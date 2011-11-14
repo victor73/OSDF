@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="OSDF" basedir="." default="package">
+    <property name="dist.dir" value="dist"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="bin.dir" value="bin"/>
+    <property name="conf.dir" value="conf"/>
+
+    <!-- Project specific properties -->
+    <property name="app.name" value="${ant.project.name}"/>
+    <property name="app.name.lc" value="osdf"/>
+    <property name="app.version" value="0.1"/>
+
+    <target name="prepare" description="Creates the necessary directories for building.">
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <target name="clean" description="Returns the distribution to a pristine state.">
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <target name="package" depends="prepare" description="Generates the project distribution.">
+        <tar destfile="${dist.dir}/${app.name.lc}-${app.version}.tar.gz" compression="gzip">
+          <tarfileset dir="." prefix="${app.name.lc}-${app.version}">
+            <include name="*.js"/>
+          </tarfileset>
+          <tarfileset dir="logs" prefix="${app.name.lc}-${app.version}/logs">
+            <exclude name="*.log"/>
+          </tarfileset>
+          <tarfileset dir="bin" prefix="${app.name.lc}-${app.version}/bin"/>
+          <tarfileset dir="lib" prefix="${app.name.lc}-${app.version}/lib"/>
+          <tarfileset dir="conf" prefix="${app.name.lc}-${app.version}/conf"/>
+          <tarfileset dir="working" prefix="${app.name.lc}-${app.version}/working"/>
+          <tarfileset dir="node_modules" prefix="${app.name.lc}-${app.version}/node_modules"/>
+          <tarfileset dir="docs" prefix="${app.name.lc}-${app.version}/docs"/>
+          <tarfileset dir="test" prefix="${app.name.lc}-${app.version}/test"/>
+        </tar>
+
+        <echo>Done. Check the "dist" directory for the disribution file.</echo>
+
+    </target>
+</project>
