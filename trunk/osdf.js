@@ -64,7 +64,34 @@ function launch() {
     var bind_address = c.value("global", "bind_address");
     var port = c.value("global", "port");
 
+    // Check that we have some valid settings.
+    if (bind_address == null || bind_address.length == 0) {
+        console.log("The 'bind_address' setting is not configured.");
+        process.exit(1);
+    }
+
+    if (port == null || port.length == 0) {
+        console.log("The 'port' setting is not configured.");
+        process.exit(1);
+    }
+
     app.listen(port, bind_address);
+    
+    // If we are being started via sys-v style init scripts we are probably being
+    // invoked as root. If we need to listen on a well known port, we need to be
+    // launched as root to bind to the port, but then drop down to another UID.
+    if (process.getuid() == 0) {
+        // Who do we drop privileges to?
+        var user = c.value("global", "user");
+        if (user === null) {
+            console.log("The 'user' setting is not configured.");
+            process.exit(1);
+        }
+
+        console.log("Launched as root. Switching to " + user); 
+        process.setuid(user);
+    }
+
     // Show some details about the server after it's up and running.
     show_ready(app.address().address, app.address().port);
 }
