@@ -146,7 +146,9 @@ function initialize() {
     perms_handler.init(eventEmitter);
 
     fs.watchFile(utils.get_config(), function (curr, prev) {
-        logger.info('Detected that the configuration has been updated.');
-        info_handler.update();
+        if (curr.mtime != prev.mtime) {
+            logger.info('Detected that the configuration has been updated.');
+            info_handler.update();
+        }
     }); 
 }
