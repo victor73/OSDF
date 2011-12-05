@@ -1,13 +1,23 @@
 #!/usr/bin/node
 
+// Scan the current directory for Javascript files that contain
+// CouchDB design documents. Such files will have the following
+// naming convention <design_doc_name>-<view_name>-map[-reduce].js.
+// The files are then read, escaped, and formatted into the proper
+// CouchDB design documents before being registered with the configured
+// CouchDB server.
+
+// TODO: Use the 'commander' module to provide for an alternate method
+// to specify a different configuration file, or perhaps specify the
+// CouchDB server hostname and port number...
 var fs = require('fs');
 var path = require('path');
 var cradle = require('cradle');
+var cli = require('commander');
 var async = require('async');
 var _ = require('underscore');
 var c = require(path.join(__dirname, "../../lib/config.js"));
 var config = new Config(path.join(__dirname, "../../conf/conf.ini"));
-
 
 main();
 
@@ -80,21 +90,30 @@ function main() {
     });
 }
 
+// Check if a string begins with another string (prefix).
 function strBeginsWith(str, prefix) {
     return str.indexOf(prefix) === 0;
 }
 
+// Check if a string end with another string (suffix).
 function strEndsWith(str, suffix) {
     var lastIndex = str.lastIndexOf(suffix);
     return (lastIndex != -1) && (lastIndex + suffix.length == str.length);
 }
 
+
+// Create a Couchdb "map" key/value for a "view" design document.
+// The first argument is the name of the map, and the second
+// argument is the javascript code to execute.
 function create_map(name, code) { 
     var view = '"' + name + '": {' + "\n";
     view += '"map": "' + escape(code) + '"}';
     return view;
 }
 
+// Create a Couchdb "map/reduce" key/value for a "view" design document. The
+// first argument is the name of the map, and the second argument is the
+// javascript code to execute.
 function create_map_reduce(name, map_code, reduce_code) {
     var view = '"' + name + '": {' + "\n";
     view += '"map": "' + escape(map_code) + '",' + "\n";
@@ -104,6 +123,9 @@ function create_map_reduce(name, map_code, reduce_code) {
     return view;
 }
 
+// Certain parts of JavaScript code has to be escaped for proper
+// inclusion into a JSON document. This function escapes the code
+// and returns the formatted result.
 function escape(code) {
     var escaped = code.replace(/\n/g, "\\n")
                       .replace(/\"/g, "\\\"")
@@ -113,6 +135,8 @@ function escape(code) {
     return escaped;
 }
 
+// Take the code that has been escaped and formatted into a JSON documents
+// (CouchDB design documents) and post tehm into the CouchDB server.
 function post_all_design_docs(design_docs) {
     var couch_ip = config.value('global', 'couch_ip');
     var couch_port = config.value('global', 'couch_port');;
@@ -134,7 +158,6 @@ function post_all_design_docs(design_docs) {
     async.forEachSeries(_.keys(design_docs), function(name, cb) {
         var code = design_docs[name];
 
-        console.log(code);
         //console.log(code);
         var view_json = JSON.parse(code);
 
