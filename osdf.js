@@ -37,6 +37,7 @@ function launch() {
         express.bodyParser()
     );
 
+    // Node handler funcitnos
     app.get('/nodes/:id', node_handler.get_node);
     app.get('/nodes/:id/ver/:ver', node_handler.get_node);
     app.post('/nodes', node_handler.insert_node);
@@ -45,10 +46,12 @@ function launch() {
     app.get('/nodes/:id/out', node_handler.get_out_linkage);
     app.get('/nodes/:id/in', node_handler.get_in_linkage);
 
-    app.post('/nodes/query', query_handler.post_query);
-    app.get('/nodes/query/:token', query_handler.getQueryResults);
-    app.get('/nodes/query/:token/page/:page', query_handler.getQueryResults);
+    // Query handler functions
+    //app.post('/nodes/query', query_handler.post_query);
+    //app.get('/nodes/query/:token', query_handler.getQueryResults);
+    //app.get('/nodes/query/:token/page/:page', query_handler.getQueryResults);
 
+    // Info handler functions
     app.get('/info', info_handler.info);
 
     app.get('/namespaces', ns_handler.get_all_namespaces);
@@ -74,6 +77,12 @@ function launch() {
         console.log("The 'port' setting is not configured.");
         process.exit(1);
     }
+
+    process.on('uncaughtException', function(err) {
+        logger.error("Caught exception: " + err);
+        logger.error(err.stack);
+        console.log("Check log file for stack trace. Caught exception: " + err);
+    });
 
     app.listen(port, bind_address);
     
