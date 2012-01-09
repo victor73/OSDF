@@ -80,7 +80,7 @@ exports['retrieve_all_namespaces_bad_auth'] = function (test) {
 // we assume that the retrieval of "all" namespaces works properly. If it doesn't,
 // then this test will probably fail too.
 exports['retrieve_valid_namespace'] = function (test) {
-    test.expect(8);
+    test.expect(9);
 
     tutils.retrieve_all_namespaces(auth_header, function(data, response) {
         var all_namespaces = JSON.parse(data);
@@ -94,6 +94,8 @@ exports['retrieve_valid_namespace'] = function (test) {
         if (ns_names.length != 1) {
             throw "Invalid number of namespace names.";
         }
+
+        // Just look at the first one
         var retrieved_ns_name = ns_names[0];
 
         tutils.retrieve_namespace(retrieved_ns_name, auth_header, function(data, response) {
@@ -112,6 +114,7 @@ exports['retrieve_valid_namespace'] = function (test) {
 
                 test.ok( "title" in  ns[retrieved_ns_name]);
                 test.ok( "description" in  ns[retrieved_ns_name]);
+                test.ok( "acl" in  ns[retrieved_ns_name]);
                 test.ok( "url" in  ns[retrieved_ns_name]);
             } catch (e) {
                 // ignore
