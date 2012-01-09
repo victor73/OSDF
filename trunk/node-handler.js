@@ -41,7 +41,9 @@ var namespaces = [];
 var validators = {};
 var db;
 
-exports.get_node = function(request, response) {
+// This is the method that handles node retrieval. It is
+// called when users HTTP GET the node.
+exports.get_node = function (request, response) {
     logger.debug("In get_node.");
     if (request.params.ver) {
         db.get(request.params.id, request.params.ver, function(err, node_data) {
@@ -54,7 +56,8 @@ exports.get_node = function(request, response) {
     }
 }
 
-exports.insert_node = function(request, response) {
+// This is the method that handles node creation.
+exports.insert_node = function (request, response) {
     logger.debug("In insert_node.");
     var content = request.rawBody;
     var report;  // To hold the results of validation
@@ -393,10 +396,17 @@ function validate_incoming_node(node_string) {
         }
     }
 
-    // TODO: Use a JSON schema check right here instead of this
-    // rudimentary check.
+    // TODO: Use a JSON schema check right here instead of the rudimentary check.
     if (! node.ns || ! node.acl || ! node.node_type || ! node.meta || ! node.linkage ) {
         throw "Node JSON does not possess the correct structure.";
+    }
+
+    if (! ('read' in node.acl && node.acl['read'] instanceof Array)) {
+        throw "Node acl object doesn't have a correctly defined 'read' key.";
+    }
+
+    if (! ('write' in node.acl && node.acl['write'] instanceof Array)) {
+        throw "Node acl object doesn't have a correctly defined 'write' key.";
     }
     
     if (! utils.contains(node.ns, namespaces)) {
