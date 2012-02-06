@@ -1,5 +1,5 @@
 var fs = require('fs');
-var utils = require('utils');
+var utils = require('osdf_utils');
 require('config');
 
 var c = Config.get_instance(utils.get_config());

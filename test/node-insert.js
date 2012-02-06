@@ -1,8 +1,6 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
-
-var utils = require('utils');
+var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
 var host = 'localhost';
@@ -10,11 +8,11 @@ var username = 'test';
 var password = 'test';
 var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
 var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + utils.random_string(8)).toString('base64');
+var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string(8)).toString('base64');
 var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
 
 var test_node = { ns: 'test',
-                  acl: { 'read': 'all', 'write': 'all' },
+                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
                   linkage: {},
                   node_type: 'unregistered',
                   meta: {}
@@ -22,7 +20,7 @@ var test_node = { ns: 'test',
 
 var test_node_schema = {
                   ns: 'test',
-                  acl: { 'read': 'all', 'write': 'all' },
+                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
                   linkage: {},
                   node_type: 'example',
                   meta: {
@@ -170,7 +168,7 @@ exports['insertion_into_unknown_namespace'] = function (test) {
     var bad_node = test_node;
 
     // Overwrite the namespace with a randomly generated one.
-    bad_node.ns = utils.random_string(8);
+    bad_node.ns = osdf_utils.random_string(8);
 
     tutils.insert_node( bad_node, auth_header, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for node with bad namespace.");
@@ -206,7 +204,7 @@ exports['insertion_into_unknown_namespace_no_auth'] = function (test) {
     var bad_node = test_node;
 
     // Overwrite the namespace with a randomly generated one.
-    bad_node.ns = utils.random_string(8);
+    bad_node.ns = osdf_utils.random_string(8);
 
     tutils.insert_node( bad_node, null, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for node with bad ns, no auth.");

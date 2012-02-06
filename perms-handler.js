@@ -1,9 +1,7 @@
-require.paths.unshift(__dirname + "/lib")
-
 var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
-var utils = require('utils');
+var utils = require('osdf_utils');
 var logger = utils.get_logger();
 
 // The main data structure to hold our ACL information.

@@ -1,13 +1,10 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/..");
-require.paths.unshift(__dirname + "/../lib");
-
 var events = require('events');
 var sec = require('perms-handler');
-var utils = require('utils');
+var osdf_utils = require('osdf_utils');
 
-var logger = utils.get_logger();
+var logger = osdf_utils.get_logger();
 var sec_initialized = false;
 var test_user = "test";
 var privileged_user = "test_executive";

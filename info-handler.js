@@ -1,6 +1,6 @@
 var path = require('path');
 var config = require('config');
-var utils = require('utils');
+var utils = require('osdf_utils');
 var logger = utils.get_logger();
 var info = {};
 

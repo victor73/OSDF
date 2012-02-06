@@ -1,8 +1,6 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
-
-var utils = require('utils');
+var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
 var host = 'localhost';
@@ -10,7 +8,7 @@ var username = 'test';
 var password = 'test';
 var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
 var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + utils.random_string(8)).toString('base64');
+var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string(8)).toString('base64');
 var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
 
 // Test whether we can retrieve OSDF instance infomration, and whether

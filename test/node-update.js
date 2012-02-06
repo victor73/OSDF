@@ -1,9 +1,11 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
+var events = require('events');
+var ee = new events.EventEmitter();
+ee.setMaxListeners(0);
 
 var flow = require('flow');
-var utils = require('utils');
+var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
 var host = 'localhost';
@@ -125,6 +127,7 @@ exports['update_no_auth'] = function (test) {
 // Test the behavior of the system when a user attempts to update a node with
 // an invalid or incorrect authentication token.
 exports['update_bad_auth'] = function (test) {
+
     test.expect(3);
 
     // Create the initial node
@@ -165,6 +168,7 @@ exports['valid_update_with_schema_validation'] = function (test) {
     test.expect(4);
 
     var node_id;
+    var initial_version;
 
     flow.exec(
         function() {
@@ -177,7 +181,7 @@ exports['valid_update_with_schema_validation'] = function (test) {
             tutils.retrieve_node(node_id, auth_header, this);
         }, function(data, response) {
             var initial_node = JSON.parse(data);
-            var initial_version = initial_node.ver;
+            initial_version = initial_node.ver;
             var modified_node = test_node_schema;
             modified_node['ver'] = initial_version;
 

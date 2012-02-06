@@ -1,22 +1,20 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
-
-var utils = require('utils');
+var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var flow = require('flow');
 
 var auth_header = tutils.get_test_auth();
 
 var test_node = { ns: 'test',
-                  acl: { 'read': ['all'], 'write': ['all'] },
+                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
                   linkage: {},
                   node_type: 'test',
                   meta: {}
                 };
 
 var restricted_node = { ns: 'test',
-                        acl: { 'read': ['all'], 'write': ['all'] },
+                        acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
                         linkage: {},
                         node_type: 'test',
                         meta: {}
@@ -50,10 +48,10 @@ exports['basic_retrieve'] = function (test) {
             var node_data;
             try {
                 node_data = JSON.parse(data);
-                test.ok("Data returned was valid JSON.");
-            } catch (e) {
-                test.fail("Invalid JSON returned.");
+            } catch (err) {
+                // ignored
             }
+            test.ok(node_data != null, "Data returned was valid JSON.");
             test.ok("id" in node_data, "Node data has id.");
             test.ok("ver" in node_data, "Node data has version.");
             test.ok("meta" in node_data, "Node data has metadata.");
@@ -183,7 +181,7 @@ exports['retrieve_by_version'] = function (test) {
             version = inserted_node['ver'];
 
             modified_data = test_node;
-            modified_data.meta['modified'] = true;
+            modified_data['meta']['modified'] = true;
             modified_data['ver'] = version;
 
             // and save the modification
@@ -198,9 +196,11 @@ exports['retrieve_by_version'] = function (test) {
             test.ok("id" in updated, "Updated node has an id.");
             test.equal(updated.id, node_id, "Updated node has the same id as original.");
             test.ok("ver" in updated, "Updated node has a version.");
-            test.ok(updated.ver != version, "Updated node and original have different versions.");
+            var updated_version = updated['ver'];
 
-            test.ok("modified" in updated.meta && updated.meta.modified == true, "Updated node is modified as expected.");
+            test.ok(updated_version != version, "Updated node and original have different versions.");
+
+            test.ok("modified" in updated['meta'] && updated['meta']['modified'] == true, "Updated node is modified as expected.");
 
             // Now, retrieve the older node by version
             tutils.retrieve_node_by_version( node_id, version, auth_header, this);
@@ -210,13 +210,14 @@ exports['retrieve_by_version'] = function (test) {
 
             test.ok(data.length > 0, "Data returned.");
 
-            var node_data;
+            var node_data = null;
             try {
                 node_data = JSON.parse(data);
-                test.ok("Data returned was valid JSON.");
             } catch (e) {
-                test.fail("Invalid JSON returned.");
+                // ignored
             }
+
+            test.ok(node_data != null, "Data returned was valid JSON.");
             test.ok("id" in node_data, "Node data has id.");
             test.ok("ver" in node_data, "Node data has version.");
             test.ok("meta" in node_data, "Node data has metadata.");
@@ -225,9 +226,9 @@ exports['retrieve_by_version'] = function (test) {
             test.ok("node_type" in node_data, "Node data has node_type.");
 
             // Also test that the version we requested is the version we got
-            test.equal(version, node_data.ver, "Version requested and retrieved match.");
+            test.equal(version, node_data['ver'], "Version requested and retrieved match.");
 
-            test.ok(! ("modified" in node_data.meta), "Older version of node does not have modification.");
+            test.ok(node_data != null && (! ("modified" in node_data['meta'])), "Older version of node does not have modification.");
 
             test.done();
 
@@ -326,7 +327,7 @@ function retrieve_by_version_test(test, auth) {
 exports['retrieve_nonexistent'] = function (test) {
     test.expect(2);
 
-    var node_id = utils.random_string(8);
+    var node_id = osdf_utils.random_string(8);
 
     tutils.retrieve_node(node_id, auth_header, function(data, response) {
         test.equal(response.statusCode, 404, "Correct status for retrieval of non-existent node.");
@@ -343,7 +344,7 @@ exports['retrieve_nonexistent'] = function (test) {
 exports['retrieve_nonexistent_no_auth'] = function (test) {
     test.expect(2);
 
-    var node_id = utils.random_string(8);
+    var node_id = osdf_utils.random_string(8);
 
     // Use null for the credential, which won't send anything.
     tutils.retrieve_node(node_id, null, function(data, response) {
@@ -361,7 +362,7 @@ exports['retrieve_nonexistent_no_auth'] = function (test) {
 exports['retrieve_nonexistent_bad_auth'] = function (test) {
     test.expect(2);
 
-    var node_id = utils.random_string(8);
+    var node_id = osdf_utils.random_string(8);
 
     // Get an invalid credential.
     var bad = tutils.get_invalid_auth();

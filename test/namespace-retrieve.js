@@ -1,18 +1,16 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
-
+var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
-var utils = require('utils');
 var _ = require('underscore');
-var logger = utils.get_logger();
+var logger = osdf_utils.get_logger();
 
 var host = 'localhost';
 var username = 'test';
 var password = 'test';
 var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
 var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + utils.random_string()).toString('base64');
+var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string()).toString('base64');
 var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
 
 // Test that the system supports the retrieval of all the namespaces the OSDF
@@ -89,6 +87,7 @@ exports['retrieve_valid_namespace'] = function (test) {
 
         var random_ns_struct = results[ Math.floor(Math.random() * results.length) ];
         var ns_names = _.keys(random_ns_struct);
+
         // So we have our namespace names now after we have extracted the keys.
         // There should actually be only 1, so use the first element
         if (ns_names.length != 1) {
@@ -199,7 +198,7 @@ exports['retrieve_invalid_namespace'] = function (test) {
     test.expect(2);
 
     // Generate a random string for our 'invalid' namespace that we're going to request.
-    var invalid_namespace = utils.random_string(8);
+    var invalid_namespace = osdf_utils.random_string(8);
 
     tutils.retrieve_namespace(invalid_namespace, auth_header, function(data, response) {
         test.equal(response.statusCode, 404, "Correct status for invalid namespace retrieval.");
