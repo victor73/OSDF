@@ -1,5 +1,6 @@
 {
   "test": {
+    "acl": { "read": [ "all" ], "write": [ "all " ] },
     "description": "This is a test namespace that comes bundled with this OSDF implementation", 
     "title": "OSDF Test", 
     "url": "http://www.igs.umaryland.edu"

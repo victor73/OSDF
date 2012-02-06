@@ -1,6 +1,6 @@
 #!/usr/bin/node
 
-var utils = require('../lib/utils');
+var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils');
 var flow = require('flow');
 
@@ -19,7 +19,7 @@ var executive_auth = 'Basic ' + new Buffer(executive_user + ':' + executive_pass
 var executive_auth_header = { 'Host': host, 'Authorization': executive_auth };
 
 // For testing security
-var bad_auth = 'Basic ' + new Buffer(username + ':' + utils.random_string(8)).toString('base64');
+var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string(8)).toString('base64');
 var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
 
 var test_node = { ns: 'test',
@@ -150,7 +150,7 @@ exports['deletion_of_nonexistent_node'] = function (test) {
 
     // An infinitessmially small chance that we'll actually randomly come up
     // with an existing node_id this way, so we can live with it.
-    var node_id = utils.random_string(20);
+    var node_id = osdf_utils.random_string(20);
 
     tutils.delete_node(node_id, auth_header, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for deletion of non-existent node.");

@@ -5,7 +5,7 @@
 //  
 //  
 var fs = require('fs');
-var sys = require("sys");  
+var sys = require("util");  
   
 exports.FileLineReader = function(filename, bufferSize) {  
   

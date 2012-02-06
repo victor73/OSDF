@@ -1,7 +1,7 @@
 var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
-var utils = require('utils');
+var utils = require('osdf_utils');
 var root_local_dir = utils.get_osdf_root();
 
 // This is the code that is responsible for assembling the complete list

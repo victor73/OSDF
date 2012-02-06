@@ -1,9 +1,9 @@
 var linereader = require('FileLineReader');
-var utils = require('utils');
+var osdf_utils = require('osdf_utils');
 var path = require('path');
 var hash = require('node_hash');
 
-var logger = utils.get_logger();
+var logger = osdf_utils.get_logger();
 var users = {};
 
 // Initialize the handler by reading the user database file into
@@ -14,7 +14,7 @@ var users = {};
 exports.init = function (emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
-    var user_file = path.join(utils.get_osdf_root(), 'working/users.db');
+    var user_file = path.join(osdf_utils.get_osdf_root(), 'working/users.db');
 
     // The arguments are filename, and buffer size...
     var reader = linereader.FileLineReader(user_file, 10);
@@ -32,7 +32,7 @@ exports.init = function (emitter) {
     }
      
     // Notify that we are finished.
-    emitter.emit("auth_handler_initialized");
+    emitter.emit("auth_handler_initialized", Object.keys(users).length);
 }
 
 exports.authenticate = function authenticate() {
@@ -59,7 +59,7 @@ exports.authenticate = function authenticate() {
 // A convenience method to retrieve the number of
 // users registered into the OSDF instance.
 exports.get_user_count = function() {
-    return Object.keys(users).length;
+    return Object.keys(exports.users).length;
 }
 
 exports.get_user = function(request) {

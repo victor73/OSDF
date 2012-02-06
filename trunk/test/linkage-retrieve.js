@@ -1,8 +1,6 @@
 #!/usr/bin/node
 
-require.paths.unshift(__dirname + "/../lib");
-
-var utils = require('utils');
+var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var flow = require('flow');
 
