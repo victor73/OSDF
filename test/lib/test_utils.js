@@ -6,7 +6,7 @@
 // status codes and content type.
 
 var http = require('http');
-var utils = require(__dirname + "/../../lib/utils");
+var utils = require(__dirname + "/../../lib/osdf_utils");
 var host = 'localhost';
 var client = http.createClient(8123, host);
 var username = "test";
@@ -23,7 +23,6 @@ exports.retrieve_namespace = function(namespace, auth_header, callback) {
     request.end();
 
     var body = "";
-    var headers;
 
     request.on('response', function (response) {
         response.on('data', function (chunk) {
@@ -183,7 +182,6 @@ exports.retrieve_node_by_version = function(node_id, version, auth_header, callb
     request.end();
 
     var body = "";
-    var headers;
 
     request.on('response', function (response) {
         response.on('data', function (chunk) {
@@ -234,7 +232,6 @@ exports.retrieve_info = function(auth_header, callback) {
     request.end();
 
     var body = "";
-    var headers;
 
     request.on('response', function (response) {
         response.on('data', function (chunk) {
