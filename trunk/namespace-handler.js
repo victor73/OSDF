@@ -30,10 +30,15 @@ exports.get_all_namespaces = function (request, response) {
     // files. Do it ASYNCHRONOUSLY, so we DO NOT use the "sync" version 
     // of readdir(), readDirSync().
     fs.readdir(ns_path, function(err, files) {
-        if (err) throw err;
+        if (err) {
+            throw err;
+        }
 
         // Reject any hidden files/directories, such as .svn directories
-        files = _.reject(files, function(file) { return file.substr(0, 1) == '.' });
+        files = _.reject(files, function(file) {
+                                    return file.substr(0, 1) === '.';
+                                }
+                        );
 
         // So, if we're here, the scan has been completed and the 'files'
         // array is populated without incident.
@@ -43,7 +48,9 @@ exports.get_all_namespaces = function (request, response) {
             files,
             function (file, callback) {
                 fs.stat(path.join(ns_path, file), function(err, stats) {
-                    if (err) throw err;
+                    if (err) {
+                        throw err;
+                    }
 
                     if (stats.isDirectory()) {
                         var ns_dir = file;
@@ -67,7 +74,7 @@ exports.get_all_namespaces = function (request, response) {
             final_packager
         );
     });
-}
+};
 
 // This is the code that is responsible for responding to requests for individual
 // namespaces.
@@ -95,4 +102,4 @@ exports.get_namespace = function (request, response) {
             });
         }
     });
-}
+};
