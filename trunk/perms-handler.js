@@ -15,18 +15,25 @@ exports.init = function(emitter) {
 
     var acl_reader = function(namespaces) {
         // Initialize the master ACL hash with a key for each namespace
-        _.each(namespaces, function(namespace) { acl[namespace] = {} });
+        _.each(namespaces, function(namespace) {
+            acl[namespace] = {};
+        });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
         utils.async_for_each(namespaces, function(namespace, cb) {
 
-            var acl_dir = path.join(utils.get_osdf_root(), '/working/namespaces/', namespace, 'acls'); 
+            var acl_dir = path.join(utils.get_osdf_root(), '/working/namespaces/',
+                                    namespace, 'acls'); 
 
             fs.readdir(acl_dir, function(err, files) {
-                if (err) throw err;
+                if (err) {
+                    throw err;
+                }
 
                 // Reject any hidden files/directories, such as .svn directories
-                files = _.reject(files, function(file) { return file.substr(0, 1) == '.' });
+                files = _.reject(files, function(file) {
+                    return file.substr(0, 1) === '.';
+                });
 
                 // So, if we're here, the scan has been completed and the 'files'
                 // array is populated without incident.
@@ -36,26 +43,32 @@ exports.init = function(emitter) {
                     var acl_file = path.join(acl_dir, file);
 
                     fs.readFile(acl_file, 'utf-8', function(err, data) {
-                        if (err) throw err;
+                        if (err) {
+                            throw err;
+                        }
+
                         var members = data.split('\n'); 
 
                         // Reject any strange members
                         members = _.reject(members, function(member) {
-                            return member == null || member.length == 0 || member == "all" 
+                            return member === null || member.length === 0 || member === "all";
                         });
+
                         // Remove any that have spaces in them.
                         members = _.reject(members, function(member) {
                             return utils.has_white_space(member);
                         }); 
+
                         // Sort them
                         members = _.sortBy(members, function(member) { return member; });
+
                         // Remove any duplicates...
                         members = _.uniq(members, true);
 
                         acl[namespace][file] = members;
                         file_cb();
                     });
-                }, function() { cb() });
+                }, function() { cb(); });
                
             });
         }, function() {
@@ -66,12 +79,13 @@ exports.init = function(emitter) {
     utils.get_namespace_names(function(namespaces) {
         acl_reader(namespaces);
     });
-}
+};
 
 // Given a user and a node, determine if the user can read (retrieve)
 // the node. Returns true or false.
 exports.has_read_permission = function(user, node) {
-    if (! ('ns' in node && 'node_type' in node && 'acl' in node && 'linkage' in node)) {
+    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
+           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage'))) {
         throw "Invalid node.";
     }
 
@@ -88,8 +102,9 @@ exports.has_read_permission = function(user, node) {
     // namespace.
     var namespace = node['ns'];
 
-    if (namespace in acl) {
-        for (var acl_idx = 0; acl_idx < read_acls.length; acl_idx++) {
+    if (acl.hasOwnProperty(namespace)) {
+        var acl_idx;
+        for (acl_idx = 0; acl_idx < read_acls.length; acl_idx++) {
             var read_acl = read_acls[acl_idx];
 
             if (  utils.contains(user, acl[namespace][read_acl])) {
@@ -101,12 +116,13 @@ exports.has_read_permission = function(user, node) {
         logger.warn("Unknown namespace: " + namespace);
     }
     return can_read;
-}
+};
 
 // Given a user and a node, determine if the user can write to
 // (that is, update or delete) the node. Returns true or false.
 exports.has_write_permission = function(user, node) {
-    if (! ('ns' in node && 'node_type' in node && 'acl' in node && 'linkage' in node)) {
+    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
+           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage') )) {
         throw "Invalid node.";
     }
 
@@ -124,8 +140,9 @@ exports.has_write_permission = function(user, node) {
 
     var can_write = false;
 
-    if (namespace in acl) {
-        for (var acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
+    if (acl.hasOwnProperty(namespace)) {
+        var acl_idx;
+        for (acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
             var write_acl = write_acls[acl_idx]; 
 
             if (  utils.contains(user, acl[namespace][write_acl])) {
@@ -137,4 +154,4 @@ exports.has_write_permission = function(user, node) {
         logger.warn("Unknown namespace: " + namespace);
     }
     return can_write;
-}
+};
