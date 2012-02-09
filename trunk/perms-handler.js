@@ -1,8 +1,8 @@
 var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
-var utils = require('osdf_utils');
-var logger = utils.get_logger();
+var osdf_utils = require('osdf_utils');
+var logger = osdf_utils.get_logger();
 
 // The main data structure to hold our ACL information.
 var acl = {};
@@ -20,9 +20,9 @@ exports.init = function(emitter) {
         });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
-        utils.async_for_each(namespaces, function(namespace, cb) {
+        osdf_utils.async_for_each(namespaces, function(namespace, cb) {
 
-            var acl_dir = path.join(utils.get_osdf_root(), '/working/namespaces/',
+            var acl_dir = path.join(osdf_utils.get_osdf_root(), '/working/namespaces/',
                                     namespace, 'acls'); 
 
             fs.readdir(acl_dir, function(err, files) {
@@ -39,7 +39,7 @@ exports.init = function(emitter) {
                 // array is populated without incident.
                 logger.debug("Found " + files.length + " ACL files for namespace " + namespace);
 
-                utils.async_for_each(files, function(file, file_cb) {
+                osdf_utils.async_for_each(files, function(file, file_cb) {
                     var acl_file = path.join(acl_dir, file);
 
                     fs.readFile(acl_file, 'utf-8', function(err, data) {
@@ -56,7 +56,7 @@ exports.init = function(emitter) {
 
                         // Remove any that have spaces in them.
                         members = _.reject(members, function(member) {
-                            return utils.has_white_space(member);
+                            return osdf_utils.has_white_space(member);
                         }); 
 
                         // Sort them
@@ -76,7 +76,7 @@ exports.init = function(emitter) {
         });
     };
 
-    utils.get_namespace_names(function(namespaces) {
+    osdf_utils.get_namespace_names(function(namespaces) {
         acl_reader(namespaces);
     });
 };
@@ -94,7 +94,7 @@ exports.has_read_permission = function(user, node) {
 
     // Do the easiest/fastest thing first. Is 'all' in the read acl?
     // If so, our job is done.
-    if (utils.contains("all", read_acls)) {
+    if (osdf_utils.contains("all", read_acls)) {
         return true;
     }
 
@@ -107,7 +107,7 @@ exports.has_read_permission = function(user, node) {
         for (acl_idx = 0; acl_idx < read_acls.length; acl_idx++) {
             var read_acl = read_acls[acl_idx];
 
-            if (  utils.contains(user, acl[namespace][read_acl])) {
+            if (  osdf_utils.contains(user, acl[namespace][read_acl])) {
                 can_read = true;
                 break;
             }
@@ -130,7 +130,7 @@ exports.has_write_permission = function(user, node) {
 
     // Do the easiest/fastest thing first. Is 'all' in the write acl?
     // If so, our job is done.
-    if (utils.contains("all", write_acls)) {
+    if (osdf_utils.contains("all", write_acls)) {
         return true;
     }
 
@@ -145,7 +145,7 @@ exports.has_write_permission = function(user, node) {
         for (acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
             var write_acl = write_acls[acl_idx]; 
 
-            if (  utils.contains(user, acl[namespace][write_acl])) {
+            if (  osdf_utils.contains(user, acl[namespace][write_acl])) {
                 can_write = true;
                 break;
             }
