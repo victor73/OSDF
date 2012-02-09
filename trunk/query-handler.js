@@ -23,11 +23,12 @@ exports.init = function(emitter) {
     // Establish the connection to the ElasticSearch server
     eclient = new elastical.Client(elasticsearch_address, {port: elasticsearch_port});
 
-    logger.debug("Connected to Elastic Search at " + elasticsearch_address + ":" + elasticsearch_port);
+    logger.debug("Connected to Elastic Search at " +
+                 elasticsearch_address + ":" + elasticsearch_port);
 
     // Setup all the JSON validators for the namespaces and their node types.
     emitter.emit('query_handler_initialized');
-}
+};
 
 // This is the method that handles node creation.
 exports.perform_query = function (request, response) {
@@ -37,14 +38,14 @@ exports.perform_query = function (request, response) {
     var query;
     try {
         query = JSON.parse(content);
-    } catch (err) {
+    } catch (parse_err) {
         logger.error("Bad query json provided.");
         response.json('', {'X-OSDF-Error': "Bad query json provided."}, 500);
         return;
     }
 
     // Check if the user is attempting to do too much
-    if ( 'fields' in query ) {
+    if ( query.hasOwnProperty('fields') ) {
         logger.warn("User attempted to control the fields to search.");
         delete query['fields'];
     }
@@ -60,7 +61,8 @@ exports.perform_query = function (request, response) {
             }
 
             var hit_count = results['total'];
-            logger.info("Got back " + hit_count + " search " + ((hit_count == 1) ? "result." : "results."));
+            logger.info("Got back " + hit_count + " search " + ((hit_count === 1) ?
+                        "result." : "results."));
 
             response.json(results, 200);
         });
@@ -68,9 +70,9 @@ exports.perform_query = function (request, response) {
         logger.error(err);
         response.json('', {'X-OSDF-Error': err.error}, 500);
     }
-}
+};
 
 exports.get_query_results = function (request, response) {
     logger.debug("In post_query.");
     response.json("Not implemented yet.", {'X-OSDF-Error': "Not implemented yet."}, 500);
-}
+};
