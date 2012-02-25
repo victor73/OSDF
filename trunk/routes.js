@@ -23,11 +23,17 @@ exports.set_routes = function (app) {
     // Info handler functions
     app.get('/info', info_handler.info);
 
+    // Namespace handler functions
     app.get('/namespaces', ns_handler.get_all_namespaces);
     app.get('/namespaces/:ns', ns_handler.get_namespace);
 
+    // Schema handler functions
     app.get('/namespaces/:ns/schemas', schema_handler.get_all_schemas);
+    app.get('/namespaces/:ns/schemas/aux', schema_handler.get_all_aux_schemas);
     app.get('/namespaces/:ns/schemas/:schema', schema_handler.get_schema);
-    app.post('/namespaces/:ns/schemas', schema_handler.post_schema);
+    app.get('/namespaces/:ns/schemas/aux/:aux', schema_handler.get_aux_schema);
+    app.post('/namespaces/:ns/schemas', schema_handler.create_schema);
+    app.post('/namespaces/:ns/schemas/aux', schema_handler.create_aux_schema);
     app.delete('/namespaces/:ns/schemas/:schema', schema_handler.delete_schema);
+    app.delete('/namespaces/:ns/schemas/aux/:aux', schema_handler.delete_aux_schema);
 };

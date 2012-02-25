@@ -42,6 +42,10 @@ exports.random_string = function (length) {
 // is complete. The callback will be passed an array of namespace names
 // as its first argument.
 exports.get_namespace_names = function (callback) {
+    if (! callback) {
+        throw "No callback provided.";
+    }
+
     var namespaces = [];
     var namespace_dir = path.join(exports.get_osdf_root(), 'working/namespaces');
 
