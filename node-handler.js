@@ -421,6 +421,18 @@ exports.init = function(emitter) {
     // Create the CouchDB connection using the configured database name.
     db = couch_conn.database(dbname);
 
+    // We want to be notified whenever a schema is deleted so that we can
+    // adjust our validators data structure by removing the corresponding
+    // validator from their as well.
+    var schema_handler = require('schema-handler');
+
+    schema_handler.on("delete_schema", function (data) {
+        logger.debug("Got a schema deletion event: ", data);
+        var ns = data['ns'];
+        var schema = data['schema'];
+        delete validators[ns][schema];
+    });
+
     osdf_utils.get_namespace_names( function(names) {
         namespaces = names;
         logger.info("Namespaces: ", namespaces);

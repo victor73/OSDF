@@ -95,7 +95,7 @@ function start_worker(config) {
 // when they are finished. When all the events are received, we're ready
 // to proceed, and launch() is called.
 function listen_for_init_completion(config) {
-    var signals = [ "node", "info", "auth", "perms", "query" ];
+    var signals = [ "node", "info", "auth", "perms", "query", "schema" ];
     var handler_count = 0;
 
     var examine_handlers = function() {
@@ -137,7 +137,7 @@ function engine_start() {
 
         console.log("Running on " + cpu_count + " CPUs.");
 
-        // Fork a work for each CPU
+        // Fork a worker for each CPU
         for (worker_idx = 0; worker_idx < cpu_count; worker_idx++) {
             var worker = cluster.fork();
 
@@ -185,6 +185,7 @@ function initialize() {
     node_handler.init(eventEmitter);
     perms_handler.init(eventEmitter);
     query_handler.init(eventEmitter);
+    schema_handler.init(eventEmitter);
 
     fs.watchFile(osdf_utils.get_config(), function (curr, prev) {
         if (curr.mtime.getTime() !== prev.mtime.getTime()) {
