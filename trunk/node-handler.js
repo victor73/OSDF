@@ -137,7 +137,13 @@ exports.insert_node = function (request, response) {
 };
 
 function save_history(node_id, node_data, callback) {
+    logger.debug("In save_history.");
     var version = node_data['ver'];
+
+    var attachment = { contentType: 'application/json',
+                       name: version.toString(),
+                       body: JSON.stringify(node_data),
+                     };
 
     try {
         if (version === 1) {
@@ -149,10 +155,14 @@ function save_history(node_id, node_data, callback) {
 
                 var first_hist_version = data['_rev'];
 
-                db.saveAttachment(node_id + "_hist", first_hist_version,
-                                  version.toString(),
-                                  'application/json',
-                                  JSON.stringify(node_data), function(err, data) {
+                var doc = { id: node_id + "_hist",
+                            rev: first_hist_version
+                          };
+                db.saveAttachment(doc, attachment, function(err, data) {
+                    if (err) {
+                        logger.error(err);
+                        throw err;
+                    }
                     logger.debug("Saved first history for node " + node_id + ".");
                     callback(null);
                 });
@@ -160,25 +170,23 @@ function save_history(node_id, node_data, callback) {
         } else {
             db.get(node_id + "_hist", function(err, hist_node) {
                 if (err) {
-                    console.log(err);
+                    logger.error(err);
                     throw err;
                 }
 
-                var hist_node_version = hist_node['_rev'];
+                var doc = { id: node_id + "_hist",
+                            rev: hist_node['_rev']
+                          };
 
-                db.saveAttachment(node_id + "_hist",  hist_node_version,
-                                  version.toString(),
-                                  'application/json',
-                                  JSON.stringify(node_data),
-                                  function(err, data) {
-                                      if (err) {
-                                          throw err;
-                                      }
+                db.saveAttachment(doc, attachment, function(err, data) {
+                    if (err) {
+                        logger.error(err);
+                        throw err;
+                    }
 
-                                      logger.debug("Saved history for node " + node_id + ".");
-                                      callback(null);
-                                  }
-                );
+                    logger.debug("Saved history for node " + node_id + ".");
+                    callback(null);
+                });
             });
         }
 
