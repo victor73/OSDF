@@ -243,6 +243,14 @@ exports.delete_schema = function (request, response) {
                 // to get the inherited emit() function.
                 module.exports.emit("delete_schema", { 'ns': ns, 'schema': schema });
 
+                // Send a message to the master process so that it can notify other
+                // sibling workers about this.
+                process.send({ cmd: "schema_change",
+                               type: "deletion",
+                               ns: ns,
+                               schema: schema
+                             });
+
                 response.send('', 204);
             }
         });
