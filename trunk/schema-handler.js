@@ -237,9 +237,9 @@ exports.delete_schema = function (request, response) {
                 response.send('', {'X-OSDF-Error': "Unable to delete schema."}, 500);
             } else {
                 logger.debug("Successful deletion of schema file. Deleting from memory...");
-                delete global_schemas[ns]['schemas'][schema];
+                delete_schema_helper(ns, schema);
 
-                // Can't use this, so we have to reach down to the module.exports 
+                // Can't use 'this', so we have to reach down to the module.exports 
                 // to get the inherited emit() function.
                 module.exports.emit("delete_schema", { 'ns': ns, 'schema': schema });
 
@@ -303,3 +303,25 @@ exports.delete_aux_schema = function (request, response) {
         return;
     }
 };
+
+// This message is used to process schema deletion events that are relayed to
+// this process from the master process by worker.js.
+exports.process_schema_change = function (msg) {
+    logger.debug("In process_schema_change.");
+
+    if (msg.hasOwnProperty('cmd') && msg['cmd'] === "schema_change") {
+        if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
+            var namespace = msg['ns']
+            var schema = msg['schema']
+            delete_schema_helper(namespace, schema);
+        }
+    }
+};
+
+function delete_schema_helper(namespace, schema_name) {
+    if (global_schemas.hasOwnProperty(namespace) &&
+            global_schemas[namespace].hasOwnProperty('schemas') &&
+            global_schemas[namespace]['schemas'].hasOwnProperty(schema_name)) {
+        delete global_schemas[namespace]['schemas'][schema_name];
+    }
+}
