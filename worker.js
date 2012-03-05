@@ -6,6 +6,13 @@ var logger = osdf_utils.get_logger();
 var events = require('events');
 var express = require('express');
 
+var node_handler = require('node-handler');
+var info_handler = require('info-handler');
+var perms_handler = require('perms-handler');
+var ns_handler = require('namespace-handler');
+var schema_handler = require('schema-handler');
+var query_handler = require('query-handler');
+
 // This event emitter is instrumental in providing us
 // a way of knowing when all our handlers are ready.
 var eventEmitter = new events.EventEmitter();
@@ -19,13 +26,6 @@ exports.start_worker = function(config) {
 
 // Calls the variously handlers' initialization methods.
 function initialize() {
-    var info_handler = require('info-handler');
-    var node_handler = require('node-handler');
-    var perms_handler = require('perms-handler');
-    var ns_handler = require('namespace-handler');
-    var schema_handler = require('schema-handler');
-    var query_handler = require('query-handler');
-
     // These initializations happen asynchronously, so we use events to
     // to track their completion.
     auth_enforcer.init(eventEmitter);
@@ -122,6 +122,12 @@ function launch(config) {
         logger.error("Caught exception: " + err);
         logger.error(err.stack);
         console.log("Check log file for stack trace. Caught exception: " + err);
+    });
+
+    process.on('message', function(msg) {
+        logger.info("Got message from the master: ", msg);
+        node_handler.process_schema_change(msg);
+        schema_handler.process_schema_change(msg);
     });
 
     app.listen(port, bind_address);

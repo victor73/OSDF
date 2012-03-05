@@ -35,6 +35,49 @@ var namespaces = [];
 var validators = {};
 var db;
 
+// This initializes the handler. The things we need to do before the
+// handler is ready to begin its work are: establish a connection to the
+// CouchDB server, determine what the installed namespaces are, and create
+// the various validators for each of the node types inside each namespace. 
+exports.init = function(emitter) {
+    logger.debug("In " + path.basename(__filename) + " init().");
+
+    logger.info("Creating couchdb connection. Using db: " + dbname);
+
+    // Establish the connection parameters, including the application's
+    // CouchDB credentials.
+    var couch_conn = new(cradle.Connection)('http://' + couch_address, couch_port, {
+        auth: { username: couch_user, password: couch_pass },
+        cache: false,
+        raw: false
+    });
+
+    // Create the CouchDB connection using the configured database name.
+    db = couch_conn.database(dbname);
+
+    // We want to be notified whenever a schema is deleted so that we can
+    // adjust our validators data structure by removing the corresponding
+    // validator from their as well.
+    var schema_handler = require('schema-handler');
+
+    schema_handler.on("delete_schema", function (data) {
+        logger.debug("Got a schema deletion event: ", data);
+        delete_schema_helper(data['ns'], data['schema']);
+    });
+
+    osdf_utils.get_namespace_names( function(names) {
+        namespaces = names;
+        logger.info("Namespaces: ", namespaces);
+
+        // Setup all the JSON validators for the namespaces and their node types.
+        // Then, send a notificatino that we have completed initialization and
+        // are ready to begin working.
+        populate_validators( function() {
+            emitter.emit('node_handler_initialized');
+        });
+    });
+};
+
 // This is the method that handles node retrieval. It is
 // called when users HTTP GET the node.
 exports.get_node = function (request, response) {
@@ -44,7 +87,6 @@ exports.get_node = function (request, response) {
         retrieval_helper(request, response, err, node_data);
     });
 };
-
 
 // This is the method that handles node retrieval. It is
 // called when users HTTP GET the node.
@@ -135,65 +177,6 @@ exports.insert_node = function (request, response) {
         }
     }
 };
-
-function save_history(node_id, node_data, callback) {
-    logger.debug("In save_history.");
-    var version = node_data['ver'];
-
-    var attachment = { contentType: 'application/json',
-                       name: version.toString(),
-                       body: JSON.stringify(node_data),
-                     };
-
-    try {
-        if (version === 1) {
-            db.save(node_id + "_hist", {}, function(err, data) {
-                if (err) {
-                    console.log(err);
-                    throw err;
-                }
-
-                var first_hist_version = data['_rev'];
-
-                var doc = { id: node_id + "_hist",
-                            rev: first_hist_version
-                          };
-                db.saveAttachment(doc, attachment, function(err, data) {
-                    if (err) {
-                        logger.error(err);
-                        throw err;
-                    }
-                    logger.debug("Saved first history for node " + node_id + ".");
-                    callback(null);
-                });
-            });
-        } else {
-            db.get(node_id + "_hist", function(err, hist_node) {
-                if (err) {
-                    logger.error(err);
-                    throw err;
-                }
-
-                var doc = { id: node_id + "_hist",
-                            rev: hist_node['_rev']
-                          };
-
-                db.saveAttachment(doc, attachment, function(err, data) {
-                    if (err) {
-                        logger.error(err);
-                        throw err;
-                    }
-
-                    logger.debug("Saved history for node " + node_id + ".");
-                    callback(null);
-                });
-            });
-        }
-
-    } catch (err) {
-        callback(err);
-    }
-}
 
 
 // This is the function that handles edits/modifications to nodes.
@@ -409,47 +392,18 @@ exports.get_in_linkage = function(request, response) {
     }
 };
 
-// This initializes the handler. The things we need to do before the
-// handler is ready to begin its work are: establish a connection to the
-// CouchDB server, determine what the installed namespaces are, and create
-// the various validators for each of the node types inside each namespace. 
-exports.init = function(emitter) {
-    logger.debug("In " + path.basename(__filename) + " init().");
+// This message is used to process schema deletion events that are relayed to
+// this process from the master process by worker.js.
+exports.process_schema_change = function (msg) {
+    logger.debug("In process_schema_change.");
 
-    logger.info("Creating couchdb connection. Using db: " + dbname);
-
-    // Establish the connection parameters, including the application's
-    // CouchDB credentials.
-    var couch_conn = new(cradle.Connection)('http://' + couch_address, couch_port, {
-        auth: { username: couch_user, password: couch_pass },
-        cache: false,
-        raw: false
-    });
-
-    // Create the CouchDB connection using the configured database name.
-    db = couch_conn.database(dbname);
-
-    // We want to be notified whenever a schema is deleted so that we can
-    // adjust our validators data structure by removing the corresponding
-    // validator from their as well.
-    var schema_handler = require('schema-handler');
-
-    schema_handler.on("delete_schema", function (data) {
-        logger.debug("Got a schema deletion event: ", data);
-        var ns = data['ns'];
-        var schema = data['schema'];
-        delete validators[ns][schema];
-    });
-
-    osdf_utils.get_namespace_names( function(names) {
-        namespaces = names;
-        logger.info("Namespaces: ", namespaces);
-
-        // Setup all the JSON validators for the namespaces and their node types.
-        populate_validators( function() {
-            emitter.emit('node_handler_initialized');
-        });
-    });
+    if (msg.hasOwnProperty('cmd') && msg['cmd'] === "schema_change") {
+        if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
+            var namespace = msg['ns']
+            var schema = msg['schema']
+            delete_schema_helper(namespace, schema);
+        }
+    }
 };
 
 // Validates the data presented based on the json-schema of the node type.
@@ -506,17 +460,6 @@ function validate_incoming_node(node_string) {
     } 
 
     return report;
-}
-
-function fix_keys_no_clone(data) {
-    if (data !== null) {
-        data['id'] = data['_id'];
-        data['ver'] = parseInt(data['_rev'].split("-")[0], 10);
-
-        delete data['_id'];
-        delete data['_rev'];
-    }
-    return data;
 }
 
 function fix_keys(data) {
@@ -792,6 +735,8 @@ function delete_helper(user, node_id, response) {
 }
 
 function delete_history_node(node_id, callback) {
+    logger.debug("In delete_history_node.");
+
     var history_node_id = node_id + "_hist";
 
     delete_couch_doc(node_id + "_hist", function(err) {
@@ -805,6 +750,7 @@ function delete_history_node(node_id, callback) {
 }
 
 function delete_couch_doc(id, callback) {
+    logger.debug("In delete_couch_doc.");
 
     db.get(id, function(err, doc_data) {
         if (err) {
@@ -823,6 +769,56 @@ function delete_couch_doc(id, callback) {
             });
         }
     });
+}
+
+function load_reference_schema(env, schema, callback) {
+    var basename = path.basename(schema, '.json');
+
+    fs.readFile(schema, 'utf-8',
+        function(err, data) {
+            if (err) {
+                logger.error("Missing or invalid schema found for " + schema );
+                callback();
+            } else {
+                logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
+                env.createSchema( JSON.parse(data), undefined, basename );
+                callback();
+            }
+        }
+    );
+}
+
+function delete_schema_helper(namespace, schema_name) {
+    if (validators.hasOwnProperty(namespace) && validators[namespace].hasOwnProperty(schema_name)) {
+        delete validators[namespace][schema_name];
+    }
+}
+
+// This function parses a JSON structure and looks for keys named '$ref'
+// The function returns an array of the '$ref' values.
+function extractRefNames(struct) {
+    var refs = [];
+    var keyName;
+    var deeperIdx;
+
+    // Check that we have a dictionary
+    if (typeof struct === "object") {
+        for (keyName in struct) {
+            if (typeof struct[keyName] === "object") {
+                var deeper_refs = extractRefNames(struct[keyName]);
+                if (deeper_refs !== null && deeper_refs.length > 0) {
+                    for (deeperIdx = 0; deeperIdx < deeper_refs.length ; deeperIdx++) {
+                        refs.push(deeper_refs[deeperIdx]);
+                    }
+                }
+            } else if (keyName === "$ref") {
+                if (struct[keyName].length > 0) {
+                    refs.push(struct[keyName]);
+                }
+            }
+        }
+    }
+    return refs;
 }
 
 // This function is used to determine if any nodes point to this node.
@@ -870,71 +866,9 @@ function has_dependent_nodes(node, callback) {
     });
 }
 
-function loadReferenceSchema(env, schema, callback) {
-    var basename = path.basename(schema, '.json');
-
-    fs.readFile(schema, 'utf-8',
-        function(err, data) {
-            if (err) {
-                logger.error("Missing or invalid schema found for " + schema );
-                callback();
-            } else {
-                logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
-                env.createSchema( JSON.parse(data), undefined, basename );
-                callback();
-            }
-        }
-    );
-}
-
-// This function parses a JSON structure and looks for keys named '$ref'
-// The function returns an array of the '$ref' values.
-function extractRefNames(struct) {
-    var refs = [];
-    var keyName;
-    var deeperIdx;
-
-    // Check that we have a dictionary
-    if (typeof struct === "object") {
-        for (keyName in struct) {
-            if (typeof struct[keyName] === "object") {
-                var deeper_refs = extractRefNames(struct[keyName]);
-                if (deeper_refs !== null && deeper_refs.length > 0) {
-                    for (deeperIdx = 0; deeperIdx < deeper_refs.length ; deeperIdx++) {
-                        refs.push(deeper_refs[deeperIdx]);
-                    }
-                }
-            } else if (keyName === "$ref") {
-                if (struct[keyName].length > 0) {
-                    refs.push(struct[keyName]);
-                }
-            }
-        }
-    }
-    return refs;
-}
-
-function register_aux_schemas_to_env(env, ns, then) {
-    logger.debug("In register_aux_schemas_to_env.");
-    flow.exec(
-        function() {
-            var aux_dir = path.join(root_local_dir, 'working/namespaces', ns, 'aux');
-            fs.readdir(aux_dir, this); 
-        },
-        function(err, files) {
-            if (err) {
-                throw err;
-            }
-            loadAuxSchemas(ns, env, files, this);
-        }, function() {
-            then(); 
-        }
-    );
-}
-
-function loadAuxSchemas(ns, env, schemas, then) {
+function load_aux_schemas(ns, env, schemas, then) {
     var loaded = {};
-    recursiveLoadHelper(ns, env, schemas, loaded, then);
+    recursive_load_helper(ns, env, schemas, loaded, then);
 }
 
 function locate_schema_id_source(ns, schema_id) {
@@ -952,61 +886,139 @@ function locate_schema_source(ns, schema) {
 // env: the JSV environment. Each namespace has one
 // schemas: an array of schema files to load, each may contain references to other schemas
 // then: a callback that is called when the loading is complete
-function recursiveLoadHelper(ns, env, schemas, loaded, then) {
-        osdf_utils.async_for_each(schemas, function(schema, cb) {
-            var schema_src  = locate_schema_source(ns, schema);
+function recursive_load_helper(ns, env, schemas, loaded, then) {
+    osdf_utils.async_for_each(schemas, function(schema, cb) {
+        var schema_src  = locate_schema_source(ns, schema);
 
-            fs.stat(schema_src, function(err, stats) {
-                if (err) {
-                    logger.debug("Error examining " + schema_src + ": ", err);
-                    cb();
-                    return;
-                }
+        fs.stat(schema_src, function(err, stats) {
+            if (err) {
+                logger.debug("Error examining " + schema_src + ": ", err);
+                cb();
+                return;
+            }
 
-                if (stats.isDirectory()) {
-                    logger.warn("Skipping directory: " + schema_src);
-                    cb();
-                } else {
-                    var schema_id = path.basename(schema, '.json');
+            if (stats.isDirectory()) {
+                logger.warn("Skipping directory: " + schema_src);
+                cb();
+            } else {
+                var schema_id = path.basename(schema, '.json');
 
-                    fs.readFile( schema_src, function(err, data) {
-                        if (err) {
-                            throw err;
-                        }
+                fs.readFile( schema_src, function(err, data) {
+                    if (err) {
+                        logger.error(err);
+                        throw err;
+                    }
 
-                        var schemaJson, reference_ids;
-                        try {
-                            schemaJson = JSON.parse(data);
-                            reference_ids = extractRefNames(schemaJson);
-                        } catch (e) {
-                            logger.warn("Unable to extract references from " + schema_src );
+                    var schemaJson, reference_ids;
+                    try {
+                        schemaJson = JSON.parse(data);
+                        reference_ids = extractRefNames(schemaJson);
+                    } catch (e) {
+                        logger.warn("Unable to extract references from " + schema_src );
+                        cb();
+                        return;
+                    }
+
+                    var reference_schemas = [];
+                    var refIdx;
+                    for (refIdx = 0; refIdx < reference_ids.length; refIdx++) {
+                        var schema_file = reference_ids[refIdx] + ".json";
+                        reference_schemas.push(schema_file);
+                    }
+
+                    // Call ourselves and pass along the list of schemas that we have
+                    // already loaded.
+                    recursive_load_helper(ns, env, reference_schemas, loaded, function() {
+                        if (loaded.hasOwnProperty(schema_id)) {
+                            logger.debug("Already loaded " + schema_id);
                             cb();
-                            return;
+                        } else {
+                            load_reference_schema(env, schema_src, cb);
+                            // Make a note that we loaded this one already
+                            loaded[schema_id] = 1;
                         }
-
-                        var reference_schemas = [];
-                        var refIdx;
-                        for (refIdx = 0; refIdx < reference_ids.length; refIdx++) {
-                            var schema_file = reference_ids[refIdx] + ".json";
-                            reference_schemas.push(schema_file);
-                        }
-
-                        // Call ourselves and pass along the list of schemas that we have
-                        // already loaded.
-                        recursiveLoadHelper(ns, env, reference_schemas, loaded, function() {
-                            if (loaded.hasOwnProperty(schema_id)) {
-                                logger.debug("Already loaded " + schema_id);
-                                cb();
-                            } else {
-                                loadReferenceSchema(env, schema_src, cb);
-                                // Make a note that we loaded this one already
-                                loaded[schema_id] = 1;
-                            }
-                        });
-
                     });
-                }
-            });
 
-        }, then);
+                });
+            }
+        });
+
+    }, then);
+}
+
+function register_aux_schemas_to_env(env, ns, then) {
+    logger.debug("In register_aux_schemas_to_env.");
+    flow.exec(
+        function() {
+            var aux_dir = path.join(root_local_dir, 'working/namespaces', ns, 'aux');
+            fs.readdir(aux_dir, this); 
+        },
+        function(err, files) {
+            if (err) {
+                throw err;
+            }
+            load_aux_schemas(ns, env, files, this);
+        }, function() {
+            then(); 
+        }
+    );
+}
+
+function save_history(node_id, node_data, callback) {
+    logger.debug("In save_history.");
+    var version = node_data['ver'];
+
+    var attachment = { contentType: 'application/json',
+                       name: version.toString(),
+                       body: JSON.stringify(node_data),
+                     };
+
+    try {
+        if (version === 1) {
+            db.save(node_id + "_hist", {}, function(err, data) {
+                if (err) {
+                    console.log(err);
+                    throw err;
+                }
+
+                var first_hist_version = data['_rev'];
+
+                var doc = { id: node_id + "_hist",
+                            rev: first_hist_version
+                          };
+                db.saveAttachment(doc, attachment, function(err, data) {
+                    if (err) {
+                        logger.error(err);
+                        throw err;
+                    }
+                    logger.debug("Saved first history for node " + node_id + ".");
+                    callback(null);
+                });
+            });
+        } else {
+            db.get(node_id + "_hist", function(err, hist_node) {
+                if (err) {
+                    logger.error(err);
+                    throw err;
+                }
+
+                var doc = { id: node_id + "_hist",
+                            rev: hist_node['_rev']
+                          };
+
+                db.saveAttachment(doc, attachment, function(err, data) {
+                    if (err) {
+                        logger.error(err);
+                        throw err;
+                    }
+
+                    logger.debug("Saved history for node " + node_id + ".");
+                    callback(null);
+                });
+            });
+        }
+
+    } catch (err) {
+        callback(err);
+    }
 }
