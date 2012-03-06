@@ -15,10 +15,7 @@ exports.set_routes = function (app) {
     app.get('/nodes/:id/in', node_handler.get_in_linkage);
 
     // Query handler functions
-    app.get('/nodes/query', query_handler.perform_query);
-    app.post('/nodes/query', query_handler.perform_query);
-    app.get('/nodes/query/:token', query_handler.get_query_results);
-    app.get('/nodes/query/:token/page/:page', query_handler.get_query_results);
+    app.post('/nodes/query/:ns', query_handler.perform_query);
 
     // Info handler functions
     app.get('/info', info_handler.info);
