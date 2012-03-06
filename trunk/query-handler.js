@@ -1,6 +1,8 @@
 var path = require('path');
+var auth = require('auth_enforcer');
 var elastical = require('elastical');
 var osdf_utils = require('osdf_utils');
+var util = require('util');
 var logger = osdf_utils.get_logger();
 
 var eclient;
@@ -30,49 +32,82 @@ exports.init = function(emitter) {
     emitter.emit('query_handler_initialized');
 };
 
-// This is the method that handles node creation.
+// This is the method that handles querying elastic search
 exports.perform_query = function (request, response) {
-    logger.debug("In get_query_results.");
+    logger.debug("In perform_query");
 
+    var perms_handler = require('perms-handler');
+	var user = auth.get_user(request);
+	var namespace = request.params.ns;
+	var user_acls = perms_handler.get_user_acls(namespace, user);
     var content = request.rawBody;
-    var query;
+    
+    //build a skeletal query with filters
+    var elastic_query =
+    {
+		"query" : {
+			"filtered" : {
+				"filter" : {
+					"and" : [
+						{
+						    term : { "ns" : namespace }
+						},
+						{
+						    terms : { "acl.read" : user_acls }
+						}
+					]
+				}
+			}
+		}
+	};
+    
+    var user_query;
+    
     try {
-        query = JSON.parse(content);
-    } catch (parse_err) {
-        logger.error("Bad query json provided.");
-        response.json('', {'X-OSDF-Error': "Bad query json provided."}, 500);
+    	user_query = JSON.parse(content);
+    } catch (err) {
+        logger.error("Bad query json provided.  " + err);
+        response.json('', {'X-OSDF-Error': "Bad query json provided. " + err}, 422);
         return;
     }
-
-    // Check if the user is attempting to do too much
-    if ( query.hasOwnProperty('fields') ) {
-        logger.warn("User attempted to control the fields to search.");
-        delete query['fields'];
-    }
-    // Set the fields that in the node document that are queryable.
-    query['fields'] = [ 'meta', 'node_type', 'linkage', 'acl' ];
-
-    logger.debug("Submitting search to Elastic Search.");
+	
+    //insert the client supplied query into the filtered skeletal query
+    elastic_query["query"]["filtered"]["query"] = user_query['query'];
+    
+    if (user_query["sort"]) //if user specified sort, insert the sort element into the elastic query 
+    	elastic_query["sort"] = user_query["sort"];
+    if (user_query["from"]) //if user specified from (begin index for pagination)
+    	elastic_query["from"] = user_query["from"];
+    if (user_query["size"]) //if user specified size (total size for pagination)
+    	elastic_query["size"] = user_query["size"];
+    
+    logger.debug("submitting elastic_query:\n" + util.inspect(elastic_query, true, null));
+    
     try {
-        eclient.search( query, function(err, results, res) {
-            if (err) {
-                logger.error(err);
-                response.json('',  {'X-OSDF-Error': err.error}, 500);
-            }
-
-            var hit_count = results['total'];
-            logger.info("Got back " + hit_count + " search " + ((hit_count === 1) ?
-                        "result." : "results."));
-
-            response.json(results, 200);
-        });
+		// from the elastical docs:
+		// `err` is an Error, or `null` on success.
+	    // `results` is an object containing search hits.
+	    // `res` is the full parsed ElasticSearch response data.
+    	eclient.search(elastic_query, function (err, results, res) {
+    		if (err) {
+    			logger.error("Error running query. " + err);
+    			response.json('',  {'X-OSDF-Error': err}, 500);    			
+    		}
+    		else {
+    			if (results.total != results.hits.length) {
+    				logger.debug("Number of results returned was: "
+    						+ results.hits.length + " though a total of "
+    						+ results.total + " were found.");
+    			}
+    			else {
+    				logger.debug("Number of results found was: " + results.total);
+    			}
+    			response.json(results, 200);
+    		}
+    	});
     } catch (err) {
-        logger.error(err);
-        response.json('', {'X-OSDF-Error': err.error}, 500);
-    }
-};
-
-exports.get_query_results = function (request, response) {
-    logger.debug("In post_query.");
-    response.json("Not implemented yet.", {'X-OSDF-Error': "Not implemented yet."}, 500);
+        logger.error("Error running query. " + err);
+        response.json('', {'X-OSDF-Error': "Error running query: " + err}, 500);
+        return;
+    }  
 };
