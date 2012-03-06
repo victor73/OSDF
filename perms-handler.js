@@ -6,6 +6,7 @@ var logger = osdf_utils.get_logger();
 
 // The main data structure to hold our ACL information.
 var acl = {};
+var namespace_user_acls = {};
 
 // Initialize the handler by scanning the 'acls' directory in each namespace
 // directory, reading the files therein, and adding the contents to a datastructure
@@ -17,6 +18,7 @@ exports.init = function(emitter) {
         // Initialize the master ACL hash with a key for each namespace
         _.each(namespaces, function(namespace) {
             acl[namespace] = {};
+            namespace_user_acls[namespace] = {};
         });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
@@ -65,7 +67,17 @@ exports.init = function(emitter) {
                         // Remove any duplicates...
                         members = _.uniq(members, true);
 
+                        //populate the acl object
                         acl[namespace][file] = members;
+        
+                        //populate the namespace_user_acls object
+                        _.each(members, function(member) { 
+                        	if (!namespace_user_acls[namespace][member]) {
+                        		namespace_user_acls[namespace][member] = [];
+                        	}
+                        	namespace_user_acls[namespace][member].push(file);
+                        });
+                        
                         file_cb();
                     });
                 }, function() { cb(); });
@@ -154,4 +166,14 @@ exports.has_write_permission = function(user, node) {
         logger.warn("Unknown namespace: " + namespace);
     }
     return can_write;
+};
+
+exports.get_user_acls = function(namespace, user) {
+	var user_acls = ["all"];
+	//if namespace/user has valid acls, return them with prepended "all"
+	//otherwise, simply return "all"
+	if (namespace_user_acls[namespace] && namespace_user_acls[namespace][user]) {
+		user_acls.concat(namespace_user_acls[namespace][user]);
+	}
+	return user_acls;
 };
