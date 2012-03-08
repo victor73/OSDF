@@ -1,4 +1,4 @@
-# log4js-node
+# log4js-node [![Build Status](https://secure.travis-ci.org/nomiddlename/log4js-node.png?branch=master)](http://travis-ci.org/nomiddlename/log4js-node)
 
 NOTE: v0.3.8 of log4js is the last that will work with node versions older than 0.4. To use v0.3.9 you will need node 0.4 or later.
 
@@ -72,6 +72,35 @@ To specify a different period:
     log4js.configure(undefined, { reloadSecs: 300 }); // load 'log4js.json' from NODE_PATH
 
 You can also pass an object to the configure function, which has the same properties as the json versions.
+
+For FileAppender you can also pass the path to the log directory as an option where all your log files would be stored.
+
+    log4js.configure('my_log4js_configuration.json', { cwd: '/absolute/path/to/log/dir' });
+
+If you have already defined an absolute path for one of the FileAppenders in the configuration file, you could add a "absolute": true to the particular FileAppender to override the cwd option passed. Here is an example configuration file:
+
+    #### my_log4js_configuration.json ####
+    {
+      "appenders": [
+        {
+          "type": "file",
+          "filename": "relative/path/to/log_file.log",
+          "maxLogSize": 20480,
+          "backups": 3,
+          "pollInterval": 15,
+          "category": "relative-logger"
+        },
+        {
+          "type": "file",
+          "absolute": true,
+          "filename": "/absolute/path/to/log_file.log",
+          "maxLogSize": 20480,
+          "backups": 10,
+          "pollInterval": 15,
+          "category": "absolute-logger"          
+        }
+      ]
+    }
 
 ## connect/express logger
 
@@ -218,6 +247,24 @@ This was mainly created for [cluster](https://github.com/LearnBoost/cluster), bu
       .use(cluster.logger('run/logs'))
       .use(cluster.pidfiles('run/pids'))
       .listen(3000);
+</pre>
+
+## gelf logger
+
+A gelf logger has been added to log4js, by [arifamirani](https://github.com/arifamirani). This allows log4js to log to [GELF](http://www.graylog2.org/about/gelf) compatible servers such as [Graylog](http://www.graylog2.org/). This is currently configuration based and needs the following configuration to be added to log4j.json. For example:
+
+<pre>
+  {
+    "appenders": [  
+      {
+        "type": "gelf",
+        "host": "logs.mydomain.com", //defaults to localhost
+        "hostname":"mrs-dev", //defaults to the value returned by os.hostname()
+        "port": "12201", //defaults to 12201
+        "facility": "myapp" //defaults to nodejs-server
+      }
+    }
+  }
 </pre>
 
 ## author (of this node version)

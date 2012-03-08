@@ -1,0 +1,100 @@
+# The @--@ tokens are replaced with actual values by the ant build.xml process.
+%define Name @name@
+%define lcName @lc_name@
+%define _prefix /usr/lib/%{lcName}
+
+Summary: %{Name} - REST API for storing and retrieving scientific data.
+Name: %{lcName}
+Version: @version@
+Release: 1
+License: GPL
+Group: System Environment/Daemons
+URL: http://sourceforge.net/projects/%{lcName}/
+Source: http://prdownloads.sourceforge.net/%{Name}/%{lcName}-%{version}.tar.gz
+Packager: @packager@
+
+Requires: nodejs >= 0.6
+Requires: elasticsearch >= 0.18.0
+Requires: couchdb >= 1.0
+buildarch: noarch
+BuildRoot:      %{_builddir}/%{name}-%{version}-%{release}-root
+
+%description
+This is an implementation of the %{Name} REST API written in Javascript and the
+Node.js framework.
+
+
+%prep
+# unzips the source tarball/zip
+%setup -n %{lcName}-%{version}
+
+%build
+
+%clean                                                                                 
+[ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
+
+%pre
+# Create the group
+if ! getent group %{lcName} >/dev/null; then
+        groupadd -r %{lcName}
+fi
+
+# Create the user
+if ! getent passwd %{lcName} >/dev/null; then
+        useradd -r -g %{lcName} -d "%{_prefix}" \
+            -s /sbin/nologin -c "%{Name}" %{lcName}
+fi
+
+
+%post
+# Register the startup script using chkconfig.
+/sbin/chkconfig --add %{lcName}
+
+%preun
+# Stop the service, if it's running. Then deregister it from
+# the system using chkconfig.
+if [ $1 -eq 0 ]; then
+  /sbin/service %{lcName} stop >/dev/null 2>&1
+  /sbin/chkconfig --del %{lcName}
+fi
+
+%postun
+# Check if this is the last uninstall
+if [ "$1" = "0" ] ; then
+  if [ -d %{_bindir}/%{lcName}-%{version} ]; then
+    %__rm -rf %{_bindir}/%{lcName}-%{version}
+  fi
+  if [ -d %{_localstatedir}/%{lcName} ]; then
+    %__rm -rf %{_localstatedir}/%{lcName}
+  fi
+fi
+
+%install
+[ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
+# Codebase
+%__mkdir -p %{buildroot}%{_prefix}
+%__cp *.js %{buildroot}%{_prefix}
+%__cp -r lib %{buildroot}%{_prefix}
+%__cp -r node_modules %{buildroot}%{_prefix}
+%__cp nodelint.conf %{buildroot}%{_prefix}
+%__cp -r docs %{buildroot}%{_prefix}
+
+# Startup script and config file
+%__mkdir -p %{buildroot}/%{_sysconfdir}/init.d
+%__mkdir -p %{buildroot}/%{_sysconfdir}/%{lcName}
+%__cp rpm/osdf_init.sh %{buildroot}/%{_sysconfdir}/init.d/%{lcName}
+
+# Sample Configuration file
+%__cp conf/conf.ini.sample %{buildroot}/%{_sysconfdir}/%{lcName}/config.ini
+
+# Log directory
+%__mkdir -p %{buildroot}%{_localstatedir}/log/%{lcName}
+
+%files
+%{_prefix}
+%doc %{_prefix}/docs
+%config(noreplace) %{_sysconfdir}/%{lcName}/config.ini
+# Startup script
+%attr(755,root,root) %{_sysconfdir}/init.d/%{lcName}
+# Logs
+%dir %{_localstatedir}/log/%{lcName}
