@@ -1,5 +1,6 @@
 #!/usr/bin/node
 
+var commander = require('commander');
 var _ = require('underscore');
 var cluster = require('cluster');
 var osdf_utils = require('osdf_utils');
