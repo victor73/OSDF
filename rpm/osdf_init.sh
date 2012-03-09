@@ -56,7 +56,7 @@ start_osdf () {
         mkdir -p "$RUN_DIR" && chown $OSDF_USER "$RUN_DIR"
     fi
     pushd "$OSDF_HOME" >/dev/null 2>&1
-    start_daemon -p $PIDFILE "/usr/bin/node osdf.js >> $LOG &"
+    start_daemon -p $PIDFILE "/usr/bin/node osdf.js --config /etc/osdf/config.ini >> $LOG &"
     local START_RV=$?
     if [ "$START_RV" == "0" ]; then
 	sleep 3
