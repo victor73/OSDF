@@ -16,6 +16,11 @@ Packager: @packager@
 Requires: nodejs >= 0.6
 Requires: elasticsearch >= 0.18.0
 Requires: couchdb >= 1.0
+
+Requires(pre):  /usr/sbin/useradd /usr/sbin/groupadd chkconfig initscripts 
+Requires(post): chkconfig initscripts                                                                                       
+Requires(postun): /usr/sbin/userdel /usr/sbin/groupdel chkconfig initscripts
+
 buildarch: noarch
 BuildRoot:      %{_builddir}/%{name}-%{version}-%{release}-root
 
@@ -35,13 +40,13 @@ Node.js framework.
 
 %pre
 # Create the group
-if ! getent group %{lcName} >/dev/null; then
-        groupadd -r %{lcName}
+if ! /usr/bin/getent group %{lcName} >/dev/null; then
+        /usr/sbin/groupadd -r %{lcName}
 fi
 
 # Create the user
-if ! getent passwd %{lcName} >/dev/null; then
-        useradd -r -g %{lcName} -d "%{_prefix}" \
+if ! /usr/bin/getent passwd %{lcName} >/dev/null; then
+        /usr/sbin/useradd -r -g %{lcName} -d "%{_prefix}" \
             -s /sbin/nologin -c "%{Name}" %{lcName}
 fi
 
@@ -60,7 +65,7 @@ fi
 
 %postun
 # Check if this is the last uninstall
-if [ "$1" = "0" ] ; then
+if [ "$1" = "0" ]; then
   if [ -d %{_bindir}/%{lcName}-%{version} ]; then
     %__rm -rf %{_bindir}/%{lcName}-%{version}
   fi
@@ -68,6 +73,8 @@ if [ "$1" = "0" ] ; then
     %__rm -rf %{_localstatedir}/%{lcName}
   fi
 fi
+/usr/sbin/userdel %{lcName} 2>/dev/null
+/usr/sbin/groupdel %{lcName} 2>/dev/null || exit 0
 
 %install
 [ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
@@ -78,6 +85,12 @@ fi
 %__cp -r node_modules %{buildroot}%{_prefix}
 %__cp nodelint.conf %{buildroot}%{_prefix}
 %__cp -r docs %{buildroot}%{_prefix}
+
+%__mkdir -p %{buildroot}%{_prefix}/working
+%__mkdir -p %{buildroot}%{_prefix}/working/namespaces
+%__cp -r working/namespaces/test %{buildroot}%{_prefix}/working/namespaces
+%__cp working/users.db %{buildroot}%{_prefix}/working/
+%__cp working/new_namespace.sh %{buildroot}%{_prefix}/working/
 
 # Startup script and config file
 %__mkdir -p %{buildroot}/%{_sysconfdir}/init.d
