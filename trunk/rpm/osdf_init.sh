@@ -6,7 +6,7 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: osdf script
-# Description:       Open Science Data Framework (OSF) daemon
+# Description:       Open Science Data Framework (OSDF) daemon
 ### END INIT INFO
 
 SCRIPT_OK=0
@@ -17,19 +17,20 @@ ENVIRONMENT=production
 
 DESCRIPTION="osdf daemon"
 NAME=OSDF
+LCNAME=osdf
 SCRIPT_NAME=`basename $0`
-OSDF_HOME=/usr/lib/osdf
-RUN_DIR=/var/run/$NAME
-PIDFILE=/var/run/$NAME/$NAME.pid
+APP_HOME=/usr/lib/$LCNAME
+RUN_DIR=/var/run/$LCNAME
+PIDFILE=/var/run/$LCNAME/$LCNAME.pid
 LSB_LIBRARY=/lib/lsb/init-functions
-LOG=/var/log/osdf/osdf.log
+LOG=/var/log/$LCNAME/$LCNAME.log
 
 
 export NODE_ENV=$ENVIRONMENT
 # For node.js version >= 0.6
-export NODE_PATH=$OSDF_HOME:$OSDF_HOME/lib
+export NODE_PATH=$APP_HOME:$APP_HOME/lib
 
-if test ! -d "$OSDF_HOME"; then
+if test ! -d "$APP_HOME"; then
     exit $SCRIPT_ERROR
 fi
 
@@ -50,17 +51,17 @@ if test -r $LSB_LIBRARY; then
     . $LSB_LIBRARY
 fi
 
-start_osdf () {
-    # Start OSDF as a background process.
+start_app () {
+    # Start as a background process.
     if [ ! -f "$RUN_DIR" ]; then
         mkdir -p "$RUN_DIR" && chown $OSDF_USER "$RUN_DIR"
     fi
-    pushd "$OSDF_HOME" >/dev/null 2>&1
-    start_daemon -p $PIDFILE "/usr/bin/node osdf.js --config /etc/osdf/config.ini >> $LOG &"
+    pushd "$APP_HOME" >/dev/null 2>&1
+    start_daemon -p $PIDFILE "/usr/bin/node ${LCNAME}.js --config /etc/$LCNAME/config.ini \                      --working /var/run/$LCNAME/working >> $LOG &"
     local START_RV=$?
     if [ "$START_RV" == "0" ]; then
 	sleep 3
-        PID=`ps aux | grep node | grep $OSDF_USER | grep -v grep | awk '{print $2}'`
+        PID=`ps aux | grep [n]ode | grep $OSDF_USER | awk '{print $2}'`
         echo $PID > $PIDFILE
         return $SCRIPT_OK
     else
@@ -68,7 +69,7 @@ start_osdf () {
     fi
 }
 
-stop_osdf () {
+stop_app () {
     killproc -p $PIDFILE
     KILL_RV=$?
     return $SCRIPT_OK
@@ -94,7 +95,7 @@ parse_script_option_list () {
     case "$1" in
         start)
             log_daemon_msg "Starting $DESCRIPTION"
-            if start_osdf; then
+            if start_app; then
                 log_end_msg $SCRIPT_OK
             else
                 log_end_msg $SCRIPT_ERROR
@@ -102,7 +103,7 @@ parse_script_option_list () {
             ;;
         stop)
             log_daemon_msg "Stopping $DESCRIPTION"
-            if stop_osdf; then
+            if stop_app; then
                 log_end_msg $SCRIPT_OK
             else
                 log_end_msg $SCRIPT_ERROR
@@ -110,7 +111,7 @@ parse_script_option_list () {
             ;;
         restart)
             log_daemon_msg "Restarting $DESCRIPTION"
-            if stop_osdf; then
+            if stop_app; then
                 if start_osdf; then
                     log_end_msg $SCRIPT_OK
                 else
