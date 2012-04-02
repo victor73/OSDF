@@ -18,22 +18,22 @@ var query_handler = require('query-handler');
 var eventEmitter = new events.EventEmitter();
 eventEmitter.setMaxListeners(0);
 
-exports.start_worker = function(config) {
+exports.start_worker = function(config, working_path) {
     // Wait for everything to be ready before we get going.
     listen_for_init_completion(config);
-    initialize();
+    initialize(working_path);
 };
 
 // Calls the variously handlers' initialization methods.
-function initialize() {
+function initialize(working_path) {
     // These initializations happen asynchronously, so we use events to
     // to track their completion.
-    auth_enforcer.init(eventEmitter);
+    auth_enforcer.init(eventEmitter, working_path);
     info_handler.init(eventEmitter);
-    node_handler.init(eventEmitter);
+    node_handler.init(eventEmitter, working_path);
     perms_handler.init(eventEmitter);
     query_handler.init(eventEmitter);
-    schema_handler.init(eventEmitter);
+    schema_handler.init(eventEmitter, working_path);
 
     fs.watchFile(osdf_utils.get_config(), function (curr, prev) {
         if (curr.mtime.getTime() !== prev.mtime.getTime()) {
