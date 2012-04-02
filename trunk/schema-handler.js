@@ -135,7 +135,7 @@ exports.insert_schema = function (request, response) {
     var insertion_doc;
     try {
         insertion_doc = JSON.parse(content);
-    } catch () {
+    } catch (err) {
         response.send('', {'X-OSDF-Error': "Invalid JSON provided for insertion."}, 422);
     }
 
@@ -155,7 +155,7 @@ exports.insert_schema = function (request, response) {
         var stream = fs.createWriteStream(schema_path);
         stream.once('open', function(fd) {
             // Write out the prettyfied JSON to the filesystem.
-            stream.write(JSON.stringify(schema_json, null, 4);
+            stream.write(JSON.stringify(schema_json, null, 4));
         });
         
         global_schemas[ns]['schemas'] = schema_json;
