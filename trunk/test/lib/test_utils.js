@@ -222,7 +222,7 @@ exports.update_node = function(node_id, node_data, auth_header, callback, next) 
     });
 };
 
-exports.retrieve_info = function(auth_header, callback) {
+exports.retrieve_info = function (auth_header, callback) {
     var request;
     if (auth_header == null) {
         request = client.request('GET', '/info');
@@ -232,6 +232,29 @@ exports.retrieve_info = function(auth_header, callback) {
     request.end();
 
     var body = "";
+
+    request.on('response', function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    });
+};
+
+exports.insert_schema = function (namespace, schema_doc, auth_header, callback) {
+    var request;
+    if (auth_header == null) {
+        request = client.request('POST', '/namespaces/' + namespace + '/schemas');
+    } else {
+        request = client.request('POST', '/namespaces/' + namespace + '/schemas', auth_header);
+    }
+    request.write(JSON.stringify(schema_doc));
+    request.end();
+
+    var body = "";
+    var headers;
 
     request.on('response', function (response) {
         response.on('data', function (chunk) {

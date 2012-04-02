@@ -13,6 +13,7 @@ var bind_address = c.value("global", "bind_address");
 var port = c.value("global", "port");
 var base_url = c.value("global", "base_url");
 var root_local_dir = osdf_utils.get_osdf_root();
+var working_dir;
 var global_schemas = {};
 
 function SchemaHandler() {
@@ -41,99 +42,15 @@ exports.get_all_schemas = function (request, response) {
     }
 };
 
-function get_ns_schemas(ns, callback) {
-    var schemas = {};
-    var aux_schemas = {};
-    var ns_schema_dir;
-    var ns_aux_schema_dir;
-
-    flow.exec(
-        function () {
-            // Determine the directory to the schemas for this namespace.
-            ns_schema_dir = path.join(root_local_dir, '/working/namespaces/', ns, '/schemas');
-            logger.debug("Schema dir for namespace " + ns + ": " + ns_schema_dir);
-
-            // Scan the directory for the schema files.
-            fs.readdir(ns_schema_dir, this);
-        },
-        function (err, files) {
-            if (err) {
-                logger.error("Unable to scan schema directory for namespace " + ns, err);
-                throw err;
-            }
-
-            // Reject any hidden files/directories, such as .svn directories
-            files = _.reject(files, function(file) {
-                return file.substr(0, 1) === '.';
-            });
-
-            logger.debug("Scanned " + files.length + " schemas.");
-
-            osdf_utils.async_for_each(
-                files,
-                function(file, cb) {
-                    try {
-                        var name = path.basename(file, '.json');
-                        var file_text = fs.readFileSync(ns_schema_dir + '/' + file, 'utf8');
-                        var schema_json = JSON.parse(file_text);
-                        schemas[name] = schema_json;
-                        cb();
-                    } catch (err) {
-                        logger.error("Error parsing schema file " + file, err);
-                        cb();
-                    }
-                },
-                this
-            );
-        },
-        function() {
-            // Determine the directory to the auxiliary schemas for this namespace.
-            ns_aux_schema_dir = path.join(root_local_dir, '/working/namespaces/', ns, '/aux');
-            logger.debug("Aux schema dir for namespace " + ns + ": " + ns_aux_schema_dir);
-
-            // Scan the directory for the schema files.
-            fs.readdir(ns_aux_schema_dir, this);
-        },
-        function(err, files) {
-            if (err) {
-                logger.error("Unable to scan schema directory for namespace " + ns, err);
-                throw err;
-            }
-
-            // Reject any hidden files/directories, such as .svn directories
-            files = _.reject(files, function(file) {
-                return file.substr(0, 1) === '.';
-            });
-
-            logger.debug("Scanned " + files.length + " auxiliary schemas.");
-
-            osdf_utils.async_for_each(
-                files,
-                function(file, cb) {
-                    try {
-                        var name = path.basename(file, '.json');
-                        var file_text = fs.readFileSync(ns_aux_schema_dir + '/' + file, 'utf8');
-                        var aux_schema_json = JSON.parse(file_text);
-                        aux_schemas[name] = aux_schema_json;
-                        cb();
-                    } catch (err) {
-                        logger.error("Error parsing aux schema file " + file, err);
-                        cb();
-                    }
-                },
-                this
-            );
-        },
-        function() {
-            var final_struct = { 'schemas': schemas,
-                                 'aux': aux_schemas };
-            callback(final_struct);
-        }
-    );
-}
-
-exports.init = function (emitter) {
+exports.init = function (emitter, working_dir_custom) {
     logger.debug("In init.");
+
+    if (working_dir_custom !== null && typeof working_dir_custom !== 'undefined') {
+        logger.debug("Configuring for a custom working directory of: " + working_dir_custom);
+        working_dir = working_dir_custom;
+    } else {
+        working_dir = path.join(root_local_dir, 'working');
+    }
 
     var ns_schema_dir;
 
@@ -203,9 +120,62 @@ exports.get_schema = function (request, response) {
     }
 };
 
-exports.create_schema = function (request, response) {
-    logger.debug("In create_schema.");
-    response.send('', {'X-OSDF-Error': "Not yet implemented."}, 501);
+exports.insert_schema = function (request, response) {
+    logger.debug("In insert_schema.");
+
+    var ns = request.params.ns;
+    var content = request.rawBody();
+
+    if (! global_schemas.hasOwnProperty(ns)) {
+        logger.warn("User attempted to insert a schema into an unknown namespace: " + ns);
+        response.send('', {'X-OSDF-Error': "Namespace not found."}, 404);
+        return;
+    }
+
+    var insertion_doc;
+    try {
+        insertion_doc = JSON.parse(content);
+    } catch () {
+        response.send('', {'X-OSDF-Error': "Invalid JSON provided for insertion."}, 422);
+    }
+
+    // TODO: Check that the JSON has a 'name'.
+    var schema_name = insertion_doc['name'];
+    var schema_json = insertion_doc['schema'];
+
+    if (global_schemas[ns].hasOwnProperty('schemas')) {
+        if ( global_schemas[ns]['schemas'].hasOwnProperty(schema_name) ) {
+            // TODO: Overwrite, or send an error code?
+        }
+
+        // Save the schema to the filesystem in the working directory,
+        // and if successful, save it to our in-memory data structure.
+        var schema_path = path.join(working_dir, "namespaces", ns, "schemas", schema_name + '.json');
+
+        var stream = fs.createWriteStream(schema_path);
+        stream.once('open', function(fd) {
+            // Write out the prettyfied JSON to the filesystem.
+            stream.write(JSON.stringify(schema_json, null, 4);
+        });
+        
+        global_schemas[ns]['schemas'] = schema_json;
+
+        // Can't use 'this', so we have to reach down to the module.exports 
+        // to get the inherited emit() function.
+        module.exports.emit("insert_schema", { 'ns': ns, 'name': schema_name, 'json': schema_json });
+
+        // Send a message to the master process so that it can notify other
+        // sibling workers about this.
+        process.send({ cmd: "schema_change",
+                       type: "insertion",
+                       ns: ns,
+                       schema_json: schema_json
+                     });
+    } else {
+        // Should never get to here.
+        logger.error("No 'schemas' structure for namespace: " + ns);
+        throw "No 'schemas' structure for namespace: " + ns;
+    }
 };
 
 /* Delete a JSON schema from a namespace. We delete it
@@ -220,7 +190,7 @@ exports.delete_schema = function (request, response) {
     var schema = request.params.schema;
 
     if (! global_schemas.hasOwnProperty(ns)) {
-        logger.warn("User attempted to delete a schema from unknown namespace " + ns);
+        logger.warn("User attempted to delete a schema from unknown namespace: " + ns);
         response.send('', {'X-OSDF-Error': "Namespace not found."}, 404);
         return;
     }
@@ -229,8 +199,7 @@ exports.delete_schema = function (request, response) {
             global_schemas[ns]['schemas'].hasOwnProperty(schema)) {
 
         // Delete from the filesystem, and if successful, from memory.
-        var schema_path = path.join(root_local_dir, '/working/namespaces/',
-                                    ns, 'schemas', schema + '.json');
+        var schema_path = path.join(working_dir, 'namespaces', ns, 'schemas', schema + '.json');
         fs.unlink(schema_path, function (err) {
             if (err) {
                 logger.error(err);
@@ -283,8 +252,7 @@ exports.delete_aux_schema = function (request, response) {
             global_schemas[ns]['aux'].hasOwnProperty(aux)) {
 
         // Delete from the filesystem, and if successful, from memory.
-        var aux_path = path.join(root_local_dir, '/working/namespaces/',
-                                 ns, '/aux/', aux + '.json');
+        var aux_path = path.join(working_dir, 'namespaces', ns, '/aux/', aux + '.json');
 
         fs.unlink(aux_path, function (err, data) {
             if (err) {
@@ -324,4 +292,95 @@ function delete_schema_helper(namespace, schema_name) {
             global_schemas[namespace]['schemas'].hasOwnProperty(schema_name)) {
         delete global_schemas[namespace]['schemas'][schema_name];
     }
+}
+
+function get_ns_schemas(ns, callback) {
+    var schemas = {};
+    var aux_schemas = {};
+    var ns_schema_dir;
+    var ns_aux_schema_dir;
+
+    flow.exec(
+        function () {
+            // Determine the directory to the schemas for this namespace.
+            ns_schema_dir = path.join(working_dir, 'namespaces', ns, 'schemas');
+            logger.debug("Schema dir for namespace " + ns + ": " + ns_schema_dir);
+
+            // Scan the directory for the schema files.
+            fs.readdir(ns_schema_dir, this);
+        },
+        function (err, files) {
+            if (err) {
+                logger.error("Unable to scan schema directory for namespace " + ns, err);
+                throw err;
+            }
+
+            // Reject any hidden files/directories, such as .svn directories
+            files = _.reject(files, function(file) {
+                return file.substr(0, 1) === '.';
+            });
+
+            logger.debug("Scanned " + files.length + " schemas.");
+
+            osdf_utils.async_for_each(
+                files,
+                function(file, cb) {
+                    try {
+                        var name = path.basename(file, '.json');
+                        var file_text = fs.readFileSync(ns_schema_dir + '/' + file, 'utf8');
+                        var schema_json = JSON.parse(file_text);
+                        schemas[name] = schema_json;
+                        cb();
+                    } catch (err) {
+                        logger.error("Error parsing schema file " + file, err);
+                        cb();
+                    }
+                },
+                this
+            );
+        },
+        function() {
+            // Determine the directory to the auxiliary schemas for this namespace.
+            ns_aux_schema_dir = path.join(working_dir, 'namespaces', ns, 'aux');
+            logger.debug("Aux schema dir for namespace " + ns + ": " + ns_aux_schema_dir);
+
+            // Scan the directory for the schema files.
+            fs.readdir(ns_aux_schema_dir, this);
+        },
+        function(err, files) {
+            if (err) {
+                logger.error("Unable to scan schema directory for namespace " + ns, err);
+                throw err;
+            }
+
+            // Reject any hidden files/directories, such as .svn directories
+            files = _.reject(files, function(file) {
+                return file.substr(0, 1) === '.';
+            });
+
+            logger.debug("Scanned " + files.length + " auxiliary schemas.");
+
+            osdf_utils.async_for_each(
+                files,
+                function(file, cb) {
+                    try {
+                        var name = path.basename(file, '.json');
+                        var file_text = fs.readFileSync(ns_aux_schema_dir + '/' + file, 'utf8');
+                        var aux_schema_json = JSON.parse(file_text);
+                        aux_schemas[name] = aux_schema_json;
+                        cb();
+                    } catch (err) {
+                        logger.error("Error parsing aux schema file " + file, err);
+                        cb();
+                    }
+                },
+                this
+            );
+        },
+        function() {
+            var final_struct = { 'schemas': schemas,
+                                 'aux': aux_schemas };
+            callback(final_struct);
+        }
+    );
 }

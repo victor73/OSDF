@@ -5,16 +5,25 @@ var hash = require('node_hash');
 
 var logger = osdf_utils.get_logger();
 var users = {};
+var working_dir;
 
 // Initialize the handler by reading the user database file into
 // memory. This should make for faster lookups when we are authenticating
 // access. Notify the top level code that we are finished with the 
 // initialization process by sending an event using the emitter which
 // is passed in as an argument.
-exports.init = function (emitter) {
+exports.init = function (emitter, working_dir_custom) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
-    var user_file = path.join(osdf_utils.get_osdf_root(), 'working/users.db');
+    if (working_dir_custom !== null && typeof working_dir_custom !== 'undefined') {
+        logger.debug("Configuring for a custom working directory of: " + working_dir_custom);
+        working_dir = working_dir_custom;
+    } else {
+        var root_local_dir = osdf_utils.get_osdf_root();
+        working_dir = path.join(root_local_dir, 'working');
+    }
+
+    var user_file = path.join(working_dir, 'users.db');
 
     // The arguments are filename, and buffer size...
     var reader = linereader.FileLineReader(user_file, 10);

@@ -30,6 +30,7 @@ var dbname = c.value('global', 'dbname');
 var root_local_dir = osdf_utils.get_osdf_root();
 var logger = osdf_utils.get_logger();
 
+var working_dir;
 // An array to hold the namespaces.
 var namespaces = [];
 var validators = {};
@@ -39,8 +40,14 @@ var db;
 // handler is ready to begin its work are: establish a connection to the
 // CouchDB server, determine what the installed namespaces are, and create
 // the various validators for each of the node types inside each namespace. 
-exports.init = function(emitter) {
+exports.init = function(emitter, working_dir_custom) {
     logger.debug("In " + path.basename(__filename) + " init().");
+    if (working_dir_custom !== null && typeof working_dir_custom !== 'undefined') {
+        logger.debug("Configuring for a custom working directory of: " + working_dir_custom);
+        working_dir = working_dir_custom;
+    } else {
+        working_dir = path.join(root_local_dir, 'working');
+    }
 
     logger.info("Creating couchdb connection. Using db: " + dbname);
 
@@ -63,6 +70,11 @@ exports.init = function(emitter) {
     schema_handler.on("delete_schema", function (data) {
         logger.debug("Got a schema deletion event: ", data);
         delete_schema_helper(data['ns'], data['schema']);
+    });
+
+    schema_handler.on('insert_schema', function (data) {
+        logger.debug("Got a schema insertion event: ", data);
+        insert_schema_helper(data['ns'], data['name'], data['json']);
     });
 
     osdf_utils.get_namespace_names( function(names) {
@@ -583,9 +595,9 @@ function retrieval_helper(request, response, err, data) {
 function ns2working(namespace, file) {
     var location;
     if (file !== null) {
-        location = path.join(root_local_dir, '/working/namespaces/', namespace, file);
+        location = path.join(working_dir, 'namespaces', namespace, file);
     } else {
-        location = path.join(root_local_dir, '/working/namespaces/', namespace);
+        location = path.join(working_dir, 'namespaces', namespace);
     }
     return location;
 }
@@ -788,6 +800,13 @@ function load_reference_schema(env, schema, callback) {
     );
 }
 
+function insert_schema_helper(namespace, name, json) {
+    if (validators.hasOwnProperty(namespace)) {
+        var env = validators[namespace]['env'];
+        env.createSchema( JSON.parse(json), undefined, name );
+    }
+}
+
 function delete_schema_helper(namespace, schema_name) {
     if (validators.hasOwnProperty(namespace) && validators[namespace].hasOwnProperty(schema_name)) {
         delete validators[namespace][schema_name];
@@ -872,11 +891,11 @@ function load_aux_schemas(ns, env, schemas, then) {
 }
 
 function locate_schema_id_source(ns, schema_id) {
-    return path.join(root_local_dir, 'working/namespaces', ns, 'aux', schema_id + '.json');
+    return path.join(working_dir, 'namespaces', ns, 'aux', schema_id + '.json');
 }
 
 function locate_schema_source(ns, schema) {
-    return path.join(root_local_dir, 'working/namespaces', ns, 'aux', schema);
+    return path.join(working_dir, 'namespaces', ns, 'aux', schema);
 }
 
 // Recursively load all the auxiliary schemas belonging to a namespace
@@ -950,7 +969,7 @@ function register_aux_schemas_to_env(env, ns, then) {
     logger.debug("In register_aux_schemas_to_env.");
     flow.exec(
         function() {
-            var aux_dir = path.join(root_local_dir, 'working/namespaces', ns, 'aux');
+            var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
             fs.readdir(aux_dir, this); 
         },
         function(err, files) {

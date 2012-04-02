@@ -6,27 +6,37 @@ var flow = require('flow');
 
 var auth_header = tutils.get_test_auth();
 
+var test_ns = 'test';
+var schema_name = 'test';
+var test_schema = {
+    "description": "A test schema.",
+    "type": "object",
+    "properties": {
+        "prop": {
+            "title": "A bit of text.",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false
+}
+
 // Test basic retrieval of a schema. The approach is to first insert a schema, then
 // retrieve it. We also make an attempt To cleanup by deleting the schema at the
 // conclusion of the test.
 exports['basic_retrieve'] = function (test) {
     test.expect(5);
 
-    var schema_id;
+    // First we insert a schema
+    var schema_doc = { 'name': schema_name,
+                       'schema': test_schema };
 
-    // First we create a node
-    tutils.insert_schema( test_schema, auth_header, function(data, response) {
+    tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
-
-        test.ok("location" in response.headers, "Response header contains location of new node." );
 
         test.ok(data == '', "No content returned on a schema insertion.");
 
-        var location = response.headers.location;
-        node_id = location.split('/').pop();
-        
         // then try to retrieve it 
-        tutils.retrieve_schema( schema_id, auth_header, function(data, response) {
+        tutils.retrieve_schema( schema_name, auth_header, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for schema retrieval.");
 
             test.ok(data.length > 0, "Data returned.");

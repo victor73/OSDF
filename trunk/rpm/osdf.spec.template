@@ -74,23 +74,23 @@ if [ "$1" = "0" ]; then
   fi
 fi
 /usr/sbin/userdel %{lcName} 2>/dev/null
-/usr/sbin/groupdel %{lcName} 2>/dev/null || exit 0
+/usr/sbin/groupdel %{lcName} 1>/dev/null 2>/dev/null || exit 0
 
 %install
 [ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
 # Codebase
 %__mkdir -p %{buildroot}%{_prefix}
 %__cp *.js %{buildroot}%{_prefix}
+%__cp -r bin %{buildroot}%{_prefix}
 %__cp -r lib %{buildroot}%{_prefix}
 %__cp -r node_modules %{buildroot}%{_prefix}
 %__cp nodelint.conf %{buildroot}%{_prefix}
 %__cp -r docs %{buildroot}%{_prefix}
 
-%__mkdir -p %{buildroot}%{_prefix}/working
-%__mkdir -p %{buildroot}%{_prefix}/working/namespaces
-%__cp -r working/namespaces/test %{buildroot}%{_prefix}/working/namespaces
-%__cp working/users.db %{buildroot}%{_prefix}/working/
-%__cp working/new_namespace.sh %{buildroot}%{_prefix}/working/
+%__mkdir -p %{buildroot}%{_localstatedir}/run/%{lcName}/working
+%__mkdir -p %{buildroot}%{_localstatedir}/run/%{lcName}/working/namespaces
+%__cp -r working/namespaces/test %{buildroot}%{_localstatedir}/run/%{lcName}/working/namespaces
+%__cp working/users.db %{buildroot}%{_localstatedir}/run/%{lcName}/working/
 
 # Startup script and config file
 %__mkdir -p %{buildroot}/%{_sysconfdir}/init.d
@@ -105,6 +105,7 @@ fi
 
 %files
 %{_prefix}
+%attr(660,%{lcName},%{lcName}) %{_localstatedir}/run/%{lcName} 
 %doc %{_prefix}/docs
 %config(noreplace) %{_sysconfdir}/%{lcName}/config.ini
 # Startup script
