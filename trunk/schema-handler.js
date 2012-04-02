@@ -124,7 +124,7 @@ exports.insert_schema = function (request, response) {
     logger.debug("In insert_schema.");
 
     var ns = request.params.ns;
-    var content = request.rawBody();
+    var content = request.rawBody;
 
     if (! global_schemas.hasOwnProperty(ns)) {
         logger.warn("User attempted to insert a schema into an unknown namespace: " + ns);
