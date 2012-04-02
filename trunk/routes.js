@@ -29,8 +29,8 @@ exports.set_routes = function (app) {
     app.get('/namespaces/:ns/schemas/aux', schema_handler.get_all_aux_schemas);
     app.get('/namespaces/:ns/schemas/:schema', schema_handler.get_schema);
     app.get('/namespaces/:ns/schemas/aux/:aux', schema_handler.get_aux_schema);
-    app.post('/namespaces/:ns/schemas', schema_handler.create_schema);
-    app.post('/namespaces/:ns/schemas/aux', schema_handler.create_aux_schema);
+    app.post('/namespaces/:ns/schemas', schema_handler.insert_schema);
+    app.post('/namespaces/:ns/schemas/aux', schema_handler.insert_aux_schema);
     app.delete('/namespaces/:ns/schemas/:schema', schema_handler.delete_schema);
     app.delete('/namespaces/:ns/schemas/aux/:aux', schema_handler.delete_aux_schema);
 };
