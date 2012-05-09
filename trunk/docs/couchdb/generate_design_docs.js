@@ -138,15 +138,19 @@ function escape(code) {
 // Take the code that has been escaped and formatted into a JSON documents
 // (CouchDB design documents) and post tehm into the CouchDB server.
 function post_all_design_docs(design_docs) {
-    var couch_ip = config.value('global', 'couch_ip');
+    var couch_address = config.value('global', 'couch_address');
     var couch_port = config.value('global', 'couch_port');;
     var couch_user = config.value('global', 'couch_user');
     var couch_pass = config.value('global', 'couch_pass');
     var dbname = config.value('global', 'dbname');
 
+    if (couch_address === null || couch_port === null || couch_pass === null || couch_user === null) {
+        throw "Invalid configuration encountered.";
+    }
+
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
-    var couch_conn = new(cradle.Connection)('http://' + couch_ip, couch_port, {
+    var couch_conn = new(cradle.Connection)('http://' + couch_address, couch_port, {
         auth: { username: couch_user, password: couch_pass },
         cache: false,
         raw: false
@@ -158,7 +162,6 @@ function post_all_design_docs(design_docs) {
     async.forEachSeries(_.keys(design_docs), function(name, cb) {
         var code = design_docs[name];
 
-        //console.log(code);
         var view_json = JSON.parse(code);
 
         db.save('_design/' + name, view_json );
