@@ -164,7 +164,13 @@ function post_all_design_docs(design_docs) {
 
         var view_json = JSON.parse(code);
 
-        db.save('_design/' + name, view_json );
-        cb;
+        db.save('_design/' + name, view_json, function(err, res) {
+            if (err) {
+                console.log(err);
+                process.exit(1);
+            } else {
+                cb;
+            }
+        });
     });
 }
