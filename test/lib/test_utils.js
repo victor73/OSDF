@@ -266,6 +266,28 @@ exports.insert_schema = function (namespace, schema_doc, auth_header, callback) 
     });
 };
 
+exports.retrieve_schema = function ( namespace, schema_name, auth_header, callback ) {
+    var request;
+    if (auth_header == null) {
+        request = client.request('GET', '/namespaces/' + namespace + '/schemas/' + schema_name);
+    } else {
+        request = client.request('GET', '/namespaces/' + namespace + '/schemas/' + schema_name, auth_header);
+    }
+    request.end();
+
+    var body = "";
+    var headers;
+
+    request.on('response', function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    });
+};
+
 // Taken from http://rosskendall.com/blog/web/javascript-function-to-check-an-email-address-conforms-to-rfc822
 // and licensed under the Creative Commons Attribution-ShareAlike 2.5 License, or the GPL.
 exports.isRFC822ValidEmail = function(sEmail) {
