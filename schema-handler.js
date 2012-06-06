@@ -132,22 +132,44 @@ exports.insert_schema = function (request, response) {
         return;
     }
 
-    var insertion_doc;
+    var insertion_doc = null;
     try {
         insertion_doc = JSON.parse(content);
     } catch (err) {
         response.send('', {'X-OSDF-Error': "Invalid JSON provided for insertion."}, 422);
+        return;
     }
 
-    // TODO: Check that the JSON has a 'name'.
+    // Check that the JSON has 'name' and 'schema' properties.
+    if (! insertion_doc.hasOwnProperty('name')) {
+        var msg = "Document did not have the required the 'name' property.";
+        logger.error(msg);
+        response.send('', {'X-OSDF-Error': msg}, 422);
+        return;
+    }
+
+    if (! insertion_doc.hasOwnProperty('schema')) {
+        var msg = "Document did not have the required 'schema' property.";
+        logger.error(msg);
+        response.send('', {'X-OSDF-Error': msg}, 422);
+        return;
+    }
+
     var schema_name = insertion_doc['name'];
     var schema_json = insertion_doc['schema'];
 
-    if (global_schemas[ns].hasOwnProperty('schemas')) {
-        if ( global_schemas[ns]['schemas'].hasOwnProperty(schema_name) ) {
-            // TODO: Overwrite, or send an error code?
-        }
+    if (! global_schemas[ns].hasOwnProperty('schemas')) {
+        // Should never get here.
+        logger.error("No 'schemas' structure for namespace: " + ns);
+        throw "No 'schemas' structure for namespace: " + ns;
+    }
 
+    if ( global_schemas[ns]['schemas'].hasOwnProperty(schema_name) ) {
+        // Overwriting a schema, so let's just make a note of that.
+        logger.warn("Overwriting existing schema (ns:schema): (" + ns + ":" + schema_name + ")");
+    }
+
+    try {
         // Save the schema to the filesystem in the working directory,
         // and if successful, save it to our in-memory data structure.
         var schema_path = path.join(working_dir, "namespaces", ns, "schemas", schema_name + '.json');
@@ -169,12 +191,15 @@ exports.insert_schema = function (request, response) {
         process.send({ cmd: "schema_change",
                        type: "insertion",
                        ns: ns,
-                       schema_json: schema_json
+                       name: schema_name,
+                       json: schema_json
                      });
-    } else {
-        // Should never get to here.
-        logger.error("No 'schemas' structure for namespace: " + ns);
-        throw "No 'schemas' structure for namespace: " + ns;
+
+        response.send('', {'Location': base_url + ':' + port + '/namespaces/' + ns + '/schemas/' + schema_name }, 201);
+    } catch (e) {
+        logger.error(e);
+        response.send('', {'X-OSDF-Error': "Unable to insert schema." }, 500);
+        return;
     }
 };
 
@@ -187,7 +212,7 @@ exports.delete_schema = function (request, response) {
     logger.debug("In delete_schema.");
 
     var ns = request.params.ns;
-    var schema = request.params.schema;
+    var schema_name = request.params.schema;
 
     if (! global_schemas.hasOwnProperty(ns)) {
         logger.warn("User attempted to delete a schema from unknown namespace: " + ns);
@@ -196,28 +221,28 @@ exports.delete_schema = function (request, response) {
     }
 
     if (global_schemas[ns].hasOwnProperty('schemas') &&
-            global_schemas[ns]['schemas'].hasOwnProperty(schema)) {
+            global_schemas[ns]['schemas'].hasOwnProperty(schema_name)) {
 
         // Delete from the filesystem, and if successful, from memory.
-        var schema_path = path.join(working_dir, 'namespaces', ns, 'schemas', schema + '.json');
+        var schema_path = path.join(working_dir, 'namespaces', ns, 'schemas', schema_name + '.json');
         fs.unlink(schema_path, function (err) {
             if (err) {
                 logger.error(err);
                 response.send('', {'X-OSDF-Error': "Unable to delete schema."}, 500);
             } else {
                 logger.debug("Successful deletion of schema file. Deleting from memory...");
-                delete_schema_helper(ns, schema);
+                delete_schema_helper(ns, schema_name);
 
                 // Can't use 'this', so we have to reach down to the module.exports 
                 // to get the inherited emit() function.
-                module.exports.emit("delete_schema", { 'ns': ns, 'schema': schema });
+                module.exports.emit("delete_schema", { 'ns': ns, 'name': schema_name });
 
                 // Send a message to the master process so that it can notify other
                 // sibling workers about this.
                 process.send({ cmd: "schema_change",
                                type: "deletion",
                                ns: ns,
-                               schema: schema
+                               name: schema_name
                              });
 
                 response.send('', 204);
@@ -278,20 +303,30 @@ exports.process_schema_change = function (msg) {
     logger.debug("In process_schema_change.");
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === "schema_change") {
+        var namespace = msg['ns']
+
         if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
-            var namespace = msg['ns']
-            var schema = msg['schema']
-            delete_schema_helper(namespace, schema);
+            var schema_name = msg['name']
+            delete_schema_helper(namespace, schema_name);
+        } else if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
+            insert_schema_helper(namespace);
         }
     }
 };
 
 function delete_schema_helper(namespace, schema_name) {
+    logger.debug("In delete_schema_helper.");
+
     if (global_schemas.hasOwnProperty(namespace) &&
             global_schemas[namespace].hasOwnProperty('schemas') &&
             global_schemas[namespace]['schemas'].hasOwnProperty(schema_name)) {
         delete global_schemas[namespace]['schemas'][schema_name];
     }
+}
+
+function insert_schema_helper(namespace, schema_name) {
+    logger.debug("In insert_schema_helper.");
+
 }
 
 function get_ns_schemas(ns, callback) {
