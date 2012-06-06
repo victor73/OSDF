@@ -125,9 +125,11 @@ function launch(config) {
     });
 
     process.on('message', function(msg) {
-        logger.info("Got message from the master: ", msg);
-        node_handler.process_schema_change(msg);
-        schema_handler.process_schema_change(msg);
+        logger.info("Got a message from the master. Type: " +  msg['type']);
+        if (msg['type'] === "schema_change") {
+            node_handler.process_schema_change(msg);
+            schema_handler.process_schema_change(msg);
+        }
     });
 
     app.listen(port, bind_address);
