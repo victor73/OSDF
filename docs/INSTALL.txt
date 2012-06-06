@@ -5,3 +5,14 @@ Requirements
 Node.js 0.6.x or more recent.
 CouchDB 1.0.x or more recent.
 ElasticSearch .18 or more recent.
+
+
+1. Install the ElasticSearch river to feed off of changes from the CouchDB
+server. If the both the ElasticSearch and CouchDB servers are installed on the
+"localhost" with the default ports, and the CouchDB database that is used is
+named "osdf", then the curl command to install the river would be: 
+
+$ curl -XPUT 'localhost:9200/_river/osdf/_meta' -d '{ "type" : "couchdb", "couchdb" : { "user" : "elastic_idx", "password" : "XXXXXXXX", "host" : "localhost", "port" : 5984, "db" : "osdf", "filter" : null } }'
+
+You will need to create the elatic_idx account and password in CouchDB for the
+river to work properly.
