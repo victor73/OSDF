@@ -412,8 +412,8 @@ exports.process_schema_change = function (msg) {
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === "schema_change") {
         if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
             var namespace = msg['ns']
-            var schema = msg['schema']
-            delete_schema_helper(namespace, schema);
+            var schema_name = msg['name']
+            delete_schema_helper(namespace, schema_name);
         }
     }
 };
@@ -803,7 +803,9 @@ function load_reference_schema(env, schema, callback) {
 function insert_schema_helper(namespace, name, json) {
     if (validators.hasOwnProperty(namespace)) {
         var env = validators[namespace]['env'];
-        env.createSchema( JSON.parse(json), undefined, name );
+        env.createSchema( json, undefined, name );
+    } else {
+        logger.error("No such namespace: " + namespace);
     }
 }
 
