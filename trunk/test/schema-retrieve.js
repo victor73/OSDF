@@ -9,16 +9,18 @@ var auth_header = tutils.get_test_auth();
 var test_ns = 'test';
 var schema_name = 'test';
 var test_schema = {
-    "description": "A test schema.",
-    "type": "object",
-    "properties": {
-        "prop": {
-            "title": "A bit of text.",
-            "type": "string"
+    description: "A test schema.",
+    type: "object",
+    properties: {
+        prop: {
+            title: "A bit of text.",
+            type: "string",
+            required: true
         }
     },
-    "additionalProperties": false
-}
+   additionalProperties: false
+};
+
 
 // Test basic retrieval of a schema. The approach is to first insert a schema, then
 // retrieve it. We also make an attempt To cleanup by deleting the schema at the
@@ -27,8 +29,8 @@ exports['basic_retrieve'] = function (test) {
     test.expect(5);
 
     // First we insert a schema
-    var schema_doc = { 'name': schema_name,
-                       'schema': test_schema };
+    var schema_doc = { name: schema_name,
+                       schema: test_schema };
 
     tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
@@ -36,7 +38,7 @@ exports['basic_retrieve'] = function (test) {
         test.ok(data == '', "No content returned on a schema insertion.");
 
         // then try to retrieve it 
-        tutils.retrieve_schema( schema_name, auth_header, function(data, response) {
+        tutils.retrieve_schema( test_ns, schema_name, auth_header, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for schema retrieval.");
 
             test.ok(data.length > 0, "Data returned.");
@@ -47,7 +49,7 @@ exports['basic_retrieve'] = function (test) {
             } catch (err) {
                 // ignored
             }
-            test.ok(schema_data != null, "Data returned was valid JSON.");
+            test.ok(schema_data !== null, "Data returned was valid JSON.");
 
             test.done();
 
@@ -61,7 +63,7 @@ exports['basic_retrieve'] = function (test) {
         });
 
     });
-}
+};
 
 // Attempt a retreival with no authentication header provided.
 // Insert a schema, then retrieve it with no authentication, then cleanup.
@@ -98,7 +100,7 @@ exports['basic_retrieve_no_auth'] = function (test) {
 
         });
     });
-}
+};
 
 // Attempt a retreival with no authentication header provided.
 // Insert a node, then retrieve it with no authentication, then cleanup.
@@ -137,7 +139,7 @@ exports['basic_retrieve_bad_auth'] = function (test) {
 
         });
     });
-}
+};
 
 // Test the behavior of retrieving a non-existent node.
 exports['retrieve_nonexistent'] = function (test) {
