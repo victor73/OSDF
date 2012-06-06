@@ -61,11 +61,9 @@ function engine_start() {
                 }
 
                 if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
-                    // TODO: Send messages to all the workers so that they can adjust their
+                    // Send messages to all the workers so that they can adjust their
                     // lists of active schemas.
-                    var ns = msg['ns'];
                     var type = msg['type'];
-                    var schema = msg['schema'];
                     logger.info("Master got a schema change event of type: " + type + ". Relay this to the workers.");
 
                     _.each(workers_array, function (clustered_worker) {
