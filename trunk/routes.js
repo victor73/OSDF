@@ -16,7 +16,8 @@ exports.set_routes = function (app) {
 
     // Query handler functions
     app.post('/nodes/query/:ns', query_handler.perform_query);
-
+    app.post('/nodes/query/:ns/page/:page', query_handler.perform_query);
+    
     // Info handler functions
     app.get('/info', info_handler.info);
 
