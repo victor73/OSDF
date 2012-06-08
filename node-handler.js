@@ -1,6 +1,5 @@
 // cradle - for interactions with CouchDB
 // JSV - Used for JSON validation with JSON-Schema
-// clone - For creating deep copies of data structures
 
 var _ = require('underscore');
 var cradle = require('cradle');
@@ -8,7 +7,6 @@ var http = require('http');
 var fs = require('fs');
 var osdf_utils = require('osdf_utils');
 var path = require('path');
-var clone = require('clone');
 var JSV = require('./node_modules/JSV/jsv').JSV;
 var config = require('config');
 var flow = require('flow');
@@ -314,7 +312,7 @@ exports.get_out_linkage = function(request, response) {
 
             // Fix the couch docs to look like an OSDF doc
             filtered = _.map(filtered, function(filtered_result) {
-                return fix_keys(filtered_result);
+                return osdf_utils.fix_keys(filtered_result);
             });
 
             // Exclude nodes that we do not have read permission for
@@ -377,7 +375,7 @@ exports.get_in_linkage = function(request, response) {
 
             // Fix the CouchDB doc to look like an OSDF doc
             filtered = _.map(filtered, function(filtered_result) {
-                return fix_keys(filtered_result);
+                return osdf_utils.fix_keys(filtered_result);
             });
 
             // Exclude nodes that we do not have read permission for
@@ -474,22 +472,6 @@ function validate_incoming_node(node_string) {
     return report;
 }
 
-function fix_keys(data) {
-    // Should need to clone the data, but stumbled upon an apparent bug with V8.
-    var new_data = null;
-
-    if (data !== null) {
-        new_data = clone(data);
-
-        new_data['id'] = data._id;
-        new_data['ver'] = parseInt(data._rev.split("-")[0], 10);
-
-        delete new_data._id;
-        delete new_data._rev;
-    }
-    return new_data;
-}
-
 function update_helper(node_id, node_data, callback) {
     logger.debug("In update_helper.");
 
@@ -544,7 +526,7 @@ function update_helper(node_id, node_data, callback) {
                 logger.info("Successful update for node id: " + node_id);
 
                 // Save the history
-                save_history(node_id, fix_keys(previous_node), this);
+                save_history(node_id, osdf_utils.fix_keys(previous_node), this);
             },
             function(err) {
                 if (err) {
@@ -577,7 +559,7 @@ function retrieval_helper(request, response, err, data) {
     } else {
         var user = auth.get_user(request);
         if (perms.has_read_permission(user, data)) {
-            var fix = fix_keys(data); 
+            var fix = osdf_utils.fix_keys(data); 
             response.json(fix);
         } else {
             response.send('', {'X-OSDF-Error': 'No read access to this node'}, 403);
