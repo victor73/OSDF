@@ -18,29 +18,31 @@ var logger = log4js.getLogger('main');
 
 exports.get_logger = function() {
     return logger;
-}
+};
 
 exports.get_config = function() {
     return path.resolve(exports.get_osdf_root(), 'conf/conf.ini');
-}
+};
 
 exports.get_osdf_root = function() {
     return path.resolve(__dirname, '..');
-}
+};
 
 exports.random_string = function (length) {
-    var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
+    var valid_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz';
+    var chars = valid_chars.split('');
+    var str = '';
+    var i;
     
     if (! length) {
         length = Math.floor(Math.random() * chars.length);
     }
     
-    var str = '';
-    for (var i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
         str += chars[Math.floor(Math.random() * chars.length)];
     }
     return str;
-}
+};
 
 // Used to retrieve the namespace names known to this OSDF instance.
 // The function takes a callback that is called when the namespace scan
@@ -58,16 +60,20 @@ exports.get_namespace_names = function (callback) {
     // files. Do it ASYNCHRONOUSLY, so we DO NOT use the "sync" version
     // of readdir(), readDirSync().
     fs.readdir(namespace_dir, function(err, files) {
-        if (err) throw err;
+        if (err) {
+            throw err;
+        }
 
         // Reject any hidden files/directories, such as .svn directories
-        files = _.reject(files, function(file) { return file.substr(0,1) == '.' });
+        files = _.reject(files, function(file) { return file.substr(0,1) === '.'; });
 
         exports.async_for_each(files, function(entry, cb) {
             var full_path = path.join(namespace_dir, entry);
 
             fs.stat(full_path, function(err, stats) {
-                if (err) throw err;
+                if (err) {
+                    throw err;
+                }
 
                 if (stats.isDirectory()) {
                     namespaces.push(entry); 
@@ -76,16 +82,16 @@ exports.get_namespace_names = function (callback) {
                 }
                 cb();
             });
-        }, function() { callback(namespaces)});
+        }, function() { callback(namespaces); });
     });
-}
+};
 
 // A quick way to check if an array contains a value
 // The first argument is the value to check for, and the
 // second argument is the array to check in.
 exports.contains = function (value, array_to_check ) {
     var present = false;
-    if (array_to_check != null) {
+    if (array_to_check !== null) {
         var len = array_to_check.length;
         while (len--) {
             if (array_to_check[len] === value) {
@@ -94,7 +100,7 @@ exports.contains = function (value, array_to_check ) {
         }
     }
     return present;
-}
+};
 
 exports.async_for_each = function (array, iterator, then) {
     function loop(i) {
@@ -103,16 +109,16 @@ exports.async_for_each = function (array, iterator, then) {
                 loop(i + 1);
             });
         } else {
-            if (then != null) { then(); }
+            if (then !== null) { then(); }
         }
     }
     loop(0);
-}
+};
 
 // Check for white space
 exports.has_white_space = function(string) {
-    return /\s/.test(string);
-}
+    return (/\s/).test(string);
+};
 
 exports.fix_keys = function(data) {
     // Should need to clone the data, but stumbled upon an apparent bug with V8.
@@ -128,5 +134,4 @@ exports.fix_keys = function(data) {
         delete new_data._rev;
     }
     return new_data;
-}
-
+};
