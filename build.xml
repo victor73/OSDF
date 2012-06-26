@@ -22,7 +22,7 @@
         <delete dir="${build.dir}"/>
     </target>
 
-    <target name="package" depends="prepare" description="Generates the project distribution.">
+    <target name="dist" depends="prepare" description="Generates the project distribution.">
         <tar destfile="${dist.dir}/${app.name.lc}-${app.version}.tar.gz" compression="gzip">
           <tarfileset dir="." prefix="${app.name.lc}-${app.version}">
             <include name="*.js"/>
