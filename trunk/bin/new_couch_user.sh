@@ -40,6 +40,9 @@ while [ -z $COUCHDB_PW ]; do
 done
 
 # CouchDB has a notion of "roles" for users. Here we can assign the user to such a role.
+echo "CouchDB uses the concept of roles. If you do not yet have any"
+echo "roles defined, please login to CouchDB as an Administrator"
+echo "and define one."
 while [ -z $COUCHDB_ROLE ]; do
     read -p "Enter the new user's role (can't be blank): " COUCHDB_ROLE
 done
@@ -47,6 +50,8 @@ done
 
 SALT=`openssl rand 16 | openssl md5`
 PW_HASH=`echo -n "${COUCHDB_PW}${SALT}" | openssl sha1`
+PW_HASH=`echo -n "${COUCHDB_PW}${SALT}" | openssl sha1`
+PW_HASH=`echo $PW_HASH | sed -e 's/(stdin)= //'`
 
 USER_JSON=$(cat <<JSON
 { "_id":"org.couchdb.user:$NEW_COUCHDB_USER",
