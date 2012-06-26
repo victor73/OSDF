@@ -24,7 +24,7 @@ exports.start_worker = function(config, working_path) {
     initialize(working_path);
 };
 
-// Calls the variously handlers' initialization methods.
+// Calls the various handlers' initialization methods.
 function initialize(working_path) {
     // These initializations happen asynchronously, so we use events to
     // to track their completion.
@@ -48,11 +48,11 @@ function initialize(working_path) {
 // when they are finished. When all the events are received, we're ready
 // to proceed, and launch() is called.
 function listen_for_init_completion(config) {
-    var signals = [ "node", "info", "auth", "perms", "query", "schema" ];
+    var handlers = [ "node", "info", "auth", "perms", "query", "schema" ];
     var handler_count = 0;
 
     var examine_handlers = function() {
-        if (++handler_count === signals.length) {
+        if (++handler_count === handlers.length) {
             console.log("Handlers initialized for worker " +
                         process.env.NODE_WORKER_ID + " (PID " +
                         process.pid + ").");
@@ -70,9 +70,14 @@ function listen_for_init_completion(config) {
         process.send({ cmd: "user_count", users: user_count });
     });
 
-    _.each(signals, function (signal) {
-        eventEmitter.on(signal + "_handler_initialized", function (message) {
+    _.each(handlers, function (handler) {
+        eventEmitter.on(handler + "_handler_initialized", function (message) {
             examine_handlers();
+        });
+
+        eventEmitter.on(handler + "_handler_aborted", function(message) {
+            console.error("Got an abort from " + handler + " handler. Reason: " + message);
+            process.send({ cmd: "abort", reason: message });
         });
     });
 }

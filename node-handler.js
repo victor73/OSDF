@@ -1,5 +1,6 @@
 // cradle - for interactions with CouchDB
 // JSV - Used for JSON validation with JSON-Schema
+// flow - For handling complicated async workflows
 
 var _ = require('underscore');
 var cradle = require('cradle');
@@ -25,13 +26,12 @@ var couch_pass = c.value('global', 'couch_pass');
 
 var dbname = c.value('global', 'dbname');
 
-var root_local_dir = osdf_utils.get_osdf_root();
 var logger = osdf_utils.get_logger();
 
-var working_dir;
 // An array to hold the namespaces.
 var namespaces = [];
 var validators = {};
+var working_dir;
 var db;
 
 // This initializes the handler. The things we need to do before the
@@ -40,12 +40,8 @@ var db;
 // the various validators for each of the node types inside each namespace. 
 exports.init = function(emitter, working_dir_custom) {
     logger.debug("In " + path.basename(__filename) + " init().");
-    if (working_dir_custom !== null && typeof working_dir_custom !== 'undefined') {
-        logger.debug("Configuring for a custom working directory of: " + working_dir_custom);
-        working_dir = working_dir_custom;
-    } else {
-        working_dir = path.join(root_local_dir, 'working');
-    }
+
+    working_dir = osdf_utils.get_working_dir();
 
     logger.info("Creating couchdb connection. Using db: " + dbname);
 
@@ -59,6 +55,20 @@ exports.init = function(emitter, working_dir_custom) {
 
     // Create the CouchDB connection using the configured database name.
     db = couch_conn.database(dbname);
+    db.exists( function(err, exists) {
+        if (err) {
+            //throw err;
+            msg = "Error connecting to CouchDB database at " +
+                  couch_address + ":" + couch_port + "." +
+                  "Check settings and credentials in " + osdf_utils.get_config() + ".";
+            emitter.emit('node_handler_aborted', msg);
+        }
+
+        if (! exists) {
+            //throw "CouchDB database '" + dbname + "' doesn't exist.";
+            emitter.emit('node_handler_aborted', "CouchDB database '" + dbname + "' doesn't exist.");
+        }
+    });
 
     // We want to be notified whenever a schema is deleted so that we can
     // adjust our validators data structure by removing the corresponding
@@ -107,7 +117,7 @@ exports.get_node_by_version = function (request, response) {
     var requested_version = parseInt(request.params.ver, 10);
 
     if (requested_version <= 0) {
-        logger.warn("User ask for invalid version number of node: " + node_id);
+        logger.warn("User asked for invalid version number of node: " + node_id);
         response.send('', {'X-OSDF-Error': "Invalid version number." }, 422);
     } else {
         var version = request.params.ver.toString();
@@ -116,6 +126,7 @@ exports.get_node_by_version = function (request, response) {
         stream.on('data', function(chunk) {
             return response.write(chunk, "binary");
         });
+
         stream.on('end', function() {
             return response.end();
         });
