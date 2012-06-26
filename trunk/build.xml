@@ -55,7 +55,7 @@
         <mkdir dir="${build.dir}/rpm/BUILD"/>
     </target>
 
-    <target name="rpm" depends="rpm_prep,package" description="Creates an rpm package for the application.">
+    <target name="rpm" depends="rpm_prep,dist" description="Creates an rpm package for the application.">
        <copy file="rpm/${app.name.lc}.spec.template" tofile="${build.dir}/rpm/SPECS/${app.name.lc}.spec"/>
        <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@name@" value="${app.name}"/>
        <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@lc_name@" value="${app.name.lc}"/>
