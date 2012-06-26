@@ -4,24 +4,61 @@ var _ = require('underscore');
 var clone = require('clone');
 var fs = require('fs');
 var path = require('path');
-var log4js = require('log4js');
+var working_dir;
 
-var root = path.resolve(path.resolve(__dirname, '..'));
-var log_file = path.join(root, '/logs/osdf.log');
-log4js.clearAppenders();
-log4js.loadAppender('file');
-log4js.loadAppender('console');
-log4js.addAppender(log4js.appenders.file(log_file), 'main');
-log4js.addAppender(log4js.appenders.console(log4js.messagePassThroughLayout), 'console');
+var logger = null;
 
-var logger = log4js.getLogger('main');
+function set_logging(log_file) {
+    var log4js = require('log4js');
+
+    log4js.clearAppenders();
+    log4js.loadAppender('file');
+    log4js.loadAppender('console');
+    log4js.addAppender(log4js.appenders.file(log_file), 'main');
+    log4js.addAppender(log4js.appenders.console(log4js.messagePassThroughLayout), 'console');
+
+    // Set the logger
+    logger = log4js.getLogger('main');
+}
+
+exports.set_log_file = function(log_file_path) {
+    set_logging(log_file_path);
+};
 
 exports.get_logger = function() {
+    if (logger == null || typeof log_file_path === 'undefined') {                                                                                                        
+        log_file_path = path.resolve(exports.get_osdf_root(), 'logs/osdf.log'); 
+        set_logging(log_file_path);
+    }
     return logger;
 };
 
 exports.get_config = function() {
     return path.resolve(exports.get_osdf_root(), 'conf/conf.ini');
+};
+
+exports.set_working_dir = function(directory, cb) {
+    fs.stat(directory, function(err, stats) {
+        if (err) {
+            throw err;
+        }
+        if (stats.isDirectory()) {
+            working_dir = directory;
+            cb();
+        } else {
+            throw "Configured path to working area is not a directory: " + directory;
+        }
+    });
+};
+
+exports.get_working_dir = function() {
+    // If the working directory hasn't been set, then we use the default,
+    // which is a directory called 'working' under the OSDF root.
+    if (working_dir === null || typeof working_dir === 'undefined') {
+        working_dir = path.resolve(exports.get_osdf_root(), 'working');
+    }
+
+    return working_dir;
 };
 
 exports.get_osdf_root = function() {
@@ -54,7 +91,7 @@ exports.get_namespace_names = function (callback) {
     }
 
     var namespaces = [];
-    var namespace_dir = path.join(exports.get_osdf_root(), 'working/namespaces');
+    var namespace_dir = path.join(exports.get_working_dir(), 'namespaces');
 
     // Scan the directory containing the namespace descriptors for JSON
     // files. Do it ASYNCHRONOUSLY, so we DO NOT use the "sync" version
