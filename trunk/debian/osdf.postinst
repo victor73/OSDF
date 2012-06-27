@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+NAME=OSDF
+LCNAME=`echo $NAME | tr A-Z a-z`
+SYSUSER=$LCNAME
+
+case "$1" in
+    configure)
+        if ! getent passwd $SYSUSER > /dev/null; then
+            adduser --system --quiet \
+                --home /var/lib/$LCNAME --no-create-home \
+                --shell /bin/bash --group --gecos "$NAME Administrator" "$SYSUSER"
+            echo "add user: $?" > /tmp/postinst.log
+        fi
+        if test "`id -u $SYSUSER`" -eq 0; then
+            echo "The $NAME administrative user must not be root." >&2
+            false
+        fi
+        if test "`id -g $SYSUSER`" -eq 0; then
+            echo "The $NAME administrative group must not be root." >&2
+            false
+        fi
+        echo "HERE" >> /tmp/postinst.log
+        chown -R $SYSUSER:$SYSUSER /etc/$LCNAME
+        echo "HERE1" >> /tmp/postinst.log
+        chmod 0775 /etc/$LCNAME
+        echo "HERE2" >> /tmp/postinst.log
+        chmod 0664 /etc/$LCNAME/conf.ini
+        echo "HERE3" >> /tmp/postinst.log
+        ;;  
+    *)
+       echo "Invalid invocation."
+       exit 1
+esac
+
+#DEBHELPER#
