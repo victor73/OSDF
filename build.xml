@@ -41,6 +41,7 @@
           <tarfileset dir="docs" prefix="${app.name.lc}-${app.version}/docs"/>
           <tarfileset dir="test" prefix="${app.name.lc}-${app.version}/test"/>
           <tarfileset dir="rpm" prefix="${app.name.lc}-${app.version}/rpm"/>
+          <tarfileset dir="debian" prefix="${app.name.lc}-${app.version}/debian"/>
         </tar>
 
         <echo>Done. Check the "dist" directory for the disribution file.</echo>
@@ -69,6 +70,21 @@
            <fileset dir="${build.dir}/rpm/RPMS/noarch/"/>
        </copy>
        <echo>RPM file created. Please check the ${dist.dir} directory."</echo>
+    </target>
+
+    <target name="deb" depends="dist" description="Create a deb package for the application.">
+      <property name="tarball" value="${app.name.lc}-${app.version}.tar.gz"/>
+      <property name="debian.orig.tar" value="${app.name.lc}_${app.version}.orig.tar.gz"/>
+      <copy file="${dist.dir}/${tarball}" todir="${build.dir}"/>
+      <copy file="${dist.dir}/${tarball}" tofile="${build.dir}/${debian.orig.tar}"/>
+
+      <untar src="${build.dir}/${tarball}" failOnEmptyArchive="true" compression="gzip" dest="${build.dir}"/>
+
+      <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild">
+        <arg value="-us"/>
+        <arg value="-uc"/>
+      </exec>
+
     </target>
 
 </project>
