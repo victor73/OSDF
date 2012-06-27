@@ -1,0 +1,20 @@
+Source: osdf
+Section: devel
+Priority: extra
+Maintainer: Victor Felix <vfelix@som.umaryland.edu>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://sourceforge.net/projects/osdf/
+#Vcs-Git: git://git.debian.org/collab-maint/osdf.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/osdf.git;a=summary
+
+Package: osdf
+Architecture: any
+Depends: ${misc:Depends}, adduser (>= 3.11), nodejs (>= 0.6), couchdb, elasticsearch
+Description: RESTful API for storing and retrieving scientific data.
+ OSDF is a server that is used to provide a RESTful HTTP API for
+ storing, retrieving and modifying JSON documents. The server
+ supports links between documents, security with access control lists,
+ versioning of changes, and validation of data using JSON-Schema. This
+ reference implementation of the API is built with Node.js, CouchDB and
+ ElasticSearch.

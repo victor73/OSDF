@@ -1,0 +1,54 @@
+#!/usr/bin/make -f
+# See debian/rules-dh if you prefer the new dh syntax.
+
+token-replace:
+	/bin/sed -i s:NAME=%NAME%:NAME=OSDF: debian/osdf.postrm debian/osdf.postinst
+
+clean:
+	rm -f build
+	dh_auto_clean
+	dh_clean
+
+install: build
+	dh_clean
+	dh_auto_install
+
+build:
+	touch build
+
+build-indep: build
+
+build-arch: build
+
+binary-arch: binary
+
+binary-indep: binary
+
+binary: install token-replace
+	dh_installdocs docs/README.txt
+	dh_installchangelogs
+	dh_installchangelogs -k docs/CHANGES.txt
+	dh_install osdf.js /usr/lib/osdf/
+	dh_install worker.js /usr/lib/osdf/
+	dh_install routes.js /usr/lib/osdf/
+	dh_install info-handler.js /usr/lib/osdf/
+	dh_install namespace-handler.js /usr/lib/osdf/
+	dh_install node-handler.js /usr/lib/osdf/
+	dh_install perms-handler.js /usr/lib/osdf/
+	dh_install query-handler.js /usr/lib/osdf/
+	dh_install schema-handler.js /usr/lib/osdf/
+	dh_install node_modules /usr/lib/osdf/
+	dh_install lib /usr/lib/osdf/
+	dh_install working /var/lib/osdf/
+	dh_install debian/etc/default/osdf /etc/default/
+	dh_install conf/conf.ini /etc/osdf/
+	dh_installinit --name=osdf --init-script=debian/etc/init.d/osdf.sh
+	dh_lintian osdf.lintian-overrides
+	dh_compress -A
+	dh_fixperms
+	dh_installdeb -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+
+.PHONY: binary clean

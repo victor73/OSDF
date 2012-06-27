@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+NAME=OSDF
+LCNAME=`echo $NAME | tr A-Z a-z`
+SYSUSER=$LCNAME
+
+case $1 in
+    purge)
+        if getent passwd "$SYSUSER" > /dev/null; then
+            deluser --quiet --system "$SYSUSER"
+        fi
+        if getent group "$SYSUSER" > /dev/null; then
+            delgroup --quiet --system "$SYSUSER"
+        fi
+esac
+
+#DEBHELPER#
