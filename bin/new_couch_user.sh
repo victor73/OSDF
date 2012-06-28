@@ -48,10 +48,8 @@ while [ -z $COUCHDB_ROLE ]; do
 done
 
 
-SALT=`openssl rand 16 | openssl md5`
-PW_HASH=`echo -n "${COUCHDB_PW}${SALT}" | openssl sha1`
-PW_HASH=`echo -n "${COUCHDB_PW}${SALT}" | openssl sha1`
-PW_HASH=`echo $PW_HASH | sed -e 's/(stdin)= //'`
+SALT=`openssl rand 16 | openssl md5 | sed -e 's/(stdin)= //'`
+PW_HASH=`echo -n "${COUCHDB_PW}${SALT}" | openssl sha1 | sed -e 's/(stdin)= //'`
 
 USER_JSON=$(cat <<JSON
 { "_id":"org.couchdb.user:$NEW_COUCHDB_USER",
