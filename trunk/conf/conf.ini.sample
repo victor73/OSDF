@@ -21,8 +21,8 @@ couch_pass=test
 dbname=osdf
 # How many records are reported on each 'page' of output. For instance, if
 # search/query restults exceed this number, the results will be paginated in
-# gropus of 'perpage' size.
-perpage=1000
+# groups of 'pagesize' size.
+pagesize=1000
 
 [elasticsearch]
 # The IP address or hostname of teh Elastic Search server that powers the
