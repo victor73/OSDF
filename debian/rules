@@ -41,6 +41,7 @@ binary: install token-replace
 	dh_install lib /usr/lib/osdf/
 	dh_install working /var/lib/osdf/
 	dh_install debian/etc/default/osdf /etc/default/
+	cp conf/conf.ini.sample conf/conf.ini
 	dh_install conf/conf.ini /etc/osdf/
 	dh_installinit --name=osdf --init-script=debian/etc/init.d/osdf.sh
 	dh_lintian osdf.lintian-overrides
