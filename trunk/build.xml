@@ -57,22 +57,22 @@
     </target>
 
     <target name="rpm" depends="rpm_prep,dist" description="Creates an rpm package for the application.">
-       <copy file="rpm/${app.name.lc}.spec.template" tofile="${build.dir}/rpm/SPECS/${app.name.lc}.spec"/>
-       <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@name@" value="${app.name}"/>
-       <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@lc_name@" value="${app.name.lc}"/>
-       <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@version@" value="${app.version}"/>
-       <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@packager@" value="${app.packager}"/>
+      <copy file="rpm/${app.name.lc}.spec.template" tofile="${build.dir}/rpm/SPECS/${app.name.lc}.spec"/>
+      <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@name@" value="${app.name}"/>
+      <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@lc_name@" value="${app.name.lc}"/>
+      <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@version@" value="${app.version}"/>
+      <replace file="${build.dir}/rpm/SPECS/${app.name.lc}.spec" token="@packager@" value="${app.packager}"/>
 
-       <copy file="${dist.dir}/${app.name.lc}-${app.version}.tar.gz" todir="${build.dir}/rpm/SOURCES"/>
-       <rpm specFile="${app.name.lc}.spec" topDir="${build.dir}/rpm" cleanBuildDir="true" failOnError="true"/>
+      <copy file="${dist.dir}/${app.name.lc}-${app.version}.tar.gz" todir="${build.dir}/rpm/SOURCES"/>
+      <rpm specFile="${app.name.lc}.spec" topDir="${build.dir}/rpm" cleanBuildDir="true" failOnError="true"/>
 
-       <copy overwrite="true" todir="${dist.dir}">
-           <fileset dir="${build.dir}/rpm/RPMS/noarch/"/>
-       </copy>
-       <echo>RPM file created. Please check the ${dist.dir} directory."</echo>
+      <copy overwrite="true" todir="${dist.dir}">
+          <fileset dir="${build.dir}/rpm/RPMS/noarch/"/>
+      </copy>
+      <echo>RPM file created. Please check the ${dist.dir} directory."</echo>
     </target>
 
-    <target name="deb" depends="dist" description="Create a deb package for the application.">
+    <target name="deb" depends="dist" description="Create a debian package for the application.">
       <property name="tarball" value="${app.name.lc}-${app.version}.tar.gz"/>
       <property name="debian.orig.tar" value="${app.name.lc}_${app.version}.orig.tar.gz"/>
       <copy file="${dist.dir}/${tarball}" todir="${build.dir}"/>
@@ -84,6 +84,13 @@
         <arg value="-us"/>
         <arg value="-uc"/>
       </exec>
+
+      <copy overwrite="true" todir="${dist.dir}">
+        <fileset dir="${build.dir}">
+          <include name="*.deb"/>
+        </fileset>
+      </copy>
+      <echo>Debian package created. Please check the ${dist.dir} directory."</echo>
 
     </target>
 
