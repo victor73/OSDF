@@ -24,7 +24,7 @@ exports.init = function(emitter) {
         // Now, iterate over the namespaces and scan the ACL files for each one.
         osdf_utils.async_for_each(namespaces, function(namespace, cb) {
 
-            var acl_dir = path.join(osdf_utils.get_osdf_root(), '/working/namespaces/',
+            var acl_dir = path.join(osdf_utils.get_working_dir(), 'namespaces',
                                     namespace, 'acls'); 
 
             fs.readdir(acl_dir, function(err, files) {
