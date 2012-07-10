@@ -51,8 +51,8 @@ function configure() {
     if (config_path === null || typeof config_path === 'undefined') {
         config_path = osdf_utils.get_config();
     } else {
+        osdf_utils.set_config(config_path);
         custom_config = true;
-        config_path = osdf_utils.get_config();
     }
 
     if (log_file_path === null || typeof log_file_path === 'undefined') {
@@ -62,7 +62,6 @@ function configure() {
         osdf_utils.set_log_file(log_file_path);
         custom_log_file = true;
     }
-
 
     // ...get the logger object
     logger = osdf_utils.get_logger();
