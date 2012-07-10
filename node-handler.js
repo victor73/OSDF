@@ -59,7 +59,7 @@ exports.init = function(emitter, working_dir_custom) {
         if (err) {
             //throw err;
             msg = "Error connecting to CouchDB database at " +
-                  couch_address + ":" + couch_port + "." +
+                  couch_address + ":" + couch_port + ". " +
                   "Check settings and credentials in " + osdf_utils.get_config() + ".";
             emitter.emit('node_handler_aborted', msg);
         }
