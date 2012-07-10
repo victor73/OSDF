@@ -92,12 +92,11 @@ case "$1" in
         touch "$PID_FILE" && chown "$OSDF_USER":"$OSDF_GROUP" "$PID_FILE"
         ulimit -n 65535
 
-        APP_ARGS="${LCNAME}.js --config /etc/$LCNAME/conf.ini --working \"$WORKING_DIR\" >> $LOG"
+        APP_ARGS="${LCNAME}.js --config /etc/$LCNAME/conf.ini --working $WORKING_DIR --log $LOG"
 
         # Start Daemon
-        #start-stop-daemon --start --background --chuid "$OSDF_USER" --pidfile "$PID_FILE" \
         start-stop-daemon --start --chdir "$OSDF_HOME" --chuid "$OSDF_USER" --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" --exec /bin/bash -- -c "$NODE $NODE_OPTS $APP_ARGS"
+            --user "$OSDF_USER" --exec $NODE -- $NODE_OPTS $APP_ARGS
 
         sleep 1
         if start-stop-daemon --test --start --pidfile "$PID_FILE" \
