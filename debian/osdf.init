@@ -95,8 +95,9 @@ case "$1" in
         APP_ARGS="${LCNAME}.js --config /etc/$LCNAME/conf.ini --working $WORKING_DIR --log $LOG"
 
         # Start Daemon
-        start-stop-daemon --start --chdir "$OSDF_HOME" --chuid "$OSDF_USER" --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" --exec $NODE -- $NODE_OPTS $APP_ARGS
+        start-stop-daemon --start --background --chdir "$OSDF_HOME" --chuid "$OSDF_USER" \
+            --make-pidfile --pidfile "$PID_FILE" --user "$OSDF_USER" \
+            --exec $NODE -- $NODE_OPTS $APP_ARGS
 
         sleep 1
         if start-stop-daemon --test --start --pidfile "$PID_FILE" \
@@ -121,8 +122,7 @@ case "$1" in
     set +e
     if [ -f "$PID_FILE" ]; then 
         start-stop-daemon --stop --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" \
-            --retry=TERM/20/KILL/5 >/dev/null
+            --user "$OSDF_USER" --signal INT --retry=5 >/dev/null
         if [ $? -eq 1 ]; then
             log_progress_msg "$DESC is not running but pid file exists, cleaning up"
         elif [ $? -eq 3 ]; then

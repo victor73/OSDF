@@ -2,7 +2,8 @@
 # See debian/rules-dh if you prefer the new dh syntax.
 
 token-replace:
-	/bin/sed -i s:NAME=%NAME%:NAME=OSDF: debian/osdf.postrm debian/osdf.postinst
+	/bin/sed -e s:NAME=%NAME%:NAME=OSDF: debian/osdf.postrm.token > debian/osdf.postrm
+	/bin/sed -e s:NAME=%NAME%:NAME=OSDF: debian/osdf.postinst.token > debian/osdf.postinst
 
 clean:
 	rm -f build
@@ -43,7 +44,13 @@ binary: install token-replace
 	dh_install debian/etc/default/osdf /etc/default/
 	cp conf/conf.ini.sample conf/conf.ini
 	dh_install conf/conf.ini /etc/osdf/
-	dh_installinit --name=osdf --init-script=debian/etc/init.d/osdf.sh
+	# It's extremely unlikely that the configuration of OSDF will be correct
+	# out of the box, so rather than have the system automatically start it up
+	# when the package is installed, we do NOT try to start it by passing --no-start
+	# to the dh_installinit script. This means the sysadmin/user installing the package
+	# will need to start the sript him/herself (most likely after making the appropriate
+	# changes to /etc/osdf/conf.ini and/or /etc/default/osdf).
+	dh_installinit --no-start --name=osdf --init-script=debian/etc/init.d/osdf.sh
 	dh_lintian osdf.lintian-overrides
 	dh_compress -A
 	dh_fixperms
