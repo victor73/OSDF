@@ -142,6 +142,16 @@ function start_master(config) {
         }
     });
 
+    process.on('SIGTERM', function() {
+        console.error("Caught SIGTERM. Killing workers.");
+
+        // Modify the flag so that the 'death' handler does not attempt
+        // to replace the workers we are about to kill off.
+        letWorkersDie = true;
+
+        kill_workers(workers_array);
+    });
+
     process.on('exit', function() {
         console.error("Exiting. Killing workers.");
 
