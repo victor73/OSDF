@@ -122,7 +122,7 @@ case "$1" in
     set +e
     if [ -f "$PID_FILE" ]; then 
         start-stop-daemon --stop --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" --signal INT --retry=5 >/dev/null
+            --user "$OSDF_USER" --signal TERM --retry=5 >/dev/null
         if [ $? -eq 1 ]; then
             log_progress_msg "$DESC is not running but pid file exists, cleaning up"
         elif [ $? -eq 3 ]; then
