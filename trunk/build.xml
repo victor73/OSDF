@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project name="OSDF" basedir="." default="package">
+<project name="OSDF" basedir="." default="dist">
     <property name="dist.dir" value="dist"/>
     <property name="build.dir" value="build"/>
     <property name="lib.dir" value="lib"/>
     <property name="bin.dir" value="bin"/>
     <property name="conf.dir" value="conf"/>
+    <property name="util.dir" value="util"/>
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+          <pathelement location="${util.dir}/ant-contrib-0.6.jar"/>
+        </classpath>
+    </taskdef>
 
     <!-- Project specific properties -->
     <property name="app.name" value="${ant.project.name}"/>
@@ -69,29 +76,60 @@
       <copy overwrite="true" todir="${dist.dir}">
           <fileset dir="${build.dir}/rpm/RPMS/noarch/"/>
       </copy>
-      <echo>RPM file created. Please check the ${dist.dir} directory."</echo>
+      <echo>RPM file created. Please check the ${dist.dir} directory.</echo>
     </target>
 
-    <target name="deb" depends="dist" description="Create a debian package for the application.">
-      <property name="tarball" value="${app.name.lc}-${app.version}.tar.gz"/>
-      <property name="debian.orig.tar" value="${app.name.lc}_${app.version}.orig.tar.gz"/>
-      <copy file="${dist.dir}/${tarball}" todir="${build.dir}"/>
-      <copy file="${dist.dir}/${tarball}" tofile="${build.dir}/${debian.orig.tar}"/>
+    <target name="can_debuild" description="Checks if we are on unix and if debuild is available.">
+      <echo>Checking for unix and debuild availability</echo>
+      <property environment="env" />
+      <condition property="debuild.present">
+        <and>
+          <os family="unix"/>
+          <available file="debuild" type="file">
+            <filepath>
+              <pathelement path="${env.PATH}"/>
+            </filepath>
+          </available>
+        </and>
+      </condition>
+      <if>
+        <equals arg1="${debuild.present}" arg2="true"/>
+          <then>
+            <echo>debuild available: true</echo>
+          </then>
+          <else>
+            <echo>debuild available: false</echo>
+          </else>
+      </if>
+    </target>
 
-      <untar src="${build.dir}/${tarball}" failOnEmptyArchive="true" compression="gzip" dest="${build.dir}"/>
+    <target name="deb" depends="can_debuild,dist" description="Create a debian package.">
+      <if>
+        <equals arg1="${debuild.present}" arg2="true"/>
+        <then>
+            <property name="tarball" value="${app.name.lc}-${app.version}.tar.gz"/>
+            <property name="debian.orig.tar" value="${app.name.lc}_${app.version}.orig.tar.gz"/>
+            <copy file="${dist.dir}/${tarball}" todir="${build.dir}"/>
+            <copy file="${dist.dir}/${tarball}" tofile="${build.dir}/${debian.orig.tar}"/>
 
-      <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild">
-        <arg value="-us"/>
-        <arg value="-uc"/>
-      </exec>
+            <untar src="${build.dir}/${tarball}" failOnEmptyArchive="true" compression="gzip" dest="${build.dir}"/>
 
-      <copy overwrite="true" todir="${dist.dir}">
-        <fileset dir="${build.dir}">
-          <include name="*.deb"/>
-        </fileset>
-      </copy>
-      <echo>Debian package created. Please check the ${dist.dir} directory."</echo>
+            <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild">
+              <arg value="-us"/>
+              <arg value="-uc"/>
+            </exec>
 
+            <copy overwrite="true" todir="${dist.dir}">
+              <fileset dir="${build.dir}">
+                <include name="*.deb"/>
+              </fileset>
+            </copy>
+            <echo>Debian package created. Please check the ${dist.dir} directory."</echo>
+        </then>
+        <else>
+          <echo>Unable to build debian package. Not a unix system or debuild not available.</echo>
+        </else>
+      </if>
     </target>
 
 </project>
