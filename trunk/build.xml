@@ -114,7 +114,7 @@
 
             <untar src="${build.dir}/${tarball}" failOnEmptyArchive="true" compression="gzip" dest="${build.dir}"/>
 
-            <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild">
+            <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild" failonerror="true">
               <arg value="-us"/>
               <arg value="-uc"/>
             </exec>
