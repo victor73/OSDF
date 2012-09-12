@@ -12,7 +12,7 @@
 
 # Configure the OSDF working directory by setting
 # the WORKING_DIR variable.
-#WORKING_DIR=/var/lib/osdf/working
+#WORKING_DIR=/var/run/osdf/working
 
 # Configure the OSDF configuration file
 #CONF_FILE=/etc/osdf/config.ini

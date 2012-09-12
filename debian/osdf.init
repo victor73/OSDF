@@ -56,7 +56,7 @@ WORKING_DIR=/var/lib/$LCNAME/working
 CONF_DIR=/etc/$LCNAME
 
 # OSDF configuration file
-CONF_FILE=$CONF_DIR/conf.ini
+CONF_FILE=$CONF_DIR/config.ini
 
 # End of the variables that can be overwritten in $DEFAULT
 
@@ -92,7 +92,7 @@ case "$1" in
         touch "$PID_FILE" && chown "$OSDF_USER":"$OSDF_GROUP" "$PID_FILE"
         ulimit -n 65535
 
-        APP_ARGS="${LCNAME}.js --config /etc/$LCNAME/conf.ini --working $WORKING_DIR --log $LOG"
+        APP_ARGS="${LCNAME}.js --config $CONF_FILE --working $WORKING_DIR --log $LOG"
 
         # Start Daemon
         start-stop-daemon --start --background --chdir "$OSDF_HOME" --chuid "$OSDF_USER" \
