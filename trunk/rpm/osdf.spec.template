@@ -6,7 +6,7 @@
 Summary: %{Name} - REST API for storing and retrieving scientific data.
 Name: %{lcName}
 Version: @version@
-Release: 1
+Release: 2
 License: GPL
 Group: System Environment/Daemons
 URL: http://sourceforge.net/projects/%{lcName}/
@@ -92,13 +92,18 @@ fi
 %__cp -r working/namespaces/test %{buildroot}%{_localstatedir}/run/%{lcName}/working/namespaces
 %__cp working/users.db %{buildroot}%{_localstatedir}/run/%{lcName}/working/
 
-# Startup script and config file
+# Startup script and config files
 %__mkdir -p %{buildroot}/%{_sysconfdir}/init.d
 %__mkdir -p %{buildroot}/%{_sysconfdir}/%{lcName}
-%__cp rpm/osdf_init.sh %{buildroot}/%{_sysconfdir}/init.d/%{lcName}
+%__mkdir -p %{buildroot}/%{_sysconfdir}/logrotate.d
+%__mkdir -p %{buildroot}/%{_sysconfdir}/default
+%__cp rpm/init.sh %{buildroot}/%{_sysconfdir}/init.d/%{lcName}
+%__cp rpm/etc/default/%{lcName} %{buildroot}%{_sysconfdir}/default/%{lcName}
+%__cp rpm/etc/logrotate.d/logrotate.conf %{buildroot}%{_sysconfdir}/logrotate.d/%{lcName}
+sed -i -e "s/@NAME@/%{lcName}/" %{buildroot}/%{_sysconfdir}/logrotate.d/%{lcName}
 
 # Sample Configuration file
-%__cp conf/conf.ini.sample %{buildroot}/%{_sysconfdir}/%{lcName}/config.ini
+%__cp conf/config.ini.sample %{buildroot}/%{_sysconfdir}/%{lcName}/config.ini
 
 # Log directory
 %__mkdir -p %{buildroot}%{_localstatedir}/log/%{lcName}
@@ -108,6 +113,8 @@ fi
 %attr(660,%{lcName},%{lcName}) %{_localstatedir}/run/%{lcName} 
 %doc %{_prefix}/docs
 %config(noreplace) %{_sysconfdir}/%{lcName}/config.ini
+%config(noreplace) %{_sysconfdir}/default/%{lcName}
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{lcName}
 # Startup script
 %attr(755,root,root) %{_sysconfdir}/init.d/%{lcName}
 # Logs

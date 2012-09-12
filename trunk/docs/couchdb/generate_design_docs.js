@@ -17,7 +17,7 @@ var cli = require('commander');
 var async = require('async');
 var _ = require('underscore');
 var c = require(path.join(__dirname, "../../lib/config.js"));
-var config = new Config(path.join(__dirname, "../../conf/conf.ini"));
+var config = new Config(path.join(__dirname, "../../conf/config.ini"));
 
 main();
 

@@ -1,0 +1,5 @@
+/var/log/osdf/*.log {
+    missingok
+    daily
+    notifempty
+}

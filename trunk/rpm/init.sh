@@ -12,9 +12,6 @@
 SCRIPT_OK=0
 SCRIPT_ERROR=1
 
-OSDF_USER=osdf
-ENVIRONMENT=production
-
 DESCRIPTION="osdf daemon"
 NAME=OSDF
 LCNAME=osdf
@@ -24,7 +21,39 @@ RUN_DIR=/var/run/$LCNAME
 PIDFILE=/var/run/$LCNAME/$LCNAME.pid
 LSB_LIBRARY=/lib/lsb/init-functions
 LOG=/var/log/$LCNAME/$LCNAME.log
+DEFAULT=/etc/default/$LCNAME
 
+# The following variables can be overwritten in $DEFAULT
+
+# For node.js version >= 0.6
+ENVIRONMENT=production
+
+# Run OSDF as this user ID and group ID
+OSDF_USER=osdf
+OSDF_GROUP=osdf
+
+# OSDF log directory and log file
+LOG_DIR=/var/log/$LCNAME
+LOG=$LOG_DIR/$LCNAME.log
+
+# OSDF data directory
+DATA_DIR=/var/lib/$LCNAME
+
+# OSDF work directory
+WORKING_DIR=/var/run/$LCNAME/working
+
+# OSDF configuration directory
+CONF_DIR=/etc/$LCNAME
+
+# OSDF configuration file
+CONF_FILE=$CONF_DIR/config.ini
+
+# End of the variables that can be overwritten in $DEFAULT
+
+# overwrite settings from default file
+if [ -f "$DEFAULT" ]; then
+    . "$DEFAULT"
+fi
 
 export NODE_ENV=$ENVIRONMENT
 # For node.js version >= 0.6
@@ -57,7 +86,7 @@ start_app () {
         mkdir -p "$RUN_DIR" && chown $OSDF_USER "$RUN_DIR"
     fi
     pushd "$APP_HOME" >/dev/null 2>&1
-    start_daemon -p $PIDFILE "/usr/bin/node ${LCNAME}.js --config /etc/$LCNAME/config.ini \                      --working /var/run/$LCNAME/working >> $LOG &"
+    start_daemon -p $PIDFILE "/usr/bin/node ${LCNAME}.js --log $LOG --config $CONF_FILE --working $WORKING_DIR &"
     local START_RV=$?
     if [ "$START_RV" == "0" ]; then
 	sleep 3

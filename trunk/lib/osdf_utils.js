@@ -36,7 +36,7 @@ exports.get_logger = function() {
 
 exports.get_config = function() {
     if (config_path === null || typeof config_path === 'undefined') {
-        config_path = path.resolve(exports.get_osdf_root(), 'conf/conf.ini');
+        config_path = path.resolve(exports.get_osdf_root(), 'conf/config.ini');
     }
     return config_path;
 };
