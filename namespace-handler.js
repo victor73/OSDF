@@ -2,14 +2,14 @@ var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
 var utils = require('osdf_utils');
-var root_local_dir = utils.get_osdf_root();
+var working_dir = utils.get_working_dir();
 
 // This is the code that is responsible for assembling the complete list
 // of namespaces that this OSDF instance is aware of.
 exports.get_all_namespaces = function (request, response) {
     console.log("In get_all_namespaces.");
 
-    var ns_path = path.join(root_local_dir, '/working/namespaces/');
+    var ns_path = path.join(working_dir, 'namespaces');
 
     // This is a simply array that will hold the data read from each
     // namespace file.
@@ -81,7 +81,7 @@ exports.get_all_namespaces = function (request, response) {
 exports.get_namespace = function (request, response) {
     console.log("In get_namespace.");
 
-    var ns_file = path.join(root_local_dir, 'working/namespaces/', request.params.ns, "info.json");
+    var ns_file = path.join(working_dir, 'namespaces', request.params.ns, "info.json");
 
     // Check to see if we have a file descriptor (JSON) for the namespace the user
     // has specified. This is also an asynchronous call.
