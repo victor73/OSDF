@@ -70,6 +70,8 @@ function listen_for_init_completion(config) {
         process.send({ cmd: "user_count", users: user_count });
     });
 
+    // Allow each handler to abort the launch if there is a configuration
+    // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
     _.each(handlers, function (handler) {
         eventEmitter.on(handler + "_handler_initialized", function (message) {
             examine_handlers();
@@ -130,8 +132,8 @@ function launch(config) {
     });
 
     process.on('message', function(msg) {
-        logger.info("Got a message from the master. Type: " +  msg['type']);
-        if (msg['type'] === "schema_change") {
+        logger.info("Got a message from the master: " +  msg['cmd']);
+        if (msg['cmd'] === "schema_change") {
             node_handler.process_schema_change(msg);
             schema_handler.process_schema_change(msg);
         }
