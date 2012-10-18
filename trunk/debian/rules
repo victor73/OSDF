@@ -39,6 +39,7 @@ binary: install token-replace
 	dh_install query-handler.js /usr/lib/osdf/
 	dh_install schema-handler.js /usr/lib/osdf/
 	dh_install node_modules /usr/lib/osdf/
+	dh_install bin /usr/
 	dh_install lib /usr/lib/osdf/
 	dh_install working /var/lib/osdf/
 	dh_install debian/etc/default/osdf /etc/default/
