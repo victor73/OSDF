@@ -6,7 +6,7 @@
 Summary: %{Name} - REST API for storing and retrieving scientific data.
 Name: %{lcName}
 Version: @version@
-Release: 2
+Release: 3
 License: GPL
 Group: System Environment/Daemons
 URL: http://sourceforge.net/projects/%{lcName}/
@@ -15,6 +15,7 @@ Packager: @packager@
 
 Requires: nodejs >= 0.6
 Requires: elasticsearch >= 0.18.0
+Requires: elasticsearch-plugin-river-couchdb >= 1.1.0
 Requires: couchdb >= 1.0
 
 Requires(pre):  /usr/sbin/useradd /usr/sbin/groupadd chkconfig initscripts 
