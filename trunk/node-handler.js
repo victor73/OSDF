@@ -13,6 +13,7 @@ var config = require('config');
 var flow = require('flow');
 var perms = require('perms-handler');
 var auth = require('auth_enforcer');
+var sprintf = require('sprintf').sprintf;
 
 var c = Config.get_instance(osdf_utils.get_config());
 
@@ -27,6 +28,7 @@ var couch_pass = c.value('global', 'couch_pass');
 var dbname = c.value('global', 'dbname');
 
 var logger = osdf_utils.get_logger();
+var osdf_error = osdf_utils.send_error;
 
 // An array to hold the namespaces.
 var namespaces = [];
@@ -56,33 +58,19 @@ exports.init = function(emitter, working_dir_custom) {
     // Create the CouchDB connection using the configured database name.
     db = couch_conn.database(dbname);
     db.exists( function(err, exists) {
+        // Here we emit the error to abort the server startup process.
         if (err) {
-            //throw err;
-            msg = "Error connecting to CouchDB database at " +
-                  couch_address + ":" + couch_port + ". " +
-                  "Check settings and credentials in " + osdf_utils.get_config() + ".";
+            msg = sprintf("Error connecting to CouchDB database at %s:%s. " +
+                          "Check settings & credentials in %s.",
+                  couch_address,
+                  couch_port,
+                  osdf_utils.get_config() );
             emitter.emit('node_handler_aborted', msg);
         }
 
         if (! exists) {
-            //throw "CouchDB database '" + dbname + "' doesn't exist.";
             emitter.emit('node_handler_aborted', "CouchDB database '" + dbname + "' doesn't exist.");
         }
-    });
-
-    // We want to be notified whenever a schema is deleted so that we can
-    // adjust our validators data structure by removing the corresponding
-    // validator from their as well.
-    var schema_handler = require('schema-handler');
-
-    schema_handler.on("delete_schema", function (data) {
-        logger.debug("Got a schema deletion event: ", data);
-        delete_schema_helper(data['ns'], data['schema']);
-    });
-
-    schema_handler.on('insert_schema', function (data) {
-        logger.debug("Got a schema insertion event: ", data);
-        insert_schema_helper(data['ns'], data['name'], data['json']);
     });
 
     osdf_utils.get_namespace_names( function(names) {
@@ -98,8 +86,8 @@ exports.init = function(emitter, working_dir_custom) {
     });
 };
 
-// This is the method that handles node retrieval. It is
-// called when users HTTP GET the node.
+// This is the method that handles node retrieval. It is called when users HTTP
+// GET the node.
 exports.get_node = function (request, response) {
     logger.debug("In get_node.");
     
@@ -108,8 +96,9 @@ exports.get_node = function (request, response) {
     });
 };
 
-// This is the method that handles node retrieval. It is
-// called when users HTTP GET the node.
+// This is the method that handles node retrieval by version number. It is
+// called when users HTTP GET the node and supply a specific version number in
+// the url.
 exports.get_node_by_version = function (request, response) {
     logger.debug("In get_node_by_version.");
     
@@ -117,18 +106,60 @@ exports.get_node_by_version = function (request, response) {
     var requested_version = parseInt(request.params.ver, 10);
 
     if (requested_version <= 0) {
-        logger.warn("User asked for invalid version number of node: " + node_id);
-        response.send('', {'X-OSDF-Error': "Invalid version number." }, 422);
+        logger.warn("User asked for invalid version number of node.");
+        osdf_error(response, "Invalid version number.", 422);
+    } else if ( isNaN(requested_version) ) {
+        logger.warn("User didn't provide a valid number for the version number.");
+        osdf_error(response, "Invalid version number.", 422);
     } else {
         var version = request.params.ver.toString();
-        var stream = db.getAttachment(request.params.id + "_hist", version);
+        var stream = db.getAttachment(node_id + "_hist", version);
+        var data = "";
 
         stream.on('data', function(chunk) {
-            return response.write(chunk, "binary");
+            data += chunk;
         });
 
         stream.on('end', function() {
-            return response.end();
+            logger.debug("CouchDB request for attachment complete.");
+            var couch_response = null;
+            try {
+                couch_response = JSON.parse(data);
+            } catch (err) {
+                logger.error(err, data);
+            }
+
+            if (couch_response === null) {
+                osdf_error(response, "Unable to retrieve node version.", 422);
+            } else {
+                logger.info("Got a valid CouchDB response.");
+
+                if (couch_response.hasOwnProperty("error")) {
+                    logger.info("CouchDB response indicated an error occurred.");
+
+                    get_couch_doc(node_id, function(err, current_node) {
+                        if (err) {
+                            logger.error(err);
+                            osdf_error(response, "Unable to retrieve node.", 500);
+                        } else {
+                            var current_node_version = parse_version(current_node['_rev']);
+
+                            // The user my be using this method to get the current version.
+                            // They 'should' use the regular node retrieval method, but here
+                            // they are using the 'by version' method to get the current
+                            // version.
+                            if (requested_version === current_node_version) {
+                                response.json(osdf_utils.fix_keys(current_node));
+                            } else {
+                                osdf_error(response, "Unable to retrieve node version.", 404);
+                            }
+                        }
+                    });
+                } else {
+                    response.json(couch_response);
+                }
+            }
+            return;
         });
     }
 };
@@ -143,7 +174,7 @@ exports.insert_node = function (request, response) {
         report = validate_incoming_node(content);
     } catch (report_err) {
         logger.error(report_err);
-        response.send('', {'X-OSDF-Error': report_err }, 422);
+        osdf_error(response, report_err, 422);
         return;
     }
 
@@ -180,21 +211,20 @@ exports.insert_node = function (request, response) {
                     
                     var node_url = base_url + ':' + port + '/nodes/' + node_id;
                     logger.info("Successful insertion: " + node_url);
-                    response.send('', {'Location': base_url + ':' + 
-                                  port + '/nodes/' + node_id}, 201); 
+                    response.send('', {'Location': node_url}, 201); 
                 }
             );
         } catch (err) {
             logger.error(err);
-            response.send('', {'X-OSDF-Error': "Unable to save node"}, 500);
+            osdf_error(response, "Unable to save node.", 500);
         }
     } else {
         if (report !== null) {
             var err_msg = report.errors.shift().message;
             logger.info("Bad node. Error: ", err_msg);
-            response.send('', {'X-OSDF-Error': err_msg }, 422);
+            osdf_error(response, err_msg, 422);
         } else {
-            response.send('', {'X-OSDF-Error': 'Invalid node data'}, 422);
+            osdf_error(response, "Invalid node data.", 422);
         }
     }
 };
@@ -222,7 +252,7 @@ exports.update_node = function(request, response) {
         report = validate_incoming_node(content);
     } catch (err) {
         logger.info("Returning HTTP 422.", err);
-        response.send('', {'X-OSDF-Error': err}, 422);
+        osdf_error(response, err, 422);
         return;
     }
 
@@ -231,8 +261,7 @@ exports.update_node = function(request, response) {
         update_helper(node_id, node_data, function(err, update_result) {
             if (err) {
                 logger.error("Unable to update data in couch.", err);
-
-                response.send('', {'X-OSDF-Error': update_result['msg']}, update_result['code']);
+                osdf_error(response, update_result['msg'], update_result['code']);
             } else {
                 response.send('', update_result['201']);
             }
@@ -243,9 +272,9 @@ exports.update_node = function(request, response) {
         if (report !== null) {
             var err_msg = report.errors.shift().message;
             logger.info("Bad node. Error: ", err_msg);
-            response.send('', {'X-OSDF-Error': err_msg }, 422);
+            osdf_error(response, err_msg, 422);
         } else {
-            response.send('', {'X-OSDF-Error': 'Node does not validate'}, 422);
+            osdf_error(response, "Node does not validate.", 422);
         }
     }
 };
@@ -267,7 +296,7 @@ exports.delete_node = function(request, response) {
             }
 
             if (has_dependencies) {
-                response.send('', {'X-OSDF-Error': 'Node has dependencies on it.'}, 403);
+                osdf_error(response, "Node has dependencies on it.", 403);
             } else {
                 logger.debug("No dependencies, so clear to delete.");
                 // Get the user that is making the deletion request.
@@ -276,7 +305,7 @@ exports.delete_node = function(request, response) {
             }
         });
     } catch (e) {
-        response.send('', {'X-OSDF-Error': 'Unable to delete node.'}, 500);
+        osdf_error(response, "Unable to delete node.", 500);
     }
 };
 
@@ -297,12 +326,12 @@ exports.get_out_linkage = function(request, response) {
                 throw err;
             }
 
-            // The first entry is the node itself. Subsequent elements in the array are the nodes
-            // that we are linking to
+            // The first entry is the node itself. Subsequent elements in the
+            // array are the nodes that we are linking to
             results.shift();
 
-            // Remove duplicates. A node can actually link to other nodes multiple times, but
-            // the API says we only report it once.
+            // Remove duplicates. A node can actually link to other nodes
+            // multiple times, but the API says we only report it once.
             var seen_list = [];
 
             logger.debug("Filtering duplicates from the result list.");
@@ -314,7 +343,6 @@ exports.get_out_linkage = function(request, response) {
                     return true;
                 }
             });
-
 
             // Move the structure up a level.
             filtered = _.map(filtered, function(filtered_result) {
@@ -346,7 +374,7 @@ exports.get_out_linkage = function(request, response) {
         });
     } catch (e) {
         logger.error(e);
-        response.send('', {'X-OSDF-Error': 'Unable to retrieve node linkages.'}, 500);
+        osdf_error(response, 'Unable to retrieve node linkages.', 500);
     }
 };
 
@@ -354,8 +382,12 @@ exports.get_out_linkage = function(request, response) {
 exports.get_in_linkage = function(request, response) {
     logger.debug("In get_in_linkage.");
 
-    // TODO: Check that we actually have the id in the request...
+    // Check that we actually have the id in the request...
     var node_id = request.params.id;
+    if (node_id === null || node_id === "") {
+        osdf_error(response, 'Invalid or missing node id.', 422);
+        return;
+    }
 
     try {
         // This needs to query a view, not issue N queries...
@@ -409,7 +441,7 @@ exports.get_in_linkage = function(request, response) {
         });
     } catch (e) {
         logger.error(e);
-        response.send('', {'X-OSDF-Error': 'Unable to retrieve node linkages.'}, 500);
+        osdf_error(response, 'Unable to retrieve node linkages.', 500);
     }
 };
 
@@ -418,10 +450,14 @@ exports.get_in_linkage = function(request, response) {
 exports.process_schema_change = function (msg) {
     logger.debug("In process_schema_change.");
 
-    if (msg.hasOwnProperty('cmd') && msg['cmd'] === "schema_change") {
-        if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
-            var namespace = msg['ns']
-            var schema_name = msg['name']
+    if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
+        var namespace = msg['ns']
+        var schema_name = msg['name']
+
+        if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
+            var json = msg['json'];
+            insert_schema_helper(namespace, schema_name, json);
+        } else if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
             delete_schema_helper(namespace, schema_name);
         }
     }
@@ -483,35 +519,68 @@ function validate_incoming_node(node_string) {
     return report;
 }
 
+function parse_version(couchdb_version) {
+    logger.debug("In parse_version.");
+
+    if (couchdb_version === null) {
+        throw "Invalid couchdb version provided.";
+    }
+    var couchdb_version_int = parseInt(couchdb_version.split('-')[0], 10);
+    return couchdb_version_int;
+}
+
+function get_node_version(node_id, callback) {
+    logger.debug("In get_node_version.");
+
+    db.get(node_id, function(err, data) {
+        if (err) {
+            callback("Unable to retrieve node operation.", null);
+        } else {
+            var couchdb_version = data['_rev'];
+            var version = parse_version(couchdb_version);
+            callback(null, version);
+        }
+    });
+}
+
+function get_couch_doc(couchdb_id, callback) {
+    logger.debug("In get_couch_doc.");
+
+    db.get(couchdb_id, function(err, data) {
+        if (err) {
+            callback("Unable to retrieve CouchDB doc.", null);
+        } else {
+            callback(null, data);
+        }
+    });
+}
+
 function update_helper(node_id, node_data, callback) {
     logger.debug("In update_helper.");
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
+    var previous_node;
 
     try {
-        var couchdb_version;
-        var couchdb_version_int;
-        var previous_node;
-
         flow.exec(
             function() {
-                db.get(node_id, this);
+                get_couch_doc(node_id, this);
             },
             function(err, data) {
-                previous_node = data;
                 if (err) {
                     result['msg'] = "Unable to perform update operation.";
                     result['code'] = 500;
                     throw err;
                 }
 
-                couchdb_version = previous_node['_rev'];
-                couchdb_version_int = parseInt(couchdb_version.split('-')[0], 10);
+                previous_node = data;
+                var couchdb_version = previous_node['_rev'];
+                var version = parse_version(couchdb_version);
 
-                if ( node_version !== couchdb_version_int ) {
+                if ( node_version !== version ) {
                     var msg = "Version provided (" + node_version + ") doesn't match " +
-                              "saved (" + couchdb_version_int + ").";
+                              "saved (" + version + ").";
 
                     result['msg'] = msg;
                     result['code'] = 422;
@@ -562,10 +631,10 @@ function retrieval_helper(request, response, err, data) {
     if (err) {
         if (err.error === 'not_found') {
             logger.debug("User requested non-existent node.");
-            response.send('', {'X-OSDF-Error': "Non-existent node" }, 404);
+            osdf_error(response, 'Non-existent node.', 404);
         } else {
             logger.error(err);
-            response.send('', {'X-OSDF-Error': err.error }, 500);
+            osdf_error(response, err.error, 500);
         }
     } else {
         var user = auth.get_user(request);
@@ -573,7 +642,7 @@ function retrieval_helper(request, response, err, data) {
             var fix = osdf_utils.fix_keys(data); 
             response.json(fix);
         } else {
-            response.send('', {'X-OSDF-Error': 'No read access to this node'}, 403);
+            osdf_error(response, 'No read access to this node.', 403);
         }
     }
 }
@@ -704,7 +773,7 @@ function delete_helper(user, node_id, response) {
             if (err) {
                 if (err.error && err.error === "not_found") {
                     logger.info("User '" + user + "' attempted to delete unknown node: " + node_id);
-                    response.send('', {'X-OSDF-Error': "Unknown node"}, 422);
+                    osdf_error(response, 'Unknown node.', 422);
                 } else {
                     throw err.reason;
                 }
@@ -729,7 +798,7 @@ function delete_helper(user, node_id, response) {
                     });
                 } else {
                     logger.debug("User " + user + " cannot delete node " + node_id);
-                    response.send('', {'X-OSDF-Error': 'No ACL permissions to delete node'}, 403);
+                    osdf_error(response, 'No ACL permissions to delete node.', 403);
                 }
             }
         } catch (e) {
@@ -794,6 +863,8 @@ function load_reference_schema(env, schema, callback) {
 }
 
 function insert_schema_helper(namespace, name, json) {
+    logger.debug("In node-handler:insert_schema_helper.");
+
     if (validators.hasOwnProperty(namespace)) {
         var env = validators[namespace]['env'];
         env.createSchema( json, undefined, name );
@@ -803,6 +874,8 @@ function insert_schema_helper(namespace, name, json) {
 }
 
 function delete_schema_helper(namespace, schema_name) {
+    logger.debug("In node-handler:delete_schema_helper.");
+
     if (validators.hasOwnProperty(namespace) && validators[namespace].hasOwnProperty(schema_name)) {
         delete validators[namespace][schema_name];
     }
