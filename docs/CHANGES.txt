@@ -1,2 +1,12 @@
+0.2
+  * Debian/Ubuntu package containing utility scripts from bin
+  * RPM package now depending on the elasticsearch-plugin-river-couchdb
+    while the DEB package executes the ElasticSearch 'plugin' utility for
+    river installation
+  * Requiring nodejs 0.8 or better
+  * Fixes for schema creation and deletion
+  * Fixed issue with retrieving the current node version
+    using the /nodes/ver/# REST method
+  * API documentation updated and rewritten in markdown
 0.1
   * Initial release
