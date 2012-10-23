@@ -5,21 +5,22 @@ var elastical = require('elastical');
 var osdf_utils = require('osdf_utils');
 var util = require('util');
 var logger = osdf_utils.get_logger();
+var es_river_name = "osdf";
+var sprintf = require('sprintf').sprintf;
 
-//Load configuration parameters
+// Load configuration parameters
 var c = Config.get_instance(osdf_utils.get_config());
 var base_url = c.value('global', 'base_url');
 var port = c.value('global', 'port');
 var page_size = c.value('global', 'pagesize');
 
+var osdf_error = osdf_utils.send_error;
 var eclient;
-
 
 // This initializes the handler. The things we need to do before the
 // handler is ready to begin its work are: establish a connection to the
 // CouchDB server, determine what the installed namespaces are, and create
 // the various validators for each of the node types inside each namespace.
-
 exports.init = function (emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
@@ -28,18 +29,68 @@ exports.init = function (emitter) {
     var elasticsearch_address = c.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
 
-    logger.info("Creating elasticsearch connection.");
+    /*
 
-    // Establish the connection to the ElasticSearch server
-    eclient = new elastical.Client(elasticsearch_address, {port: elasticsearch_port});
+    At the time of writing this code, the 'elastical' library has a documented bug
+    concerning the getRiver() method/function, which prevents it's use here. As a
+    workaround, we issue a direct HTTP request using the 'request' library to
+    ElasticSearch directly until such time that the bug is fixed.
 
-    logger.debug("Connected to Elastic Search at " +
-                    elasticsearch_address + ":" + elasticsearch_port);
+    // Abort the server start-up if ElasticSearch or the index we need isn't there.
+    eclient.getRiver( es_river_name, function(err, data) {
+        if (err) {
+            emitter.emit('query_handler_aborted', "Unable to determine if ElasticSearch " +
+                         "river exists.");
+        } else {
+            if (data === null || data === "") {
+                emitter.emit('query_handler_aborted', "ElasticSearch river '" +
+                    es_river_name + "' doesn't seem to exist.");
+            } else {
+                logger.debug("Connected to ElasticSearch at " + 
+                            elasticsearch_address + ":" + elasticsearch_port);
 
-    // Setup all the JSON validators for the namespaces and their node types.
-    emitter.emit('query_handler_initialized');
+                // Emit an event to notify of successful initialization.
+                emitter.emit('query_handler_initialized');
+            }
+        }
+    });
+    */
+
+    // See above notice about why we are using 'request' here instead of the 'elastical'
+    // library.
+
+    // Abort the server start-up if ElasticSearch or the index we need isn't there.
+    var url = sprintf("http://%s:%s/_river/%s/_status",
+                      elasticsearch_address,
+                      elasticsearch_port,
+                      es_river_name );
+
+    var request = require('request');
+
+    request.get( url, function(err, response, body) {
+        if (err) {
+            emitter.emit('query_handler_aborted',
+                         "Unable to contact ElasticSearch: " + err);
+        } else {
+            if (response.statusCode === 200) {
+                logger.info("Creating elasticsearch connection.");
+
+                // Establish the connection to the ElasticSearch server
+                eclient = new elastical.Client(elasticsearch_address,
+                              {port: elasticsearch_port});
+
+                logger.debug("Connected to ElasticSearch at " + 
+                            elasticsearch_address + ":" + elasticsearch_port);
+
+                // Emit an event to notify of successful initialization.
+                emitter.emit('query_handler_initialized');
+            } else {
+                emitter.emit('query_handler_aborted', "ElasticSearch river '" +
+                    es_river_name + "' doesn't seem to exist.");
+            }
+        }
+    });
 };
-
 
 // This is the method that handles querying elastic search
 exports.perform_query = function (request, response) {
@@ -48,7 +99,7 @@ exports.perform_query = function (request, response) {
     var perms_handler = require('perms-handler');
     var user = auth.get_user(request);
     var namespace = request.params.ns;
-    //parse int for later calculations
+    // Parse int for later calculations
     var requested_page = request.params.page ? parseInt(request.params.page, 10) : undefined;
     var user_acls = perms_handler.get_user_acls(namespace, user);
     var content = request.rawBody;
@@ -59,35 +110,36 @@ exports.perform_query = function (request, response) {
         user_query = JSON.parse(content);
     } catch (err) {
         logger.error("Bad query json provided.  " + err);
-        response.json('', {'X-OSDF-Error': "Bad query json provided. " + err}, 422);
+        osdf_error(response, 'Bad query json provided. ' + err, 422);  
         return;
     }
 
     var elastic_query = build_empty_filtered_query(namespace, user_acls);
 
-    //insert the client supplied query into the basic filtered query
+    // Insert the client supplied query into the basic filtered query
     elastic_query["query"]["filtered"]["query"] = user_query['query'];
 
-    //if user specified sort, insert the sort element into the elastic query
+    // If user specified sort, insert the sort element into the elastic query
     if (user_query["sort"]) {
         elastic_query["sort"] = user_query["sort"];
     }
 
-    //if user requested a specific page number, ignore any from and size vars in the 
-    //query that was sent and set from to the first result of the requested page
+    // If user requested a specific page number, ignore any from and size vars in the 
+    // query that was sent and set from to the first result of the requested page
     if (requested_page) {
-        //calculate the first result number to return for the top of this page
+        // Calculate the first result number to return for the top of this page
         elastic_query["from"] = (requested_page - 1) * page_size;
         logger.debug("User requested page " + requested_page
             + " so setting elastic_query['from'] to " + elastic_query["from"]);
-    } else if (user_query["from"]) { //if user specified from (begin index for pagination)
+    } else if (user_query["from"]) {
+        // If user specified from (begin index for pagination)
         elastic_query["from"] = user_query["from"];
     }
 
     if (!user_query["size"]) {
         elastic_query["size"] = page_size;
     } else {
-        //check against max page size allowed
+        // Check against max page size allowed
         elastic_query["size"] = (user_query["size"] > page_size ? page_size : user_query["size"]);
     }
 
@@ -101,17 +153,17 @@ exports.perform_query = function (request, response) {
         eclient.search(elastic_query, function (err, results, res) {
             if (err) {
                 logger.error("Error running query. " + err);
-                response.json('', {'X-OSDF-Error' : err}, 500);
+                osdf_error(response, err, 500);
             } else {
                 var partial_result = false;
                 var next_page_url;
 
-                //determine if this is a partial result response
+                // Determine if this is a partial result response
                 var first_result_number = elastic_query["from"] || 0;
                 if (first_result_number + results.hits.length < results.total) {
-                    //only count this as a partial result if the user did 
-                    //not specify both from and size in the query
-                    if (!user_query["from"] && !user_query["size"]) {
+                    // Only count this as a partial result if the user did 
+                    // not specify both from and size in the query
+                    if (! user_query["from"] && ! user_query["size"]) {
                         partial_result = true;
                         //if there was no page requested in this url
                         //then it would be page 1, so return 2
@@ -136,13 +188,13 @@ exports.perform_query = function (request, response) {
         });
     } catch (e) {
         logger.error("Error running query. " + e);
-        response.json('', {'X-OSDF-Error': "Error running query: " + e}, 500);
+        osdf_error(response, 'Error running query: ' + e, 500)
         return;
     }
 };
 
 function build_empty_filtered_query(namespace, user_acls) {
-    //return a skeletal query filtered on namespace and read acl
+    // Return a skeletal query filtered on namespace and read acl
     var elastic_query = {
         "query" : {
             "filtered" : {
@@ -163,7 +215,7 @@ function build_empty_filtered_query(namespace, user_acls) {
 }
 
 function format_query_results(results, requested_page) {
-    //convert hits from couchdb format to osdf format
+    // Convert hits from couchdb format to OSDF format
     results.hits = _.map(results.hits, function (hit) {
         return osdf_utils.fix_keys(hit._source);
     });
@@ -177,4 +229,3 @@ function format_query_results(results, requested_page) {
     delete results.total;
     delete results.max_score;
 }
-
