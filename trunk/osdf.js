@@ -39,9 +39,12 @@ function engine_start() {
 function configure() {
     var commander = require('commander');
 
-    commander.option('-c, --config <path>', 'Specify a configuration file. Default is <OSDF_HOME>/conf/config.ini.')
-             .option('-w, --working <path>', 'Specify a path to the working directory where namespaces data is stored.')
-             .option('-l, --log <path>', 'Specify the path to the log file.')
+    commander.option('-c, --config <path>',
+                     'Specify a configuration file. Default is <OSDF_HOME>/conf/config.ini.')
+             .option('-w, --working <path>',
+                     'Specify a path to the working directory where namespaces data is stored.')
+             .option('-l, --log <path>',
+                     'Specify the path to the log file.')
              .parse(process.argv);
 
     config_path = commander.config;
@@ -58,7 +61,7 @@ function configure() {
     if (log_file_path === null || typeof log_file_path === 'undefined') {
         //log_file_path = path.join(osdf_utils.get_osdf_root(), '/logs/osdf.log'); 
     } else {
-        // Set the path to hte log file and...
+        // Set the path to the log file and...
         osdf_utils.set_log_file(log_file_path);
         custom_log_file = true;
     }
@@ -106,7 +109,8 @@ function start_master(config) {
                 // Send messages to all the workers so that they can adjust their
                 // lists of active schemas.
                 var type = msg['type'];
-                logger.info("Master got a schema change event of type: " + type + ". Relay this to the workers.");
+                logger.info("Master got a schema change event of type: " + type + ". " +
+                            "Relay this to the workers.");
 
                 _.each(workers_array, function (clustered_worker) {
                     clustered_worker.send(msg);
@@ -135,6 +139,7 @@ function start_master(config) {
         });
     }
 
+    // This is for node.js .6.x, in wich the event is called 'death'.
     cluster.on('death', function(worker) {
         if (! letWorkersDie) {
             console.error('Worker ' + worker.pid + ' died. Starting a replacement...');
@@ -142,32 +147,46 @@ function start_master(config) {
         }
     });
 
+    // For node 0.8.x, the 'death' event was renamed to 'exit' on the cluster object.
+    // See here: https://github.com/joyent/node/wiki/API-changes-between-v0.6-and-v0.8
+    cluster.on('exit', function(worker) {
+        if (! letWorkersDie) {
+            console.error('Worker ' + worker.pid + ' died. Starting a replacement...');
+            cluster.fork();
+        }
+    });
+
     process.on('SIGTERM', function() {
-        console.error("Caught SIGTERM. Killing workers.");
+        console.error("Caught SIGTERM. Destroying workers.");
 
         // Modify the flag so that the 'death' handler does not attempt
-        // to replace the workers we are about to kill off.
+        // to replace the workers we are about to destroy off.
         letWorkersDie = true;
 
-        kill_workers(workers_array);
+        destroy_workers(workers_array);
     });
 
     process.on('exit', function() {
-        console.error("Exiting. Killing workers.");
+        console.error("Exiting. Destroying workers.");
 
         // Modify the flag so that the 'death' handler does not attempt
-        // to replace the workers we are about to kill off.
+        // to replace the workers we are about to destroy off.
         letWorkersDie = true;
 
-        kill_workers(workers_array);
+        destroy_workers(workers_array);
     });
 }
 
-function kill_workers(workers) {
-    // Iterate through the workers, and kill each of them.
+function destroy_workers(workers) {
+    // Iterate through the workers, and destroy each of them.
     _.each(workers, function(worker) {
-        console.error('Killing worker ' + worker.pid);
-        worker.kill();
+        console.error('Destroying worker ' + worker.pid);
+        if (worker.kill) {
+            // This is for node.js 0.6.x
+            worker.kill();
+        } else {
+            worker.destroy();
+        }
     });
 }
 
