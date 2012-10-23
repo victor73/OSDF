@@ -13,7 +13,7 @@ URL: http://sourceforge.net/projects/%{lcName}/
 Source: http://prdownloads.sourceforge.net/%{Name}/%{lcName}-%{version}.tar.gz
 Packager: @packager@
 
-Requires: nodejs >= 0.6
+Requires: nodejs >= 0.8
 Requires: elasticsearch >= 0.18.0
 Requires: elasticsearch-plugin-river-couchdb >= 1.1.0
 Requires: couchdb >= 1.0
