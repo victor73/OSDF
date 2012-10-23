@@ -3,13 +3,9 @@
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
-var host = 'localhost';
-var username = 'test';
-var password = 'test';
-var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
-var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string(8)).toString('base64');
-var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
+// Get a set of valid and invalid credentials for our tests
+var auth = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
 
 // Test whether we can retrieve OSDF instance infomration, and whether
 // the data that is returend coforms to the API specification for thing
@@ -17,7 +13,7 @@ var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
 exports['retrieve_info'] = function (test) {
     test.expect(33);
 
-    tutils.retrieve_info( auth_header, function(data, response) {
+    tutils.retrieve_info( auth, function(data, response) {
         test.equal(response.statusCode, 200, "Correct status for info request.");
 
         test.ok(response.headers['content-type'].indexOf("application/json") != -1, "Correct content type.");
@@ -96,7 +92,7 @@ exports['retrieve_info_no_auth'] = function (test) {
 exports['retrieve_info_bad_auth'] = function (test) {
     test.expect(2);
 
-    tutils.retrieve_info( bad_auth_header, function(data, response) {
+    tutils.retrieve_info( bad_auth, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for info request with a bad auth token.");
 
         test.ok(data == '', "No content returned for info request with bad auth.");
