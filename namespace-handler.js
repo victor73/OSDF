@@ -1,8 +1,10 @@
 var _ = require('underscore');
 var fs = require('fs');
 var path = require('path');
-var utils = require('osdf_utils');
-var working_dir = utils.get_working_dir();
+var osdf_utils = require('osdf_utils');
+var working_dir = osdf_utils.get_working_dir();
+
+var osdf_error = osdf_utils.send_error;
 
 // This is the code that is responsible for assembling the complete list
 // of namespaces that this OSDF instance is aware of.
@@ -36,15 +38,14 @@ exports.get_all_namespaces = function (request, response) {
 
         // Reject any hidden files/directories, such as .svn directories
         files = _.reject(files, function(file) {
-                                    return file.substr(0, 1) === '.';
-                                }
-                        );
+                            return file.substr(0, 1) === '.';
+                        });
 
         // So, if we're here, the scan has been completed and the 'files'
         // array is populated without incident.
         console.log("Found " + files.length + " files.");
 
-        utils.async_for_each(
+        osdf_utils.async_for_each(
             files,
             function (file, callback) {
                 fs.stat(path.join(ns_path, file), function(err, stats) {
@@ -88,13 +89,13 @@ exports.get_namespace = function (request, response) {
     path.exists(ns_file, function(exists) { 
         if (! exists) {
             // The namespace is unknown to us.
-            response.send('', {'X-OSDF-Error': "Namespace doesn't exist." }, 404);
+            osdf_error(response, "Namespace doesn't exit.", 404);
         } else {
             // File exists. So, let us read the data and send it back.
             fs.readFile(ns_file, function (err, file_text) {
                 if (err) {
                     console.log(err);
-                    response.send('', {'X-OSDF-Error': err.error }, 500);
+                    osdf_error(response, err.error, 500);
                 } else {
                     var ns_data = JSON.parse(file_text);
                     response.json(ns_data);
