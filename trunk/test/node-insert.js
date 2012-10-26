@@ -3,13 +3,9 @@
 var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
-var host = 'localhost';
-var username = 'test';
-var password = 'test';
-var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
-var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string(8)).toString('base64');
-var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
+// Get a set of valid and invalid credentials for our tests
+var auth = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
 
 var test_node = { ns: 'test',
                   acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
@@ -35,7 +31,7 @@ exports['basic_insertion'] = function (test) {
     var node_id;
 
     // First we create a node
-    tutils.insert_node( test_node, auth_header, function(data, response) {
+    tutils.insert_node( test_node, auth, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
         test.ok("location" in response.headers, "Response header contains location of new node." );
 
@@ -46,7 +42,7 @@ exports['basic_insertion'] = function (test) {
 
         // Clean-up (delete the inserted node)
         try {
-            tutils.delete_node(node_id, auth_header, function(){});
+            tutils.delete_node(node_id, auth, function(){});
         } catch (e) {}
         test.done();
     });
@@ -71,7 +67,7 @@ exports['basic_insertion_bad_auth'] = function (test) {
     test.expect(2);
 
     // First we create a node
-    tutils.insert_node( test_node, bad_auth_header, function(data, response) {
+    tutils.insert_node( test_node, bad_auth, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for unauthorized insertion.");
         
         test.ok(data == '', "No content returned on a unauthorized node insertion.");
@@ -89,7 +85,7 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
     var inserted = false;
 
     // Attempt to insert a node
-    tutils.insert_node( test_node_schema, auth_header, function(data, response) {
+    tutils.insert_node( test_node_schema, auth, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
         test.ok("location" in response.headers, "Response header contains location of new node." );
 
@@ -107,7 +103,7 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
 
         if (inserted) {
             try {
-                tutils.delete_node(node_id, auth_header, function(body, response) {
+                tutils.delete_node(node_id, auth, function(body, response) {
                     //
                 });
             } catch (e) {
@@ -134,7 +130,7 @@ exports['invalid_insertion_with_schema_validation'] = function (test) {
     //delete bad_node.meta['description'];
 
     // First we create a node
-    tutils.insert_node( bad_node, auth_header, function(data, response) {
+    tutils.insert_node( bad_node, auth, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for insertion of bad node.");
         test.ok(! ("location" in response.headers), "Response header does not contain 'location'." );
 
@@ -148,7 +144,7 @@ exports['invalid_insertion_with_schema_validation'] = function (test) {
 
                 // We should NOT have inserted, because the node inserted is invalid, but if we DID
                 // insert anyway (perhaps due to a bug), then we clean up after ourselves by deleting.
-                tutils.delete_node(node_id, auth_header, function(body, response) {
+                tutils.delete_node(node_id, auth, function(body, response) {
                     //
                 });
             } catch (e) {
@@ -170,7 +166,7 @@ exports['insertion_into_unknown_namespace'] = function (test) {
     // Overwrite the namespace with a randomly generated one.
     bad_node.ns = osdf_utils.random_string(8);
 
-    tutils.insert_node( bad_node, auth_header, function(data, response) {
+    tutils.insert_node( bad_node, auth, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for node with bad namespace.");
 
         test.ok(data == "", "No content returned on bad node insertion.");
@@ -183,7 +179,7 @@ exports['insertion_into_unknown_namespace'] = function (test) {
 
                 // We should NOT have inserted, because the node inserted is invalid, but if we DID
                 // insert anyway (perhaps due to a bug), then we clean up after ourselves by deleting.
-                tutils.delete_node(node_id, auth_header, function(body, response) {
+                tutils.delete_node(node_id, auth, function(body, response) {
                     //
                 });
             } catch (e) {
@@ -219,7 +215,7 @@ exports['insertion_into_unknown_namespace_no_auth'] = function (test) {
 
                 // We should NOT have inserted, because the node inserted is invalid, but if we DID
                 // insert anyway (perhaps due to a bug), then we clean up after ourselves by deleting.
-                tutils.delete_node(node_id, auth_header, function(body, response) { 
+                tutils.delete_node(node_id, auth, function(body, response) { 
                     //
                 });
             } catch (e) { 

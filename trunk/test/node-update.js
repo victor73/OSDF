@@ -8,13 +8,9 @@ var flow = require('flow');
 var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
-var host = 'localhost';
-var username = 'test';
-var password = 'test';
-var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
-var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + utils.random_string(8)).toString('base64');
-var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
+// Get a set of valid and invalid credentials for our tests
+var auth = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
 
 var test_node = { ns: 'test',
                   acl: { read: ['all'], write: ['all'] },
@@ -41,7 +37,7 @@ exports['basic_update'] = function (test) {
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node( test_node, auth_header, this);
+            tutils.insert_node( test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -53,7 +49,7 @@ exports['basic_update'] = function (test) {
             node_id = location.split('/').pop();
 
             var initial_version;
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var inserted = JSON.parse(data);
             initial_version = inserted['ver'];
@@ -64,14 +60,14 @@ exports['basic_update'] = function (test) {
             modified_node['ver'] = initial_version;
 
             // then try to update it
-            tutils.update_node( node_id, modified_node, auth_header, this);
+            tutils.update_node( node_id, modified_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for update.");
 
             test.ok(data == "", "No content returned.");
 
             // Retreieve and check that the update took effect
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var retrieved = JSON.parse(data);
             test.ok("ver" in retrieved, "Retrieved node has version in in.");
@@ -81,7 +77,7 @@ exports['basic_update'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
 
             test.done();
@@ -96,7 +92,7 @@ exports['update_no_auth'] = function (test) {
     test.expect(3);
 
     // Create the initial node
-    tutils.insert_node( test_node, auth_header, function(data, response) {
+    tutils.insert_node( test_node, auth, function(data, response) {
 
         var location = response.headers.location;
         var node_id = location.split('/').pop();
@@ -116,7 +112,7 @@ exports['update_no_auth'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
         });
 
@@ -131,7 +127,7 @@ exports['update_bad_auth'] = function (test) {
     test.expect(3);
 
     // Create the initial node
-    tutils.insert_node( test_node, auth_header, function(data, response) {
+    tutils.insert_node( test_node, auth, function(data, response) {
 
         var location = response.headers.location;
         var node_id = location.split('/').pop();
@@ -140,7 +136,7 @@ exports['update_bad_auth'] = function (test) {
         modified_node.meta['modified'] = true;
 
         // then try to update it with no authentication
-        tutils.update_node( node_id, modified_node, bad_auth_header, function(data, response) {
+        tutils.update_node( node_id, modified_node, bad_auth, function(data, response) {
             test.equal(response.statusCode, 403,
                 "Correct status for insertion w/o auth (forbidden).");
 
@@ -153,7 +149,7 @@ exports['update_bad_auth'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
         });
 
@@ -173,12 +169,12 @@ exports['valid_update_with_schema_validation'] = function (test) {
     flow.exec(
         function() {
             // create a node
-            tutils.insert_node( test_node, auth_header, this);
+            tutils.insert_node( test_node, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id = location.split('/').pop();
 
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var initial_node = JSON.parse(data);
             initial_version = initial_node.ver;
@@ -186,14 +182,14 @@ exports['valid_update_with_schema_validation'] = function (test) {
             modified_node['ver'] = initial_version;
 
             // then try to update it with data that is valid and controlled by a schema
-            tutils.update_node(node_id, modified_node, auth_header, this);
+            tutils.update_node(node_id, modified_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for insertion.");
 
             test.ok(data == "", "No content returned.");
 
             // Retrieve the node and double check that it was modified.
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var retrieved = JSON.parse(data);
 
@@ -202,7 +198,7 @@ exports['valid_update_with_schema_validation'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
 
             test.done();
@@ -218,12 +214,12 @@ exports['invalid_update_with_schema_validation'] = function (test) {
     flow.exec(
         function() {
             // create a node
-            tutils.insert_node( test_node, auth_header, this);
+            tutils.insert_node( test_node, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id = location.split('/').pop();
 
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var initial_node = JSON.parse(data);
             var initial_version = initial_node.ver;
@@ -236,7 +232,7 @@ exports['invalid_update_with_schema_validation'] = function (test) {
             modified_node['meta']['color'] = "pink";
 
             // then try to update it with data that is valid and controlled by a schema
-            tutils.update_node(node_id, modified_node, auth_header, this);
+            tutils.update_node(node_id, modified_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 422, "Correct status for insertion with invalid data.");
 
@@ -244,7 +240,7 @@ exports['invalid_update_with_schema_validation'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
 
             test.done();
@@ -265,12 +261,12 @@ exports['update_into_unknown_namespace'] = function (test) {
     flow.exec(
         function() {
             // create a node
-            tutils.insert_node( test_node, auth_header, this);
+            tutils.insert_node( test_node, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id = location.split('/').pop();
 
-            tutils.retrieve_node(node_id, auth_header, this);
+            tutils.retrieve_node(node_id, auth, this);
         }, function(data, response) {
             var initial_node = JSON.parse(data);
             var initial_version = initial_node.ver;
@@ -282,7 +278,7 @@ exports['update_into_unknown_namespace'] = function (test) {
             modified_node['ns'] = utils.random_string(5);
 
             // then try to update it with data that is valid and controlled by a schema
-            tutils.update_node(node_id, modified_node, auth_header, this);
+            tutils.update_node(node_id, modified_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 422,
                 "Correct status for insertion with invalid data.");
@@ -291,7 +287,7 @@ exports['update_into_unknown_namespace'] = function (test) {
 
             // Try to clean up by deleting the node.
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_node(node_id, auth, function(){});
             } catch (e) {}
 
             test.done();
