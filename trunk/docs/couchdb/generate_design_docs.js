@@ -7,24 +7,62 @@
 // CouchDB design documents before being registered with the configured
 // CouchDB server.
 
-// TODO: Use the 'commander' module to provide for an alternate method
-// to specify a different configuration file, or perhaps specify the
-// CouchDB server hostname and port number...
 var fs = require('fs');
 var path = require('path');
 var cradle = require('cradle');
 var cli = require('commander');
 var async = require('async');
+var pw = require('pw');
 var _ = require('underscore');
-var c = require(path.join(__dirname, "../../lib/config.js"));
-var config = new Config(path.join(__dirname, "../../conf/config.ini"));
 
-main();
+cli.option('-a, --address <Couch IP address/name>',
+           'Specify an alternate configuration file.')
+    .option('-d, --database <database>',
+            'Specify the name of the CouchDB database to install the design documents in.')
+    .option('-u, --username <username>',
+            'Specify the username of the CouchDB administrator.')
+    .option('-p, --port <port number (default of 5984)>',
+            'Specify the port number that CouchDB is listening on.')
+    .parse(process.argv); 
+
+var couchdb_admin = cli.username;
+var couchdb_address = cli.address;
+var couchdb_port = cli.port;
+var couchdb_db = cli.database;
+var couchdb_password = null;
+
+if (couchdb_admin === null || (typeof couchdb_admin === "undefined")) {
+    process.stderr.write("The username of the CouchDB admin must be specified with -u or --username.\n");
+    process.exit(2);
+}
+
+if (couchdb_address === null || (typeof couchdb_address === "undefined")) {
+    process.stderr.write("The option for -a / --address must be specified.\n");
+    process.exit(2);
+}
+
+if (couchdb_db === null || (typeof couchdb_db === "undefined")) {
+    process.stderr.write("The name of the CouchDB database must be specified with -d or --database.\n");
+    process.exit(2);
+}
+
+if (couchdb_port === null || (typeof couchdb_port === "undefined")) {
+    console.log("Using a default port of 5984.");
+    couchdb_port = 5984;
+}
+
+// Request the CouchDB admin password, but do not echo the password
+// to the terminal.
+process.stdout.write('Please enter the CouchDB administrative password for ' +
+                     couchdb_admin + ' (will not be shown): ');
+pw(function (password) {
+    couchdb_password = password;
+    main();
+})
 
 function main() {
     var files = fs.readdirSync(__dirname);
     var design_doc_names = [];
-    var design_docs = {};
 
     for (var fileIdx = 0; fileIdx < files.length; fileIdx++) {
         var file = files[fileIdx];
@@ -37,8 +75,17 @@ function main() {
             design_doc_names.push(name);
         }
     }
+
     // Okay, we have the design document names.
     design_doc_names = _.uniq(design_doc_names);
+
+    getDesignDocs(files, design_doc_names, function(designDocs) {
+        post_all_design_docs(designDocs);
+    });
+}
+
+function getDesignDocs(files, design_doc_names, callback) {
+    var design_docs = {};
 
     async.forEachSeries(design_doc_names, function(design_name, parent_cb) {
         // The variable to hold the named design document.
@@ -57,7 +104,7 @@ function main() {
 
                 var reduce_file = base + '-reduce.js';
 
-                path.exists(reduce_file, function(exists) {
+                fs.exists(reduce_file, function(exists) {
                     if (exists) {
                         var reduce_code = fs.readFileSync(reduce_file, "utf-8");
                         var map_reduce = create_map_reduce(view_name, map_code, reduce_code);
@@ -80,13 +127,12 @@ function main() {
             } else {
                 cb();
             }
-
         }, function() {
                design_docs[design_name] = '{' + doc_code + '}';
                parent_cb();
         });
     }, function() {
-        post_all_design_docs(design_docs);
+        callback(design_docs);
     });
 }
 
@@ -138,26 +184,16 @@ function escape(code) {
 // Take the code that has been escaped and formatted into a JSON documents
 // (CouchDB design documents) and post tehm into the CouchDB server.
 function post_all_design_docs(design_docs) {
-    var couch_address = config.value('global', 'couch_address');
-    var couch_port = config.value('global', 'couch_port');;
-    var couch_user = config.value('global', 'couch_user');
-    var couch_pass = config.value('global', 'couch_pass');
-    var dbname = config.value('global', 'dbname');
-
-    if (couch_address === null || couch_port === null || couch_pass === null || couch_user === null) {
-        throw "Invalid configuration encountered.";
-    }
-
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
-    var couch_conn = new(cradle.Connection)('http://' + couch_address, couch_port, {
-        auth: { username: couch_user, password: couch_pass },
+    var couch_conn = new(cradle.Connection)('http://' + couchdb_address, couchdb_port, {
+        auth: { username: couchdb_admin, password: couchdb_password },
         cache: false,
         raw: false
     });
 
     // Create the CouchDB connection using the configured database name.
-    var db = couch_conn.database(dbname);
+    var db = couch_conn.database(couchdb_db);
 
     async.forEachSeries(_.keys(design_docs), function(name, cb) {
         var code = design_docs[name];
@@ -166,7 +202,11 @@ function post_all_design_docs(design_docs) {
 
         db.save('_design/' + name, view_json, function(err, res) {
             if (err) {
-                console.log(err);
+                if (typeof err === "object" && err.hasOwnProperty('error')) {
+                    console.log("Error: " + err['error'] + ". Reason: " + err['reason']);
+                } else {
+                    console.log(err);
+                }
                 process.exit(1);
             } else {
                 cb;
