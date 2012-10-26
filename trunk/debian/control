@@ -10,7 +10,7 @@ Homepage: http://sourceforge.net/projects/osdf/
 
 Package: osdf
 Architecture: any
-Depends: ${misc:Depends}, adduser (>= 3.11), nodejs (>= 0.8), couchdb, elasticsearch
+Depends: ${misc:Depends}, openssl, adduser (>= 3.11), nodejs (>= 0.8), couchdb (>= 1.0), elasticsearch (>= 0.18)
 Description: RESTful API for storing and retrieving scientific data.
  OSDF is a server that is used to provide a RESTful HTTP API for
  storing, retrieving and modifying JSON documents. The server
