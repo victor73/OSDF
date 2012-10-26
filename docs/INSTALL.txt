@@ -2,17 +2,61 @@ OSDF Installation.
 
 Requirements
 =====================================================================
-Node.js 0.6.x or more recent.
-CouchDB 1.0.x or more recent.
-ElasticSearch .18 or more recent.
+  - Node.js 0.8.x or more better
+  - CouchDB 1.0.x or more better
+  - ElasticSearch 0.18 or better
+  - ElasticSearch CouchDB river plugin (bundled in the Debian/Ubuntu
+    package file, or via a separate RPM for RedHat/CentOS systems)
 
+Procedure
+=====================================================================
 
-1. Install the ElasticSearch river to feed off of changes from the CouchDB
+1. Ensure that CouchDB has an administrative account set up and that the
+server is secured. When you browse to CouchDB's web interface, called Futon",
+you should NOT see "Admin Party" at the lower right corner of the interface.
+You will need to know the CouchDB admin credentials to proceed with completing
+the OSDF installation.
+
+2. Create a CouchDB database called "osdf". This is easily accomplished via
+the "Futon" web interface. Browse to your Futon's address. For example, if on
+localhost, you would browse http://localhost:5984/_utils/. There should be a
+"Create Database..." button near the top of the browser screen. Create a
+database called "osdf".
+
+3. Create a CouchDB account for both the OSDF application to use as well as
+the ElasticSearch engine as well. OSDF provides a script to ease the creation
+of CouchDB accounts under /bin/couchdb/new_couch_user.sh. Make a note of
+the username and password chosen. For the account 'role', we recommend that
+"osdf" be entered.
+
+  $ bin/couchdb/new_couch_user.sh
+
+4. Create the CouchDB design documents needed by OSDF. OSDF comes bundled with
+the generate_design_docs.js script in the /bin/couchdb directory. Run the
+script and specify the address for CouchDB, the administrative usernmae, the
+name of the database (typically "osdf"), and the CouchDB port number. THe
+script will also prompt you for the CouchDB administrative password. The
+password will not be echoed to the screen as it is entered.
+
+  $ bin/couchdb/generate_design_docs.js --address localhost \
+
+5. Install the ElasticSearch river to feed off of changes from the CouchDB
 server. If the both the ElasticSearch and CouchDB servers are installed on the
-"localhost" with the default ports, and the CouchDB database that is used is
-named "osdf", then the curl command to install the river would be: 
+"localhost" with the default ports, and the CouchDB database is named "osdf",
+then the curl command to install the river would be: 
 
-$ curl -XPUT 'localhost:9200/_river/osdf/_meta' -d '{ "type" : "couchdb", "couchdb" : { "user" : "elastic_idx", "password" : "XXXXXXXX", "host" : "localhost", "port" : 5984, "db" : "osdf", "filter" : null } }'
+$ curl -X PUT 'http://localhost:9200/_river/osdf/_meta' \
+  -d '{ "type" : "couchdb",
+        "couchdb" : {
+            "user" : "<USER>",
+            "password" : "<PASSWD>",
+            "host" : "localhost",
+            "port" : 5984,
+            "db" : "osdf",
+            "filter" : null,
+            "ignore_attachments": true
+        } }'
 
-You will need to create the elatic_idx account and password in CouchDB for the
-river to work properly.
+Ensure you use the CouchDB username and password that you created in step #3
+instead of the literal "<USER>" and "<PASSWD>" seen in the example command
+above.
