@@ -8,10 +8,10 @@ var logger = osdf_utils.get_logger();
 var host = 'localhost';
 var username = 'test';
 var password = 'test';
-var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
-var auth_header = { 'Host': host, 'Authorization': auth };
-var bad_auth = 'Basic ' + new Buffer(username + ':' + osdf_utils.random_string()).toString('base64');
-var bad_auth_header = { 'Host': host, 'Authorization': bad_auth };
+
+// Get a set of valid and invalid credentials for our tests
+var auth = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
 
 // Test that the system supports the retrieval of all the namespaces the OSDF
 // instance knows about. We also examine the data that is retrieved in some
@@ -20,9 +20,10 @@ exports['retrieve_all_namespaces'] = function (test) {
     logger.debug('In retrieve_all_namespaces');
     test.expect(9);
 
-    tutils.retrieve_all_namespaces( auth_header, function(data, response) {
+    tutils.retrieve_all_namespaces( auth, function(data, response) {
         test.equal(response.statusCode, 200, "Correct status from request for all namespaces.");
-        test.ok(response.headers['content-type'].indexOf("application/json") != -1, "Correct content type for namespaces request.");
+        test.ok(response.headers['content-type'].indexOf("application/json") != -1,
+                "Correct content type for namespaces request.");
 
         var namespaces_json;
         try {
@@ -34,10 +35,12 @@ exports['retrieve_all_namespaces'] = function (test) {
             test.equal( typeof(namespaces_json.page), "number", "Type of 'page' key is correct.");
 
             test.ok( "result_count" in namespaces_json, "Data contained 'result_count' key.");
-            test.equal( typeof(namespaces_json.result_count), "number", "Type of 'result_count' key is correct.");
+            test.equal( typeof(namespaces_json.result_count), "number",
+                        "Type of 'result_count' key is correct.");
 
             test.ok( "results" in namespaces_json, "Data contained 'results' key.");
-            test.equal( typeof(namespaces_json.results), "object", "Type of 'results' key is correct.");
+            test.equal( typeof(namespaces_json.results), "object",
+                        "Type of 'results' key is correct.");
         } catch (e) {
             test.fail("Content returned is invalid JSON.");
         }
@@ -53,7 +56,8 @@ exports['retrieve_all_namespaces_no_auth'] = function (test) {
     test.expect(2);
 
     tutils.retrieve_all_namespaces(null, function(data, response) {
-        test.equal(response.statusCode, 403, "Correct status for namespace listing without auth token.");
+        test.equal(response.statusCode, 403,
+                   "Correct status for namespace listing without auth token.");
         test.ok(data == '', "No content returned for namespace listing without auth token.");
         test.done();
     });
@@ -65,8 +69,9 @@ exports['retrieve_all_namespaces_bad_auth'] = function (test) {
     logger.debug('In retrieve_all_namespaces_bad_auth');
     test.expect(2);
 
-    tutils.retrieve_all_namespaces(bad_auth_header, function(data, response) {
-        test.equal(response.statusCode, 403, "Correct status for namespace listing without auth token.");
+    tutils.retrieve_all_namespaces(bad_auth, function(data, response) {
+        test.equal(response.statusCode, 403,
+                   "Correct status for namespace listing without auth token.");
         test.ok(data == '', "No content returned for namespace listing without auth token.");
         test.done();
     });
@@ -80,7 +85,7 @@ exports['retrieve_all_namespaces_bad_auth'] = function (test) {
 exports['retrieve_valid_namespace'] = function (test) {
     test.expect(9);
 
-    tutils.retrieve_all_namespaces(auth_header, function(data, response) {
+    tutils.retrieve_all_namespaces(auth, function(data, response) {
         var all_namespaces = JSON.parse(data);
         var results = all_namespaces.results;
         results.length;
@@ -97,7 +102,7 @@ exports['retrieve_valid_namespace'] = function (test) {
         // Just look at the first one
         var retrieved_ns_name = ns_names[0];
 
-        tutils.retrieve_namespace(retrieved_ns_name, auth_header, function(data, response) {
+        tutils.retrieve_namespace(retrieved_ns_name, auth, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for valid namespace retrieval.");
 
             test.ok(response.headers['content-type'].indexOf("application/json") != -1,
@@ -133,7 +138,7 @@ exports['retrieve_valid_namespace_no_auth'] = function (test) {
     test.expect(2);
 
     // Get the list of namespaces, and then choose one at random.
-    tutils.retrieve_all_namespaces(auth_header, function(data, response) {
+    tutils.retrieve_all_namespaces(auth, function(data, response) {
         var all_namespaces = JSON.parse(data);
         var results = all_namespaces.results;
         results.length;
@@ -166,7 +171,7 @@ exports['retrieve_valid_namespace_bad_auth'] = function (test) {
     test.expect(2);
 
     // Get the list of namespaces, and then choose one at random.
-    tutils.retrieve_all_namespaces(auth_header, function(data, response) {
+    tutils.retrieve_all_namespaces(auth, function(data, response) {
         var all_namespaces = JSON.parse(data);
         var results = all_namespaces.results;
         results.length;
@@ -181,7 +186,7 @@ exports['retrieve_valid_namespace_bad_auth'] = function (test) {
         }
         var retrieved_ns_name = ns_names[0];
 
-        tutils.retrieve_namespace(retrieved_ns_name, bad_auth_header, function(data, response) {
+        tutils.retrieve_namespace(retrieved_ns_name, bad_auth, function(data, response) {
             test.equal(response.statusCode, 403, "Correct status for namespace retrieval with no auth.");
 
             test.ok(data == '', "No data returned.");
@@ -200,7 +205,7 @@ exports['retrieve_invalid_namespace'] = function (test) {
     // Generate a random string for our 'invalid' namespace that we're going to request.
     var invalid_namespace = osdf_utils.random_string(8);
 
-    tutils.retrieve_namespace(invalid_namespace, auth_header, function(data, response) {
+    tutils.retrieve_namespace(invalid_namespace, auth, function(data, response) {
         test.equal(response.statusCode, 404, "Correct status for invalid namespace retrieval.");
 
         test.ok(data == '', "No data returned for an invalid namespace retrieval.");

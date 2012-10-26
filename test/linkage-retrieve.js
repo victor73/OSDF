@@ -4,7 +4,9 @@ var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var flow = require('flow');
 
-var auth_header = tutils.get_test_auth();
+// Get a set of valid and invalid credentials for our tests
+var auth = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
 
 var test_node = { ns: 'test',
                   acl: { 'read': ['all'], 'write': ['all'] },
@@ -24,7 +26,7 @@ var restricted_node = { ns: 'test',
 // insert two linked nodes, then retrieve the linking node's links to see if
 // we obtain the other. We also make an attempt To cleanup by deleting the
 // nodes at the conclusion of the test.
-exports['basic_out_linkage'] = function (test) {
+exports['out_linkage'] = function (test) {
     test.expect(16);
 
     var node_id1, node_id2;
@@ -32,7 +34,7 @@ exports['basic_out_linkage'] = function (test) {
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node(test_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -47,13 +49,13 @@ exports['basic_out_linkage'] = function (test) {
             var test_node2 = test_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
 
             // then try to retrieve the linkage for the first node 
-            tutils.retrieve_node_out_links(node_id2, auth_header, this);
+            tutils.retrieve_node_out_links(node_id2, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for node linkage retrieval.");
 
@@ -84,8 +86,8 @@ exports['basic_out_linkage'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
                 console.log("Problem deleting test nodes during cleanup.");
@@ -96,9 +98,9 @@ exports['basic_out_linkage'] = function (test) {
     );
 }
 
-// Check whether we are able to obtain outboundlinkages without using an
+// Check whether we are able to obtain outbound linkages without using an
 // authentication token.
-exports['basic_out_linkage_no_auth'] = function (test) {
+exports['out_linkage_no_auth'] = function (test) {
     test.expect(5);
 
     var node_id1, node_id2;
@@ -106,7 +108,7 @@ exports['basic_out_linkage_no_auth'] = function (test) {
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node(test_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -121,7 +123,7 @@ exports['basic_out_linkage_no_auth'] = function (test) {
             var test_node2 = test_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
@@ -136,23 +138,77 @@ exports['basic_out_linkage_no_auth'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
-                console.log("Problem deleting test nodes during cleanup.");
+                console.log("Problem deleting test nodes during cleanup.", e);
             }
 
             test.done();
         }
     );
-}
+};
+
+// Check whether we are able to obtain outbound linkages using an
+// invalid authentication token.
+exports['out_linkage_bad_auth'] = function (test) {
+    test.expect(5);
+
+    var node_id1, node_id2;
+
+    flow.exec(
+        function() {
+            // First we create a node
+            tutils.insert_node(test_node, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 201, "Correct status for insertion.");
+
+            test.ok("location" in response.headers, "Response header contains location of new node." );
+
+            test.ok(data == '', "No content returned on a node insertion.");
+
+            var location = response.headers.location;
+            node_id1 = location.split('/').pop();
+            
+            // Make a new node, and connect it to the previously inserted one.
+            var test_node2 = test_node;
+            test_node2['linkage']['connected_to'] = [ node_id1 ];
+
+            tutils.insert_node(test_node2, auth, this);
+        }, function(data, response) {
+            var location = response.headers.location;
+            node_id2 = location.split('/').pop();
+
+            // then try to retrieve the linkage for the first node an invalid authentication token
+            tutils.retrieve_node_out_links(node_id2, bad_auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 403, "Correct status for node outbound linkage with no auth.");
+
+            test.ok(data == '', "No data returned.");
+
+            // Perform cleanup by removing what we just inserted. We have to delete in the correct
+            // order because the API doesn't allow dangling connections/linkages.
+            try {
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
+                });
+            } catch (e) {
+                console.log("Problem deleting test nodes during cleanup.", e);
+            }
+
+            test.done();
+        }
+    );
+};
+
+
 
 // Test basic retrieval of a node's inbound linkages. The approach is to first
 // insert two linked nodes, then retrieve the linked nodes's inbound links to
 // see if we obtain the linking node. We also make an attempt To cleanup by
 // deleting the nodes at the conclusion of the test.
-exports['basic_in_linkage'] = function (test) {
+exports['in_linkage'] = function (test) {
     test.expect(16);
 
     var node_id1, node_id2;
@@ -160,7 +216,7 @@ exports['basic_in_linkage'] = function (test) {
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node(test_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -175,13 +231,13 @@ exports['basic_in_linkage'] = function (test) {
             var test_node2 = test_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
 
             // then try to retrieve the linkage for the first node 
-            tutils.retrieve_node_in_links(node_id1, auth_header, this);
+            tutils.retrieve_node_in_links(node_id1, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for node linkage retrieval.");
 
@@ -212,21 +268,21 @@ exports['basic_in_linkage'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
-                console.log("Problem deleting test nodes during cleanup.");
+                console.log("Problem deleting test nodes during cleanup.", e);
             }
 
             test.done();
         }
     );
-}
+};
 
-// Check whether we are able to obtain outboundlinkages without using an
+// Check whether we are able to obtain inbound linkages without using an
 // authentication token.
-exports['basic_in_linkage_no_auth'] = function (test) {
+exports['in_linkage_no_auth'] = function (test) {
     test.expect(5);
 
     var node_id1, node_id2;
@@ -234,7 +290,7 @@ exports['basic_in_linkage_no_auth'] = function (test) {
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node(test_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -249,7 +305,7 @@ exports['basic_in_linkage_no_auth'] = function (test) {
             var test_node2 = test_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
@@ -264,34 +320,29 @@ exports['basic_in_linkage_no_auth'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
-                console.log("Problem deleting test nodes during cleanup.");
+                console.log("Problem deleting test nodes during cleanup.", e);
             }
 
             test.done();
         }
     );
-}
+};
 
-// The idea here is that there could be a node that the user is able to read,
-// that has links to nodes that the user is restricted from reading. In such a
-// case, the restricted nodes should be rendered "invisible", otherwise we'd be
-// leaking information. We test the behavior by creating a restricted node, and then
-// linking it from a public node. We then request the public node's outlinks.
-// We shouldn't get any.
-
-exports['out_linkage_with_restricted'] = function (test) {
-    test.expect(15);
+// Check whether we are able to obtain inbound linkages without using an
+// authentication token.
+exports['in_linkage_bad_auth'] = function (test) {
+    test.expect(5);
 
     var node_id1, node_id2;
 
     flow.exec(
         function() {
             // First we create a node
-            tutils.insert_node(restricted_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -306,13 +357,70 @@ exports['out_linkage_with_restricted'] = function (test) {
             var test_node2 = test_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
+        }, function(data, response) {
+            var location = response.headers.location;
+            node_id2 = location.split('/').pop();
+
+            // then try to retrieve the linkage for the first node with no authentication token. 
+            tutils.retrieve_node_in_links(node_id1, bad_auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 403, "Correct status for node inbound linkage with no auth.");
+
+            test.ok(data == '', "No data returned.");
+
+            // Perform cleanup by removing what we just inserted. We have to delete in the correct
+            // order because the API doesn't allow dangling connections/linkages.
+            try {
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
+                });
+            } catch (e) {
+                console.log("Problem deleting test nodes during cleanup.", e);
+            }
+
+            test.done();
+        }
+    );
+};
+
+
+// The idea here is that there could be a node that the user is able to read,
+// that has links to nodes that the user is restricted from reading. In such a
+// case, the restricted nodes should be rendered "invisible", otherwise we'd be
+// leaking information. We test the behavior by creating a restricted node, and then
+// linking it from a public node. We then request the public node's outlinks.
+// We shouldn't get any.
+exports['out_linkage_with_restricted'] = function (test) {
+    test.expect(15);
+
+    var node_id1, node_id2;
+
+    flow.exec(
+        function() {
+            // First we create a node
+            tutils.insert_node(restricted_node, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 201, "Correct status for insertion.");
+
+            test.ok("location" in response.headers, "Response header contains location of new node." );
+
+            test.ok(data == '', "No content returned on a node insertion.");
+
+            var location = response.headers.location;
+            node_id1 = location.split('/').pop();
+            
+            // Make a new node, and connect it to the previously inserted one.
+            var test_node2 = test_node;
+            test_node2['linkage']['connected_to'] = [ node_id1 ];
+
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
 
             // then try to retrieve the linkage for the first node 
-            tutils.retrieve_node_out_links(node_id2, auth_header, this);
+            tutils.retrieve_node_out_links(node_id2, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for node linkage retrieval.");
 
@@ -341,17 +449,17 @@ exports['out_linkage_with_restricted'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
-                console.log("Problem deleting test nodes during cleanup.");
+                console.log("Problem deleting test nodes during cleanup.", e);
             }
 
             test.done();
         }
     );
-}
+};
  
 // There could be a node that the user is able to read, that has incoming links
 // from nodes that the user is restricted from reading. In such a case, the
@@ -367,7 +475,7 @@ exports['in_linkage_with_restricted'] = function (test) {
     flow.exec(
         function() {
             // First we create a public node
-            tutils.insert_node(test_node, auth_header, this);
+            tutils.insert_node(test_node, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
@@ -382,13 +490,13 @@ exports['in_linkage_with_restricted'] = function (test) {
             var test_node2 = restricted_node;
             test_node2['linkage']['connected_to'] = [ node_id1 ];
 
-            tutils.insert_node(test_node2, auth_header, this);
+            tutils.insert_node(test_node2, auth, this);
         }, function(data, response) {
             var location = response.headers.location;
             node_id2 = location.split('/').pop();
 
             // then try to retrieve the linkage for the first node 
-            tutils.retrieve_node_in_links(node_id1, auth_header, this);
+            tutils.retrieve_node_in_links(node_id1, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 200, "Correct status for node linkage retrieval.");
 
@@ -417,14 +525,14 @@ exports['in_linkage_with_restricted'] = function (test) {
             // Perform cleanup by removing what we just inserted. We have to delete in the correct
             // order because the API doesn't allow dangling connections/linkages.
             try {
-                tutils.delete_node(node_id2, auth_header, function() {
-                    tutils.delete_node(node_id1, auth_header, function(){});
+                tutils.delete_node(node_id2, auth, function() {
+                    tutils.delete_node(node_id1, auth, function(){});
                 });
             } catch (e) {
-                console.log("Problem deleting test nodes during cleanup.");
+                console.log("Problem deleting test nodes during cleanup.", e);
             }
 
             test.done();
         }
     );
-}
+};

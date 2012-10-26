@@ -4,10 +4,12 @@ var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var flow = require('flow');
 
-var auth_header = tutils.get_test_auth();
-
 var test_ns = 'test';
-var schema_name = 'test';
+
+// Get a set of valid and invalid credentials for our tests
+var auth_header = tutils.get_test_auth();
+var bad_auth = tutils.get_invalid_auth();
+
 var test_schema = {
     description: "A test schema.",
     type: "object",
@@ -21,12 +23,13 @@ var test_schema = {
    additionalProperties: false
 };
 
+// Test retrieval of the collection of schemas. We start by inserting a test
+// schema with a random name into the 'test' namespace, then we retrieve all
+// the schemas in the namespace and see if it's there or not.
+exports['retrieve_all'] = function (test) {
+    test.expect(7);
 
-// Test basic retrieval of a schema. The approach is to first insert a schema, then
-// retrieve it. We also make an attempt To cleanup by deleting the schema at the
-// conclusion of the test.
-exports['basic_retrieve'] = function (test) {
-    test.expect(5);
+    var schema_name = osdf_utils.random_string(8);
 
     // First we insert a schema
     var schema_doc = { name: schema_name,
@@ -35,7 +38,93 @@ exports['basic_retrieve'] = function (test) {
     tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
 
-        test.ok(data == '', "No content returned on a schema insertion.");
+        test.ok(data === '', "No content returned on a schema insertion.");
+
+        // then try to retrieve it 
+        tutils.retrieve_all_schemas( test_ns, auth_header, function(data, response) {
+            test.equal(response.statusCode, 200, "Correct status for retrieval of all schemas.");
+
+            test.ok(data.length > 0, "Data returned.");
+
+            var schema_collection_data;
+            try {
+                schema_collection_data = JSON.parse(data);
+            } catch (err) {
+                // ignored
+            }
+
+            test.ok(schema_collection_data !== null, "Data returned was valid JSON.");
+
+            // Test if the JSON returned looks right
+            test.ok( schema_collection_data.hasOwnProperty('schemas') ); 
+
+            // Test if the schema we just inserted is listed in the "all" listing.
+            test.ok(schema_collection_data['schemas'].hasOwnProperty(schema_name),
+                    "Schema listing shows inserted test schema."); 
+
+            test.done();
+
+            // Perform cleanup by removing what we just inserted and retrieved.
+            try {
+                tutils.delete_schema(test_ns, schema_name, auth_header, function(){} );
+            } catch (e) {
+                console.log("Problem deleting test schema during cleanup.", e);
+            }
+        });
+    });
+};
+
+// Test retrieval of the collection of schemas with a missing authentication
+// token. We should not provide it if no authentication has been provided. The
+// user/caller should get an HTTP 403 status code.
+exports['retrieve_all_no_auth'] = function (test) {
+    test.expect(2);
+
+    // Note the 'null' for where the auth token would normally be provided.
+    tutils.retrieve_all_schemas( test_ns, null, function(data, response) {
+        test.equal(response.statusCode, 403,
+                   "Correct status for retrieval of schemas with invalid auth token.");
+
+        test.ok(data.length === 0, "No data returned.");
+
+        test.done();
+    });
+};
+
+// Test retrieval of the collection of schemas with an incorrect authentication
+// token. We generate an invalid password to test this particular case.  The
+// user/caller should get an HTTP 403 status code.
+exports['retrieve_all_bad_auth'] = function (test) {
+    test.expect(2);
+
+    // then try to retrieve it without providing authentication 
+    tutils.retrieve_all_schemas( test_ns, bad_auth, function(data, response) {
+        test.equal(response.statusCode, 403, "Correct status for retrieval of schemas without auth token.");
+
+        test.ok(data.length === 0, "No data returned.");
+
+        test.done();
+    });
+
+};
+
+
+// Test basic retrieval of a schema. The approach is to first insert a schema, then
+// retrieve it. We also make an attempt To cleanup by deleting the schema at the
+// conclusion of the test.
+exports['basic_retrieve'] = function (test) {
+    test.expect(5);
+
+    var schema_name = osdf_utils.random_string(8);
+
+    // First we insert a schema
+    var schema_doc = { name: schema_name,
+                       schema: test_schema };
+
+    tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
+        test.equal(response.statusCode, 201, "Correct status for insertion.");
+
+        test.ok(data === '', "No content returned on a schema insertion.");
 
         // then try to retrieve it 
         tutils.retrieve_schema( test_ns, schema_name, auth_header, function(data, response) {
@@ -55,88 +144,82 @@ exports['basic_retrieve'] = function (test) {
 
             // Perform cleanup by removing what we just inserted and retrieved.
             try {
-                tutils.delete_schema(schema_id, auth_header, function(){} );
+                tutils.delete_schema(test_ns, schema_name, auth_header, function(){} );
             } catch (e) {
-                console.log("Problem deleting test schema during cleanup.");
+                console.log("Problem deleting test schema during cleanup.", e);
             }
-
         });
-
     });
 };
 
-// Attempt a retreival with no authentication header provided.
+// Attempt a retreival with no authentication credentials.
 // Insert a schema, then retrieve it with no authentication, then cleanup.
 exports['basic_retrieve_no_auth'] = function (test) {
     test.expect(5);
 
-    var node_id;
+    var schema_name = osdf_utils.random_string(8);
 
-    // First we create a node
-    tutils.insert_schema( test_schema, auth_header, function(data, response) {
+    // First we create a schema
+    var schema_doc = { name: schema_name,
+                       schema: test_schema };
+    
+    tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
 
         test.ok("location" in response.headers, "Response header contains location of new schema." );
 
-        test.ok(data == '', "No content returned on a schema insertion.");
+        test.ok(data === '', "No content returned on a schema insertion.");
 
-        var location = response.headers.location;
-        schema_id = location.split('/').pop();
-        
-        // then try to retrieve it, this should fail.
+        // then try to retrieve it, this should fail...
         // Note the null where the auth_header would normally go.
-        tutils.retrieve_schema( schema_id, null, function(data, response) {
+        tutils.retrieve_schema( test_ns, schema_name, null, function(data, response) {
             test.equal(response.statusCode, 403, "Correct status for retrieval without auth token.");
 
-            test.ok(data.length == 0, "No data returned.");
+            test.ok(data.length === 0, "No data returned.");
 
             test.done();
 
             try {
-                tutils.delete_schema( schema_id, auth_header, function(){} );
+                tutils.delete_schema(test_ns, schema_name, auth_header, function(){} );
             } catch (e) {
-                console.log("Problem deleting test schema during cleanup.");
+                console.log("Problem deleting test schema during cleanup.", e);
             }
-
         });
     });
 };
 
-// Attempt a retreival with no authentication header provided.
-// Insert a node, then retrieve it with no authentication, then cleanup.
+// Attempt a retreival with bad/invalid authentication credentials provided.
+// Insert a node, then retrieve it with invalid authentication, then cleanup.
 exports['basic_retrieve_bad_auth'] = function (test) {
     test.expect(5);
 
-    var node_id;
+    var schema_name = osdf_utils.random_string(8);
+
+    // First we create a schema
+    var schema_doc = { name: schema_name,
+                       schema: test_schema };
 
     // First we create a node
-    tutils.insert_node( test_node, auth_header, function(data, response) {
+    tutils.insert_schema( test_ns, schema_doc, auth_header, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
 
-        test.ok("location" in response.headers, "Response header contains location of new node." );
+        test.ok("location" in response.headers, "Response header contains location of new schema." );
 
-        test.ok(data == '', "No content returned on a node insertion.");
-
-        var location = response.headers.location;
-        node_id = location.split('/').pop();
-        
-        // Get a set of invalid credentials
-        var bad_auth = tutils.get_invalid_auth();
+        test.ok(data === '', "No content returned on a schema insertion.");
 
         // then try to retrieve it, this should fail.
-        tutils.retrieve_node( node_id, bad_auth, function(data, response) {
-            test.equal(response.statusCode, 403, "Correct status for retrieval without auth token.");
+        tutils.retrieve_schema( test_ns, schema_name, bad_auth, function(data, response) {
+            test.equal(response.statusCode, 403, "Correct status for retrieval with invalid auth token.");
 
-            test.ok(data.length == 0, "No data returned.");
+            test.ok(data.length === 0, "No data returned.");
 
             test.done();
 
             try {
-                tutils.delete_node(node_id, auth_header, function(){});
+                tutils.delete_schema(test_ns, schema_name, auth_header, function(){});
             } catch (e) {
-                console.log("Problem deleting test node during cleanup.");
+                console.log("Problem deleting test schema during cleanup.", e);
             }
-
         });
     });
 };
@@ -145,12 +228,12 @@ exports['basic_retrieve_bad_auth'] = function (test) {
 exports['retrieve_nonexistent'] = function (test) {
     test.expect(2);
 
-    var schema_id = osdf_utils.random_string(8);
+    var schema_name = osdf_utils.random_string(8);
 
-    tutils.retrieve_schema(schema_id, auth_header, function(data, response) {
+    tutils.retrieve_schema(test_ns, schema_name, auth_header, function(data, response) {
         test.equal(response.statusCode, 404, "Correct status for retrieval of non-existent schema.");
 
-        test.ok(data == '', "No data returned for retrieval of non-existent schema.");
+        test.ok(data === '', "No data returned for retrieval of non-existent schema.");
 
         test.done();
     });
@@ -162,13 +245,13 @@ exports['retrieve_nonexistent'] = function (test) {
 exports['retrieve_nonexistent_no_auth'] = function (test) {
     test.expect(2);
 
-    var schema_id = osdf_utils.random_string(8);
+    var schema_name = osdf_utils.random_string(8);
 
     // Use null for the credential, which won't send anything.
-    tutils.retrieve_schema(schema_id, null, function(data, response) {
+    tutils.retrieve_schema(test_ns, schema_name, null, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for retrieval of non-existent schema with no auth.");
 
-        test.ok(data == '', "No data returned for retrieval of non-existent schema with no auth.");
+        test.ok(data === '', "No data returned for retrieval of non-existent schema with no auth.");
 
         test.done();
     });
@@ -180,15 +263,12 @@ exports['retrieve_nonexistent_no_auth'] = function (test) {
 exports['retrieve_nonexistent_bad_auth'] = function (test) {
     test.expect(2);
 
-    var schema_id = osdf_utils.random_string(8);
+    var schema_name = osdf_utils.random_string(8);
 
-    // Get an invalid credential.
-    var bad = tutils.get_invalid_auth();
-
-    tutils.retrieve_schema(schema_id, bad, function(data, response) {
+    tutils.retrieve_schema(test_ns, schema_name, bad_auth, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for retrieval of non-existent schema with no auth.");
 
-        test.ok(data == '', "No data returned for retrieval of non-existent schema with no auth.");
+        test.ok(data === '', "No data returned for retrieval of non-existent schema with no auth.");
 
         test.done();
     });
