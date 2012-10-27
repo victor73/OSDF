@@ -1,8 +1,6 @@
 This is the Debian GNU prepackaged version of the OSDF RESTful HTTP servers.
 This package provides the reference implementation source code, utilities, test
-scripts, and documentation needed to run an instance of OSDF. OSDF was written
-by developers at the Institute for Genome Sciences at the University of
-Maryland, Baltimore. 
+scripts, and documentation needed to run an instance of OSDF.
 
 This package is authored and maintained by Victor Felix. The source for this
 release was taken from:
