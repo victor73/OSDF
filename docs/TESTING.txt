@@ -1,0 +1,41 @@
+OSDF Testing
+
+Requirements
+=====================================================================
+  - Node.js 0.8.x or more better
+  - nodeunit (installed via npm)
+
+Procedure
+=====================================================================
+
+1. Ensure that the nodeunit utility is installed and available on the
+   command line. Nodeunit is installed via the npm utility.
+
+   # Installation of nodeunit as a non-privileged/non-root user
+   $ npm install nodeunit
+
+   # Installatoin of nodeunit as root or with sudo
+   # npm install -g nodeunit 
+
+   $ sudo npm install -g nodeunit
+
+2. Checking that nodeunit is installed
+
+   $ which nodeunit
+
+   The 'which' command should report the location of the nodunit
+   utility.
+
+2. Running the tests
+
+   # Running the whole test suite
+
+   $ nodeunit test
+
+   # Running an individual test script
+
+   $ nodeunit test/node-retrieve.js
+
+   # Running an individual test case
+
+   $ nodeunit test/node-retrieve -t basic_retrieve
