@@ -8,5 +8,7 @@
   * Fixed issue with retrieving the current node version
     using the /nodes/ver/# REST method
   * API documentation updated and rewritten in markdown
+  * Improved log rotation of logrotate configs
+  * Expanded installation documentation
 0.1
   * Initial release
