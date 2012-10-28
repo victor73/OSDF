@@ -82,8 +82,10 @@ fi
 [ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
 # Codebase
 %__mkdir -p %{buildroot}%{_prefix}
+%__mkdir -p %{buildroot}/usr/bin
 %__cp *.js %{buildroot}%{_prefix}
-%__cp -r bin %{buildroot}%{_prefix}
+%__cp -r bin/couchdb %{buildroot}%{_prefix}
+%__cp -r bin/new_namespace %{buildroot}/usr/bin
 %__cp -r lib %{buildroot}%{_prefix}
 %__cp -r node_modules %{buildroot}%{_prefix}
 %__cp nodelint.conf %{buildroot}%{_prefix}
