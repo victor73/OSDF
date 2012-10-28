@@ -14,6 +14,7 @@ osdf source: configure-generated-file-in-source node_modules/log4js/node_modules
 configure-generated-file-in-source node_modules/log4js/node_modules/compress-buffer/build/config.log
 configure-generated-file-in-source config.log
 osdf source: configure-generated-file-in-source config.log
+osdf: binary-without-manpage usr/bin/new_namespace
 osdf: configure-generated-file-in-source config.log
 osdf: configure-generated-file-in-source
 osdf: configure-generated-file-in-source node_modules/log4js/node_modules/compress-buffer/build/config.log
