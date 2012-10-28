@@ -26,7 +26,10 @@ binary-arch: binary
 binary-indep: binary
 
 binary: install token-replace
+	dh_installdocs docs/API.md
 	dh_installdocs docs/README.txt
+	dh_installdocs docs/INSTALL.txt
+	dh_installdocs docs/TESTING.txt
 	dh_installchangelogs
 	dh_installchangelogs -k docs/CHANGES.txt
 	dh_install osdf.js /usr/lib/osdf/
@@ -39,7 +42,8 @@ binary: install token-replace
 	dh_install query-handler.js /usr/lib/osdf/
 	dh_install schema-handler.js /usr/lib/osdf/
 	dh_install node_modules /usr/lib/osdf/
-	dh_install bin /usr/
+	dh_install bin/new_namespace /usr/bin
+	dh_install bin/couchdb /var/lib/osdf/bin
 	dh_install lib /usr/lib/osdf/
 	dh_install working /var/lib/osdf/
 	dh_install debian/etc/default/osdf /etc/default/
