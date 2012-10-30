@@ -270,7 +270,7 @@ exports.delete_schema = function (request, response) {
 
                 response.send('', 204);
             } catch (err) {
-                logger.err("Unable to delete schema.", err);
+                logger.error("Unable to delete schema.", err);
                 osdf_error(response, 'Unable to delete schema.', 500);
             }
     } else {
@@ -394,10 +394,11 @@ function delete_schema_helper(namespace, schema_name) {
         global_schemas[namespace]['schemas'].hasOwnProperty(schema_name)) {
 
         // Delete from the filesystem, and if successful, from memory.
-        var schema_path = path.join(working_dir, 'namespaces', ns, 'schemas', schema_name + '.json');
+        var schema_path = path.join(working_dir, 'namespaces', namespace, 'schemas',
+                                    schema_name + '.json');
 
-        // We have to check if the schema file exists because it might have already been
-        // deleted by another worker.
+        // We have to check if the schema file exists because it might have
+        // already been deleted by another worker.
         fs.exists(schema_path, function (exists) {
             if (exists) {
                 fs.unlink(schema_path, function (err) {
