@@ -296,7 +296,7 @@ exports.delete_schema = function (namespace, schema_name, auth, callback) {
 
     var options = { host: host,
                     port: port,
-                    path: '/namespaces/' + namespace + '/schemas' + schema_name,
+                    path: '/namespaces/' + namespace + '/schemas/' + schema_name,
                     method: 'DELETE' };
 
     if (auth !== null) {
