@@ -62,12 +62,47 @@ exports['insert_schema'] = function (test) {
     );
 };
 
+// Test insertion of a schema when no authentication credentials
+// are provided. We should not be able to insert a schema this way.
 exports['insert_schema_no_auth'] = function (test) {
+    // Use a helper function since the insert_schema_no_auth()
+    // and insert_schema_bad_auth() tests are so similar.
     invalid_credentials_helper(test, null);
 };
 
+// Test insertion of a schema when invalid authentication credentials
+// are provided. We should not be able to insert a schema this way.
 exports['insert_schema_bad_auth'] = function (test) {
+    // Use a helper function since the insert_schema_no_auth()
+    // and insert_schema_bad_auth() tests are so similar.
     invalid_credentials_helper(test, bad_auth);
+};
+
+exports['insert_schema_with_unknown_auxiliary'] = function (test) {
+    test.expect(2);
+
+    var schema_name = osdf_utils.random_string(8);
+
+
+    // Let's take the test schema, add a $ref to it using a
+    // randomly generated name, and attempt to insert it. This
+    // should fail.
+    var random_aux_name = osdf_utils.random_string(8);
+    var test_schema_modified = test_schema;
+
+    test_schema_modified['properties']['$ref'] = random_aux_name;
+
+    var schema_doc = { name: schema_name,
+                       schema: test_schema_modified };
+
+    tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+        test.equal(response.statusCode, 422,
+                   "Correct status code for insertion with an unknown auxiliary.");
+        test.ok(data === '', 
+                "No content returned for schema insertion with an unknown auxiliary.");
+
+        test.done();
+    });
 };
 
 function invalid_credentials_helper(test, test_auth) {
