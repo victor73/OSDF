@@ -14,7 +14,7 @@ var test_node = { ns: 'test',
                   meta: {}
                 };
 
-var test_node_schema = {
+var test_node_with_schema = {
                   ns: 'test',
                   acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
                   linkage: {},
@@ -85,7 +85,7 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
     var inserted = false;
 
     // Attempt to insert a node
-    tutils.insert_node( test_node_schema, auth, function(data, response) {
+    tutils.insert_node( test_node_with_schema, auth, function(data, response) {
         test.equal(response.statusCode, 201, "Correct status for insertion.");
         test.ok("location" in response.headers, "Response header contains location of new node." );
 
@@ -104,7 +104,7 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
         if (inserted) {
             try {
                 tutils.delete_node(node_id, auth, function(body, response) {
-                    //
+                    // ignored
                 });
             } catch (e) {
                 console.log("Problem deleting inserted node: ", e);
@@ -125,7 +125,7 @@ exports['invalid_insertion_with_schema_validation'] = function (test) {
 
     // We make a 'bad' node by copying our good node, and then deleting a required
     // property in that the validator mandates should be present.
-    var bad_node = test_node_schema;
+    var bad_node = test_node_with_schema;
     delete bad_node.meta['color'];
     //delete bad_node.meta['description'];
 
