@@ -7,6 +7,7 @@ var cradle = require('cradle');
 var http = require('http');
 var fs = require('fs');
 var osdf_utils = require('osdf_utils');
+var schema_utils = require('schema_utils');
 var path = require('path');
 var JSV = require('./node_modules/JSV/jsv').JSV;
 var config = require('config');
@@ -881,33 +882,6 @@ function delete_schema_helper(namespace, schema_name) {
     }
 }
 
-// This function parses a JSON structure and looks for keys named '$ref'
-// The function returns an array of the '$ref' values.
-function extractRefNames(struct) {
-    var refs = [];
-    var keyName;
-    var deeperIdx;
-
-    // Check that we have a dictionary
-    if (typeof struct === "object") {
-        for (keyName in struct) {
-            if (typeof struct[keyName] === "object") {
-                var deeper_refs = extractRefNames(struct[keyName]);
-                if (deeper_refs !== null && deeper_refs.length > 0) {
-                    for (deeperIdx = 0; deeperIdx < deeper_refs.length ; deeperIdx++) {
-                        refs.push(deeper_refs[deeperIdx]);
-                    }
-                }
-            } else if (keyName === "$ref") {
-                if (struct[keyName].length > 0) {
-                    refs.push(struct[keyName]);
-                }
-            }
-        }
-    }
-    return refs;
-}
-
 // This function is used to determine if any nodes point to this node.
 // We know what nodes we point to because they are listed in the linkage
 // property of the object, but to determine what nodes point to us, we
@@ -999,7 +973,7 @@ function recursive_load_helper(ns, env, schemas, loaded, then) {
                     var schemaJson, reference_ids;
                     try {
                         schemaJson = JSON.parse(data);
-                        reference_ids = extractRefNames(schemaJson);
+                        reference_ids = schema_utils.extractRefNames(schemaJson);
                     } catch (e) {
                         logger.warn("Unable to extract references from " + schema_src );
                         cb();
