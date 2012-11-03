@@ -2,6 +2,7 @@
 
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
+var schema_utils = require('schema_utils');
 var flow = require('flow');
 
 var test_ns = 'test';
@@ -79,10 +80,9 @@ exports['insert_schema_bad_auth'] = function (test) {
 };
 
 exports['insert_schema_with_unknown_auxiliary'] = function (test) {
-    test.expect(2);
+    test.expect(7);
 
     var schema_name = osdf_utils.random_string(8);
-
 
     // Let's take the test schema, add a $ref to it using a
     // randomly generated name, and attempt to insert it. This
@@ -95,14 +95,37 @@ exports['insert_schema_with_unknown_auxiliary'] = function (test) {
     var schema_doc = { name: schema_name,
                        schema: test_schema_modified };
 
-    tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
-        test.equal(response.statusCode, 422,
-                   "Correct status code for insertion with an unknown auxiliary.");
-        test.ok(data === '', 
-                "No content returned for schema insertion with an unknown auxiliary.");
+    var schema_utils = require('schema_utils.js');
+    var refs = schema_utils.extractRefNames(test_schema_modified);
 
-        test.done();
-    });
+    flow.exec(
+        function() {
+            test.ok(Array.isArray(refs), "Got an array of references to test.");
+
+            test.equal(refs.length, 1, "Got the expected number of reference names.");
+            
+            test.equal(refs[0], random_aux_name,
+                       "The extracted ref name matches the random name we generated.");
+
+            tutils.insert_schema(test_ns, schema_doc, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 422,
+                       "Correct status code for insertion with an unknown auxiliary.");
+
+            test.ok(data === '', 
+                    "No content returned for schema insertion with an unknown auxiliary.");
+
+            tutils.retrieve_schema(test_ns, schema_name, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 404,
+                       "Correct status code for failed insertion.");
+
+            test.ok(data === '', 
+                    "No content returned for schema retrieval.");
+
+            test.done();
+        }
+    );
 };
 
 function invalid_credentials_helper(test, test_auth) {

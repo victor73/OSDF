@@ -2,6 +2,7 @@ var fs = require('fs');
 var events = require('events');
 var flow = require('flow');
 var osdf_utils = require('osdf_utils');
+var schema_utils = require('schema_utils');
 var path = require('path');
 var _ = require('underscore');
 var util = require('util');
@@ -204,6 +205,21 @@ exports.insert_schema = function (request, response) {
         logger.error(msg);
         osdf_error(response, msg, 422);
         return;
+    }
+
+    // Check if the incoming schema make use of any references that we don't
+    // already know about.
+    var refs = schema_utils.extractRefNames(schema_json);
+    for (var ref_index in refs) {
+        var aux_name = refs[ref_index];
+        if (global_schemas[ns].hasOwnProperty('aux') &&
+                global_schemas[ns]['aux'].hasOwnProperty(aux_name)) {
+            // ignored
+        } else {
+            logger.warn("Schema uses unknown reference/aux schema: " + aux_name);
+            osdf_error(response, 'Schema uses unknown reference/aux schema.', 422);
+            return;
+        }
     }
    
     try {
