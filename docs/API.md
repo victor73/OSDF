@@ -27,12 +27,12 @@
   * [List All Namespace Schemas](#schema_list)
   * [Retrieve a Schema](#schema_retrieve)
   * [Retrieve an Auxiliary Schema](#schema_aux_retrieve)
-  * [Create a Schema]("#schema_create")
-  * [Create an Auxiliary Schema]("#schema_aux_create)
-* [Queries/Search](#queries)
-  * [Query DSL Examples]("#query_dsl_examples")
-  * [Filters]("#query_filters")
-  * [Pagination]("#query_pag")
+  * [Create a Schema](#schema_create)
+  * [Create an Auxiliary Schema](#schema_aux_create)
+* [Queries and Search](#queries)
+  * [Query DSL Examples](#query_dsl_examples)
+  * [Filters](#query_filters)
+  * [Pagination](#query_pag)
 
 
 ## <a name="auth"></a> Authentication
@@ -117,7 +117,7 @@ Example Request:
 
 **Response (application/json)**
 
-A GET to the URL will yield information on ACL membership.Example:	{	  "<ns1>": [ "<acl1>", "<acl2>", "<aclM>" ],	  "<ns2>": [ "<acl3>", "<acl4>", "<aclN>" ]	}Concrete Example:	{	  "bio": [ "progam_managers", "researchers" ],	}Supplying invalid authentication credentials will result in an HTTP 403 "Forbidden" status code. Other errors will result in an HTTP 500 "Server Error" response.
+A GET to the URL will yield information on ACL membership.Example:	{	  "<ns1>": [ "<acl1>", "<acl2>", "<aclM>" ],	  "<ns2>": [ "<acl3>", "<acl4>", "<aclN>" ]	}Concrete Example:	{	  "bio": [ "program_managers", "researchers" ],	}Supplying invalid authentication credentials will result in an HTTP 403 "Forbidden" status code. Other errors will result in an HTTP 500 "Server Error" response.
 
 [top](#top)
 
