@@ -41,12 +41,14 @@ exports['delete_schema'] = function (test) {
         }, function(data, response) {
 
             test.equal(response.statusCode, 201, "Correct status for insertion.");
-            test.ok(data === '', "No content returned on a schema insertion.");
+            test.equal(data.length, 0,
+                       "No content returned on a schema insertion.");
 
             // then try to retrieve it 
             tutils.retrieve_schema(test_ns, schema_name, auth_header, this);
         }, function(data, response) {
-            test.equal(response.statusCode, 200, "Correct status for schema retrieval.");
+            test.equal(response.statusCode, 200,
+                       "Correct status for schema retrieval.");
 
             test.ok(data.length > 0, "Data returned.");
 
@@ -61,7 +63,8 @@ exports['delete_schema'] = function (test) {
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_schema(test_ns, schema_name, auth_header, this);
         }, function(data, response) {
-            test.equal(response.statusCode, 204, "Schema retrieval yielded correct status code.")
+            test.equal(response.statusCode, 204,
+                       "Schema deletion yielded correct status code.")
 
             test.equal(data.length, 0, "No data returned on deletion.");
 
@@ -69,9 +72,11 @@ exports['delete_schema'] = function (test) {
             // available any longer...
             tutils.retrieve_schema(test_ns, schema_name, auth_header, this);
         }, function(data, response) {
-            test.equal(response.statusCode, 404, "Schema retrieval yielded 404.")
+            test.equal(response.statusCode, 404,
+                       "Schema retrieval yielded 404.")
 
-            test.equal(data.length, 0, "No data returned on retrieval of deleted schema.");
+            test.equal(data.length, 0,
+                      "No data returned on retrieval of deleted schema.");
 
             test.done();
         }

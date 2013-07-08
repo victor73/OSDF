@@ -30,11 +30,14 @@ exports.init = function (emitter) {
     var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
 
     /*
-
     At the time of writing this code, the 'elastical' library has a documented bug
-    concerning the getRiver() method/function, which prevents it's use here. As a
+    concerning the getRiver() method/function, which prevents its use here. As a
     workaround, we issue a direct HTTP request using the 'request' library to
     ElasticSearch directly until such time that the bug is fixed.
+    */
+
+/*
+    eclient = new elastical.Client(elasticsearch_address, {port: elasticsearch_port});
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
     eclient.getRiver( es_river_name, function(err, data) {
@@ -54,7 +57,7 @@ exports.init = function (emitter) {
             }
         }
     });
-    */
+*/
 
     // See above notice about why we are using 'request' here instead of the 'elastical'
     // library.

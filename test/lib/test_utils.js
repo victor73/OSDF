@@ -207,32 +207,6 @@ exports.retrieve_node_by_version = function (node_id, version, auth, callback) {
     http.get(options, cb);
 };
 
-exports.update_node = function (node_id, node_data, auth, callback) {
-    var body = "";
-
-    var cb = function (response) {
-        response.on('data', function (chunk) {
-            body = body + chunk;
-        });
-        response.on('end', function () {
-            callback(body, response);
-        });
-    };
-
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id,
-                    method: 'PUT' };
-
-    if (auth !== null) {
-        options['auth'] = auth;
-    }
-
-    var request = http.request(options, cb);
-    request.write(JSON.stringify(node_data));
-    request.end();
-};
-
 exports.retrieve_info = function (auth, callback) {
     var body = "";
 
@@ -254,6 +228,32 @@ exports.retrieve_info = function (auth, callback) {
     }
 
     http.get(options, cb);
+};
+
+exports.insert_aux_schema = function (namespace, aux_schema_doc, auth, callback) {
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/aux',
+                    method: 'POST' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+    request.write(JSON.stringify(aux_schema_doc));
+    request.end();
 };
 
 exports.insert_schema = function (namespace, schema_doc, auth, callback) {
@@ -279,6 +279,32 @@ exports.insert_schema = function (namespace, schema_doc, auth, callback) {
 
     var request = http.request(options, cb);
     request.write(JSON.stringify(schema_doc));
+    request.end();
+};
+
+exports.delete_aux_schema = function (namespace, aux_schema_name, auth, callback) {
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
+                    method: 'DELETE' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+
     request.end();
 };
 
@@ -332,6 +358,54 @@ exports.retrieve_all_schemas = function (namespace, auth, callback ) {
     http.get(options, cb);
 };
 
+exports.retrieve_all_aux_schemas = function (namespace, auth, callback ) {
+    var request;
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/aux/' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    http.get(options, cb);
+};
+
+exports.retrieve_aux_schema = function (namespace, aux_schema_name, auth, callback ) {
+    var request;
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    http.get(options, cb);
+};
+
 exports.retrieve_schema = function (namespace, schema_name, auth, callback ) {
     var request;
     var body = "";
@@ -355,6 +429,87 @@ exports.retrieve_schema = function (namespace, schema_name, auth, callback ) {
 
     http.get(options, cb);
 };
+
+exports.update_aux_schema = function (namespace, aux_schema_name, aux_schema_doc, auth, callback ) {
+    var request;
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
+                    method: 'PUT' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+    request.write(JSON.stringify(aux_schema_doc));
+    request.end();
+};
+
+exports.update_schema = function (namespace, schema_name, schema_doc, auth, callback ) {
+    var request;
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/namespaces/' + namespace + '/schemas/' + schema_name,
+                    method: 'PUT' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+    request.write(JSON.stringify(schema_doc));
+    request.end();
+};
+
+exports.update_node = function (node_id, node_data, auth, callback) {
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/nodes/' + node_id,
+                    method: 'PUT' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+    request.write(JSON.stringify(node_data));
+    request.end();
+};
+
 
 // Taken from http://rosskendall.com/blog/web/javascript-function-to-check-an-email-address-conforms-to-rfc822
 // and licensed under the Creative Commons Attribution-ShareAlike 2.5 License, or the GPL.

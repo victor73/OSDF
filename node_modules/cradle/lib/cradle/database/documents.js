@@ -194,22 +194,44 @@ Database.prototype.update = function (path, id, options) {
 };
 
 // Delete a document
-// if the _rev wasn't supplied, we attempt to retrieve it from the
-// cache. If the deletion was successful, we purge the cache.
+// If the _rev wasn't supplied, we attempt to retrieve it from the
+// cache. Otherwise, we attempt to get the _rev first. If the deletion
+// was successful, we purge the cache.
 Database.prototype.remove = function (id, rev) {
     var that = this, doc, args = new(Args)(arguments);
 
-    if (typeof(rev) !== 'string') {
-        if (doc = this.cache.get(id)) { rev = doc._rev }
-        else                          { throw new(Error)("rev needs to be supplied") }
+    //
+    // Removes the document with `id` at `rev`.
+    //
+    function remove() {
+        that.query({
+            method: 'DELETE',
+            path: cradle.escape(id),
+            query: { rev: rev }
+        }, function (err, res) {
+            if (! err) { that.cache.purge(id) }
+            args.callback(err, res);
+        });
     }
-    
-    this.query({
-        method: 'DELETE', 
-        path: cradle.escape(id), 
-        query: { rev: rev }
-    }, function (err, res) {
-        if (! err) { that.cache.purge(id) }
-        args.callback(err, res);
-    });
+
+    if (typeof(rev) !== 'string') {
+        if (doc = this.cache.get(id)) {
+            rev = doc._rev;
+        }
+        else {
+            return this.get(id, function (err, _doc) {
+                if (err) {
+                    return args.callback(err);
+                }
+                else if (!_doc._rev) {
+                    return args.callback(new Error('No _rev found for ' + id));
+                }
+
+                rev = _doc._rev;
+                remove();
+            });
+        }
+    }
+
+    remove();
 };

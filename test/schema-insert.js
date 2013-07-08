@@ -24,8 +24,8 @@ var test_schema = {
    additionalProperties: false
 };
 
-// Test basic insertion of a schema. The approach is to attempt the isnertion, then
-// retrieve it to check that it's there, then clean up by deleting it.
+// Test basic insertion of a schema. The approach is to attempt the insertion,
+// then retrieve it to check that it's there, then clean up by deleting it.
 exports['insert_schema'] = function (test) {
     test.expect(4);
 
@@ -49,11 +49,11 @@ exports['insert_schema'] = function (test) {
             test.equal(response.statusCode, 200,
                        "Schema retrieval yielded correct status code.")
 
-            test.ok(data.length > 0, "No data returned on deletion.");
+            test.ok(data.length > 0, "Data returned on deletion.");
 
             test.done();
 
-            // Clenaup. Remove the schema that we inserted.
+            // Cleanup. Remove the schema that we inserted.
             try {
                 tutils.delete_schema(test_ns, schema_name, auth, function(e){} );
             } catch (e) {
@@ -63,22 +63,111 @@ exports['insert_schema'] = function (test) {
     );
 };
 
-// Test insertion of a schema when no authentication credentials
-// are provided. We should not be able to insert a schema this way.
+// Test that the service does not allow invalid data or invalid JSON from
+// being registered as a schema.
+exports['insert_schema_with_malformed_json'] = function (test) {
+    test.expect(4);
+
+    var schema_name = osdf_utils.random_string(8);
+
+    flow.exec(
+        function() {
+            // First we insert a schema
+            var schema_doc = { name: schema_name,
+                               schema: "\\\\\/////" };
+
+            tutils.insert_schema(test_ns, schema_doc, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 422, "Correct status for insertion.");
+
+            test.ok(data === '', "No content returned on a schema insertion.");
+
+            // then try to retrieve it 
+            tutils.retrieve_schema(test_ns, schema_name, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 404,
+                       "Schema retrieval yielded correct status code.")
+
+            test.ok(data.length === 0, "No data returned on retrieval.");
+
+            // If for whatever reason, the schema actually made it into the server
+            // we try to remove it so that the test doesn't leave a residue behind.
+            if (response.statusCode !== 404) {
+                // Cleanup. Remove the schema that we inserted.
+                try {
+                    tutils.delete_schema(test_ns, schema_name, auth, this );
+                } catch (e) {
+                    console.log("Problem deleting the test schema during cleanup.", e);
+                    this();
+                }
+            } else {
+                test.done();
+            }
+
+        }, function(data, response) {
+            test.done();
+        }
+    );
+};
+
+// Test insertion of a schema into the server where one with the same name
+// already exists. The server should not allow an overwrite of this nature. The
+// user must either delete the schema, or update/edit it.
+exports['insert_conflicting_schema'] = function (test) {
+    test.expect(3);
+
+    var schema_name = osdf_utils.random_string(8);
+
+    var schema_doc = { name: schema_name,
+                       schema: test_schema };
+
+    flow.exec(
+        function() {
+            // First we insert a schema
+            tutils.insert_schema(test_ns, schema_doc, auth, this);
+        }, function(data, response) {
+            test.equal(response.statusCode, 201, "Correct status for insertion.");
+
+            // Now, try inserting the same thing again...
+            tutils.insert_schema(test_ns, schema_doc, auth, this);
+        }, function(data, response) {
+            test.notEqual(response.statusCode, 201,
+                       "Insertion of a schema with an existing name did not succeed.")
+
+            test.ok(data.length === 0, "No data returned on subsequent insertion.");
+
+            // Cleanup by removing the schema that we inserted.
+            try {
+                tutils.delete_schema(test_ns, schema_name, auth, function(e) {
+                    test.done();
+                });
+            } catch (e) {
+                console.log("Problem deleting the test schema during cleanup.", e);
+                test.done();
+            }
+        }
+    );
+};
+
+// Test insertion of a schema when no authentication credentials are provided.
+// We should not be able to insert a schema this way.
 exports['insert_schema_no_auth'] = function (test) {
     // Use a helper function since the insert_schema_no_auth()
     // and insert_schema_bad_auth() tests are so similar.
     invalid_credentials_helper(test, null);
 };
 
-// Test insertion of a schema when invalid authentication credentials
-// are provided. We should not be able to insert a schema this way.
+// Test insertion of a schema when invalid authentication credentials are
+// provided. We should not be able to insert a schema this way.
 exports['insert_schema_bad_auth'] = function (test) {
     // Use a helper function since the insert_schema_no_auth()
     // and insert_schema_bad_auth() tests are so similar.
     invalid_credentials_helper(test, bad_auth);
 };
 
+// Test that the service does not allow a schema to be inserted
+// that makes reference to an auxiliary schema that it does not
+// know about.
 exports['insert_schema_with_unknown_auxiliary'] = function (test) {
     test.expect(7);
 
@@ -107,21 +196,23 @@ exports['insert_schema_with_unknown_auxiliary'] = function (test) {
             test.equal(refs[0], random_aux_name,
                        "The extracted ref name matches the random name we generated.");
 
+            // Attempt to insert the schema.
             tutils.insert_schema(test_ns, schema_doc, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 422,
                        "Correct status code for insertion with an unknown auxiliary.");
 
-            test.ok(data === '', 
-                    "No content returned for schema insertion with an unknown auxiliary.");
+            test.equal(data.length, 0, 
+                       "No content returned for schema insertion with an unknown auxiliary.");
 
+            // Now retrieve it and make sure it wasn't registered on the server.
             tutils.retrieve_schema(test_ns, schema_name, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 404,
                        "Correct status code for failed insertion.");
 
-            test.ok(data === '', 
-                    "No content returned for schema retrieval.");
+            test.equal(data.length, 0, 
+                       "No content returned for schema retrieval.");
 
             test.done();
         }
@@ -139,25 +230,26 @@ function invalid_credentials_helper(test, test_auth) {
             var schema_doc = { name: schema_name,
                                schema: test_schema };
 
+            // Attempt the insertion with invalid credentials...
             tutils.insert_schema(test_ns, schema_doc, test_auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 403,
                        "Correct status for insertion without credentials.");
 
-            test.ok(data === '',
-                    "No content returned on a schema insertion with no credentials.");
+            test.equal(data.length, 0,
+                       "No content returned on a schema insertion with no credentials.");
 
-            // then try to retrieve it 
+            // then try to retrieve it. 
             tutils.retrieve_schema(test_ns, schema_name, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 404,
                        "Schema retrieval of failed insertion yielded correct code.")
 
-            test.ok(data.length == 0, "No data returned on retrieval.");
+            test.equal(data.length, 0, "No data returned on retrieval.");
 
             test.done();
 
-            // Clenaup. Remove the schema that we inserted.
+            // Cleanup. Remove the schema that we inserted.
             try {
                 tutils.delete_schema(test_ns, schema_name, auth, function(e){} );
             } catch (e) {

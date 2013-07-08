@@ -6,6 +6,7 @@ var schema_utils = require('schema_utils');
 var path = require('path');
 var _ = require('underscore');
 var util = require('util');
+var JSV = require('./node_modules/JSV/jsv').JSV;
 require('config');
 
 var logger = osdf_utils.get_logger();
@@ -29,21 +30,6 @@ util.inherits(SchemaHandler, events.EventEmitter);
 
 module.exports = new SchemaHandler();
 exports = module.exports;
-
-exports.get_all_schemas = function (request, response) {
-    var ns = request.params.ns;
-
-    logger.debug("In get_all_schemas: " + ns);
-
-    // First of all, is the requested namespace even known to us?
-    if (global_schemas.hasOwnProperty(ns)) {
-        response.json(global_schemas[ns]);
-    } else {
-        logger.warn("User requested schemas for unknown namespace: " + ns);
-        osdf_error(response, 'Namespace or schema not found.', 404);
-        return;
-    }
-};
 
 exports.init = function (emitter, working_dir_custom) {
     logger.debug("In init.");
@@ -82,6 +68,22 @@ exports.init = function (emitter, working_dir_custom) {
             emitter.emit('schema_handler_initialized');
         }
     );
+};
+
+// Retrieves all the primary schemas belonging to a namespace.
+exports.get_all_schemas = function (request, response) {
+    var ns = request.params.ns;
+
+    logger.debug("In get_all_schemas: " + ns);
+
+    // First of all, is the requested namespace even known to us?
+    if (global_schemas.hasOwnProperty(ns)) {
+        response.json(global_schemas[ns]);
+    } else {
+        logger.warn("User requested schemas for unknown namespace: " + ns);
+        osdf_error(response, 'Namespace or schema not found.', 404);
+        return;
+    }
 };
 
 // Retrieves all the auxiliary schemas belonging to a namespace. The
@@ -150,12 +152,116 @@ exports.get_schema = function (request, response) {
     }
 };
 
+// This is the code that implements auxiliary schema insertion for when users wish
+// to create NEW auxiliary schemas. Auxiliary schemas are schemas which can be reused
+// and referenced from main schemas using the $ref construct.
+exports.insert_aux_schema = function (request, response) {
+    logger.debug("In insert_aux_schema.");
+
+    // Get the namespace and the schema data (JSON) that has been provided.
+    var ns = request.params.ns;
+    var content = request.rawBody;
+
+    // Before we do anything, let's see if the namespace is known to us. If it isn't
+    // then we send an appropriate HTTP response code.
+    if (! global_schemas.hasOwnProperty(ns)) {
+        logger.warn("User attempted to insert an auxiliary schema into an unknown namespace: " + ns);
+        osdf_error(response, 'Namespace not found.', 404);
+        return;
+    }
+
+    // Parse the data provided. If it's invalid/malformed, we're about to find out.
+    var insertion_doc = null;
+    try {
+        insertion_doc = JSON.parse(content);
+    } catch (err) {
+        logger.warn("User provided invalid JSON for auxiliary schema insertion.");
+        osdf_error(response, 'Invalid JSON provided for insertion.', 422);
+        return;
+    }
+
+    // Okay, so the user provided valid JSON. However, is it in the right format?
+    // Check that the JSON has 'name' and 'schema' properties...
+    if (! insertion_doc.hasOwnProperty('name')) {
+        var msg = "Document did not have the required 'name' property.";
+        logger.error(msg);
+        osdf_error(response, msg, 422);
+        return;
+    }
+
+    if (! insertion_doc.hasOwnProperty('schema')) {
+        var msg = "Document did not have the required 'schema' property.";
+        logger.error(msg);
+        osdf_error(response, msg, 422);
+        return;
+    }
+
+    var aux_schema_name = insertion_doc['name'];
+    var aux_schema_json = insertion_doc['schema'];
+
+    // Check that the JSON-Schema embedded in the user-supplied data is
+    // actually valid JSON-Schema and not just a string, or regular JSON that
+    // is not JSON-Schema. For this, we must rely on the JSV library.
+    logger.info("Checking if aux schema document is valid JSON-Schema.");
+    if (! schema_utils.valid_json_schema(aux_schema_json)) {
+        logger.warn("User provided invalid JSON-schema.");
+        osdf_error(response, "Invalid JSON-Schema.", 422);
+        return;
+    }
+
+    // Now we check if the auxiliary schema already exists. If it does, then
+    // we need to reject the insertion as the user should either do an update
+    // or a delete instead.
+    if (global_schemas[ns]['aux'].hasOwnProperty(aux_schema_name)) {
+        osdf_error(response, "Auxiliary schema " + aux_schema_name +
+                   " already exists in namespace " + ns, 409);
+        return;
+    }
+
+    // Check if the schema name looks okay.
+    if (! schema_utils.valid_schema_name(aux_schema_name)) {
+        var msg = "Invalid auxiliary schema name.";
+        logger.warn(msg);
+        osdf_error(response, msg, 422);
+        return;
+    }
+
+    try {
+        // The last parameter indicates that this worker is the first to receive
+        // this request (we're not responding to a hint from the master process) and
+        // therefore we are the worker responsible for writing the data to disk/storage.
+        aux_schema_change_helper(ns, aux_schema_name, aux_schema_json, true);
+
+        // Can't use 'this', so we have to reach down to the module.exports 
+        // to get the inherited emit() function.
+        module.exports.emit("insert_aux_schema", { 'ns': ns,
+                                                   'name': aux_schema_name,
+                                                   'json': aux_schema_json });
+
+        // Send a message to the master process so that it can notify other
+        // sibling workers about this.
+        process.send({ cmd: 'aux_schema_change',
+                       type: 'insertion',
+                       ns: ns,
+                       name: aux_schema_name,
+                       json: aux_schema_json
+                     });
+
+        // The URL to the new aux schema should be supplied back in the form
+        // of a Location header
+        var location = base_url + ':' + port + '/namespaces/' + ns +
+                       '/schemas/aux/' + aux_schema_name;
+        response.location(location);
+        response.send(201, '');
+    } catch (e) {
+        logger.error(e);
+        osdf_error(response, 'Unable to insert auxiliary schema.', 500);
+        return;
+    }
+};
+
 // This is the code that implements schema insertion for when users wish
 // to create NEW schemas.
-//
-// TODO: Need to check the data to see if the new schema makes reference to an
-// auxiliary schema that doesn't exist yet. In that case, the auxiliar schema
-// must be added first.
 exports.insert_schema = function (request, response) {
     logger.debug("In insert_schema.");
 
@@ -176,14 +282,15 @@ exports.insert_schema = function (request, response) {
     try {
         insertion_doc = JSON.parse(content);
     } catch (err) {
+        logger.warn("User provided invalid JSON for schema insertion.");
         osdf_error(response, 'Invalid JSON provided for insertion.', 422);
         return;
     }
 
-    // Okay, so the user provided valid JSON. However, is it in the right format?
-    // Check that the JSON has 'name' and 'schema' properties...
+    // Okay, so the user provided valid JSON. However, is it in the right
+    // format?  Check that the JSON has 'name' and 'schema' properties...
     if (! insertion_doc.hasOwnProperty('name')) {
-        var msg = "Document did not have the required the 'name' property.";
+        var msg = "Document did not have the required 'name' property.";
         logger.error(msg);
         osdf_error(response, msg, 422);
         return;
@@ -200,21 +307,41 @@ exports.insert_schema = function (request, response) {
     var schema_json = insertion_doc['schema'];
 
     // Check if the schema name looks okay.
-    if (! valid_schema_name(schema_name)) {
+    if (! schema_utils.valid_schema_name(schema_name)) {
         var msg = "Invalid schema name.";
-        logger.error(msg);
+        logger.warn(msg);
         osdf_error(response, msg, 422);
+        return;
+    }
+
+    // Check that the JSON-Schema embedded in the user-supplied data is
+    // actually valid JSON-Scheme and not just a string, or regular JSON that
+    // is not JSON-Schema. For this, we must rely on the JSV library.
+    logger.info("Checking if schema document is valid JSON-Schema.");
+    if (! schema_utils.valid_json_schema(schema_json)) {
+        logger.warn("User provided invalid JSON-schema.");
+        osdf_error(response, "Invalid JSON-Schema.", 422);
+        return;
+    }
+
+    // Now we check if the schema already exists. If it does, then we need to
+    // reject the insertion as the user should either do an update or a delete
+    // instead.
+    if (global_schemas[ns]['schemas'].hasOwnProperty(schema_name)) {
+        osdf_error(response, "Schema " + schema_name +
+                   " already exists in namespace " + ns, 409);
         return;
     }
 
     // Check if the incoming schema make use of any references that we don't
     // already know about.
     var refs = schema_utils.extractRefNames(schema_json);
+
     for (var ref_index in refs) {
         var aux_name = refs[ref_index];
         if (global_schemas[ns].hasOwnProperty('aux') &&
                 global_schemas[ns]['aux'].hasOwnProperty(aux_name)) {
-            // ignored
+            // If here, then we know about this auxiliary schema. Nothing to do.
         } else {
             logger.warn("Schema uses unknown reference/aux schema: " + aux_name);
             osdf_error(response, 'Schema uses unknown reference/aux schema.', 422);
@@ -226,7 +353,7 @@ exports.insert_schema = function (request, response) {
         // The last parameter indicates that this worker is the first to receive
         // this request (we're not responding to a hint from the master process) and
         // therefore we are the worker responsible for writing the data to disk/storage.
-        insert_schema_helper(ns, schema_name, schema_json, true);
+        schema_change_helper(ns, schema_name, schema_json, true);
 
         // Can't use 'this', so we have to reach down to the module.exports 
         // to get the inherited emit() function.
@@ -241,7 +368,9 @@ exports.insert_schema = function (request, response) {
                        json: schema_json
                      });
 
-        response.send('', {'Location': base_url + ':' + port + '/namespaces/' + ns + '/schemas/' + schema_name }, 201);
+        var location = base_url + ':' + port + '/namespaces/' + ns + '/schemas/' + schema_name;
+        response.location(location);
+        response.send(201, '');
     } catch (e) {
         logger.error(e);
         osdf_error(response, 'Unable to insert schema.', 500);
@@ -249,7 +378,8 @@ exports.insert_schema = function (request, response) {
     }
 };
 
-/* Delete a JSON schema from a namespace. We delete it
+/*
+   Delete a JSON schema from a namespace. We delete it
    from memory as well as from disk.  A user must have 'write' access to the
    namespace in order to delete one of the namespace's schemas.
 
@@ -258,7 +388,10 @@ exports.insert_schema = function (request, response) {
 exports.delete_schema = function (request, response) {
     logger.debug("In delete_schema.");
 
+    // The namespace the schema belongs to
     var ns = request.params.ns;
+
+    // The name of the schema to delete
     var schema_name = request.params.schema;
 
     if (! global_schemas.hasOwnProperty(ns)) {
@@ -268,29 +401,29 @@ exports.delete_schema = function (request, response) {
     }
 
     if (global_schemas[ns].hasOwnProperty('schemas') &&
-        global_schemas[ns]['schemas'].hasOwnProperty(schema_name)) {
-            try {
-                delete_schema_helper(ns, schema_name);
+            global_schemas[ns]['schemas'].hasOwnProperty(schema_name)) {
+        try {
+            delete_schema_helper(ns, schema_name);
 
-                // Can't use 'this', so we have to reach down to the module.exports 
-                // to get the inherited emit() function.
-                module.exports.emit("delete_schema", { 'ns': ns, 'name': schema_name });
+            // Can't use 'this', so we have to reach down to the module.exports 
+            // to get the inherited emit() function.
+            module.exports.emit("delete_schema", { 'ns': ns, 'name': schema_name });
 
-                // Send a message to the master process so that it can notify other
-                // sibling workers about this.
-                process.send({ cmd: "schema_change",
-                               type: "deletion",
-                               ns: ns,
-                               name: schema_name
-                             });
+            // Send a message to the master process so that it can notify other
+            // sibling workers about this.
+            process.send({ cmd: "schema_change",
+                           type: "deletion",
+                           ns: ns,
+                           name: schema_name
+                         });
 
-                response.send('', 204);
-            } catch (err) {
-                logger.error("Unable to delete schema.", err);
-                osdf_error(response, 'Unable to delete schema.', 500);
-            }
+            response.send(204, '');
+        } catch (err) {
+            logger.error("Unable to delete schema.", err);
+            osdf_error(response, 'Unable to delete schema.', 500);
+        }
     } else {
-        logger.warn("User attempted to delete a non-existent schema: " + schema);
+        logger.warn("User attempted to delete a non-existent schema: " + schema_name);
         osdf_error(response, 'Schema not found.', 404);
         return;
     }
@@ -306,40 +439,89 @@ exports.delete_schema = function (request, response) {
 exports.delete_aux_schema = function (request, response) {
     logger.debug("In delete_aux_schema.");
 
+    // The namespace the auxiliary schema belongs to
     var ns = request.params.ns;
-    var aux = request.params.aux;
+
+    // The name of the auxiliary schema to delete
+    var aux_schema_name = request.params.aux;
 
     if (! global_schemas.hasOwnProperty(ns)) {
-        logger.warn("User attempted to delete an aux schema from unknown namespace " + ns);
+        logger.warn("User attempted to delete an auxiliary schema " +
+                    "from unknown namespace " + ns);
         osdf_error(response, 'Namespace not found.', 404);
         return;
     }
 
     if (global_schemas[ns].hasOwnProperty('aux') &&
-            global_schemas[ns]['aux'].hasOwnProperty(aux)) {
-
-        // Delete from the filesystem, and if successful, from memory.
-        var aux_path = path.join(working_dir, 'namespaces', ns, '/aux/', aux + '.json');
-
-        fs.unlink(aux_path, function (err, data) {
-            if (err) {
-                logger.err(err);
-                osdf_error(response, 'Unable to delete auxiliary schema.', 500);
-            } else {
-                logger.debug("Successful deletion of auxiliary schema. Deleting from memory...");
-                delete global_schemas[ns]['aux'][aux];
-                response.send('', 204);
+            global_schemas[ns]['aux'].hasOwnProperty(aux_schema_name)) {
+        try {
+            if (schema_utils.aux_schema_in_use(global_schemas, ns, aux_schema_name)) {
+                logger.warn("Aux schema " + aux_schema_name + " in use.");
+                osdf_error(response, 'Auxiliary schema in use.', 409);
+                return;
             }
-        });
 
+            delete_aux_schema_helper(ns, aux_schema_name);
+
+            // Can't use 'this', so we have to reach down to the module.exports 
+            // to get the inherited emit() function.
+            module.exports.emit("delete_aux_schema",
+                                { 'ns': ns,
+                                  'name': aux_schema_name
+                                });
+
+            // Send a message to the master process so that it can notify other
+            // sibling workers about this.
+            process.send({ cmd: "aux_schema_change",
+                           type: "deletion",
+                           ns: ns,
+                           name: aux_schema_name
+                         });
+
+            response.send(204, '');
+        } catch (err) {
+            logger.error("Unable to delete auxiliary schema.", err);
+            osdf_error(response, 'Unable to delete auxiliary schema.', 500);
+        }
     } else {
-        logger.warn("User attempted to delete a non-existent aux schema: " + aux);
+        logger.warn("User attempted to delete a non-existent auxiliary schema: " +
+                    aux_schema_name);
         osdf_error(response, 'Auxiliary schema not found.', 404);
         return;
     }
 };
 
-// This message is used to process schema deletion events that are relayed to
+// This message is used to process auxiliary schema events that are relayed to
+// this process from the master process by worker.js.
+exports.process_aux_schema_change = function (msg) {
+    logger.debug("In process_aux_schema_change. PID: " + process.pid);
+
+    if (msg.hasOwnProperty('cmd') && msg['cmd'] === "aux_schema_change") {
+        var namespace = msg['ns']
+        var aux_schema_name = msg['name']
+
+        if (msg.hasOwnProperty('type')) {
+            if (msg['type'] === 'deletion') {
+                delete_aux_schema_helper(namespace, aux_schema_name);
+            } else if ((msg['type'] === 'insertion') || (msg['type'] === 'update')) {
+                var aux_schema_json = msg['json'];
+                // false is to indicate that we do not need to write to disk.
+                // since we are responding to a message from the master, another
+                // worker already handled the write
+                aux_schema_change_helper(namespace, aux_schema_name,
+                                         aux_schema_json, false);
+            } else {
+                logger.error("Invalid message type: " + msg['type']);
+            }
+        } else {
+            logger.error("Invalid aux schema change message. Missing 'type' key.");
+        }
+    } else {
+        logger.error("Invalid aux schema change message. Missing or invalid 'cmd' key.");
+    }
+};
+
+// This method is used to process schema change events that are relayed to
 // this process from the master process by worker.js.
 exports.process_schema_change = function (msg) {
     logger.debug("In process_schema_change. PID: " + process.pid);
@@ -348,55 +530,263 @@ exports.process_schema_change = function (msg) {
         var namespace = msg['ns']
         var schema_name = msg['name']
 
-        if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
-            delete_schema_helper(namespace, schema_name);
-        } else if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
-            var schema_json = msg['json'];
-            // false is to indicate that we do not need to write to disk.
-            // since we are responding to a message from the master, another
-            // worker already handled the write
-            insert_schema_helper(namespace, schema_name, schema_json, false);
+        if (msg.hasOwnProperty('type')) {
+            if (msg['type'] === 'deletion') {
+                delete_schema_helper(namespace, schema_name);
+            } else if ((msg['type'] === 'insertion') || (msg['type'] === 'update')) {
+                var schema_json = msg['json'];
+                // false is to indicate that we do not need to write to disk.
+                // since we are responding to a message from the master, another
+                // worker already handled the write
+                schema_change_helper(namespace, schema_name, schema_json, false);
+            } else {
+                logger.error("Invalid message type: " + msg['type']);
+            }
+        } else {
+            logger.error("Invalid schema change message. Missing 'type' key.");
         }
+    } else {
+        logger.error("Invalid schema change message. Missing or invalid 'cmd' key.");
     }
 };
 
-// Handle the details of a new schema that has been added. This is
-// used by both the worker that initially received the request,
+exports.update_schema = function (request, response) {
+    logger.debug("In update_schema.");
+
+    // Get the namespace and the schema data (JSON) that has been provided.
+    var ns = request.params.ns;
+    var schema_name = request.params.schema;
+
+    var content = request.rawBody;
+
+    // Before we do anything, let's see if the namespace is known to us. If it isn't
+    // then we send an appropriate HTTP response code.
+    if (! global_schemas.hasOwnProperty(ns)) {
+        logger.warn("User attempted to update a schema in an unknown namespace: " + ns);
+        osdf_error(response, 'Namespace not found.', 404);
+        return;
+    }
+
+    // Parse the data provided. If it's invalid/malformed, we're about to find out.
+    var schema_json; 
+    try {
+        schema_json = JSON.parse(content);
+    } catch (err) {
+        logger.warn("User provided invalid JSON for schema update.");
+        osdf_error(response, 'Invalid JSON provided for update.', 422);
+        return;
+    }
+
+    // Check if the schema name looks okay.
+    if (! schema_utils.valid_schema_name(schema_name)) {
+        var msg = "Invalid schema name.";
+        logger.warn(msg);
+        osdf_error(response, msg, 422);
+        return;
+    }
+
+    // Check that the JSON-Schema embedded in the user-supplied data is
+    // actually valid JSON-Scheme and not just a string, or regular JSON that
+    // is not JSON-Schema. For this, we must rely on the JSV library.
+    logger.info("Checking if schema document is valid JSON-Schema.");
+    if (! schema_utils.valid_json_schema(schema_json)) {
+        logger.warn("User provided invalid JSON-schema.");
+        osdf_error(response, "Invalid JSON-Schema.", 422);
+        return;
+    }
+
+    // Now we check if the auxiliary schema already exists. If it does NOT,
+    // then we need to reject the update as the user should first perform an
+    // insertion.
+    if (! global_schemas[ns]['schemas'].hasOwnProperty(schema_name)) {
+        osdf_error(response, "Schema " + schema_name +
+                   " does not exist in namespace " + ns, 404);
+        return;
+    }
+
+    // Check if the incoming auxiliary schema make use of any references that
+    // we don't already know about.
+    var refs = schema_utils.extractRefNames(schema_json);
+
+    for (var ref_index in refs) {
+        var aux_name = refs[ref_index];
+        if (global_schemas[ns].hasOwnProperty('aux') &&
+                global_schemas[ns]['aux'].hasOwnProperty(aux_name)) {
+            // If here, then we know about this auxiliary schema. Nothing to do.
+        } else {
+            logger.warn("Schema uses unknown reference/aux schema: " + aux_name);
+            osdf_error(response, 'Schema uses unknown reference/aux schema.', 422);
+            return;
+        }
+    }
+   
+    try {
+        // The last parameter indicates that this worker is the first to receive
+        // this request (we're not responding to a hint from the master process) and
+        // therefore we are the worker responsible for writing the data to disk/storage.
+        schema_change_helper(ns, schema_name, schema_json, true);
+
+        // Can't use 'this', so we have to reach down to the module.exports 
+        // to get the inherited emit() function.
+        module.exports.emit("update_schema",
+                            { 'ns': ns,
+                              'name': schema_name,
+                              'json': schema_json });
+
+        // Send a message to the master process so that it can notify other
+        // sibling workers about this.
+        process.send({ cmd: 'schema_change',
+                       type: 'update',
+                       ns: ns,
+                       name: schema_name,
+                       json: schema_json
+                     });
+
+        response.send(200, '');
+    } catch (e) {
+        logger.error(e);
+        osdf_error(response, 'Unable to update schema.', 500);
+        return;
+    }
+};
+
+exports.update_aux_schema = function (request, response) {
+    logger.debug("In update_aux_schema.");
+
+    // Get the namespace and the auxiliary schema data that has been provided.
+    var ns = request.params.ns;
+    var aux_schema_name = request.params.aux;
+
+    var content = request.rawBody;
+
+    // Before we do anything, let's see if the namespace is known to us. If it isn't
+    // then we send an appropriate HTTP response code.
+    if (! global_schemas.hasOwnProperty(ns)) {
+        logger.warn("User attempted to update an auxiliary schema in an " +
+                    "unknown namespace: " + ns);
+        osdf_error(response, 'Namespace not found.', 404);
+        return;
+    }
+
+    // Parse the data provided. If it's invalid/malformed, we're about to find out.
+    var aux_schema_json;
+    try {
+        aux_schema_json = JSON.parse(content);
+    } catch (err) {
+        logger.warn("User provided invalid JSON for auxiliary schema update.");
+        osdf_error(response, 'Invalid JSON provided for update.', 422);
+        return;
+    }
+
+    // Check that the user-supplied JSON-Schema data is actually valid
+    // JSON-Schema and not just a string, or regular JSON that is not
+    // JSON-Schema. For this, we must rely on the JSV library.
+    logger.info("Checking if the aux schema document is valid JSON-Schema.");
+    if (! schema_utils.valid_json_schema(aux_schema_json)) {
+        logger.warn("User provided invalid JSON-schema.");
+        osdf_error(response, "Invalid JSON-Schema.", 422);
+        return;
+    }
+
+    // Now we check if the auxiliary schema already exists. If it does NOT,
+    // then we need to reject the update as the user should do an insertion.
+    if (! global_schemas[ns]['aux'].hasOwnProperty(aux_schema_name)) {
+        osdf_error(response, "Auxiliary schema " + aux_schema_name +
+                   " already exists in namespace " + ns, 409);
+        return;
+    }
+
+    // Check if the auxiliary schema name looks okay.
+    if (! schema_utils.valid_schema_name(aux_schema_name)) {
+        var msg = "Invalid auxiliary schema name.";
+        logger.warn(msg);
+        osdf_error(response, msg, 422);
+        return;
+    }
+
+    // Check if the incoming auxiliary schema makes use of any references that
+    // we don't already know about.
+    var refs = schema_utils.extractRefNames(aux_schema_json);
+
+    for (var ref_index in refs) {
+        var aux_name = refs[ref_index];
+        if (global_schemas[ns].hasOwnProperty('aux') &&
+                global_schemas[ns]['aux'].hasOwnProperty(aux_name)) {
+            // If here, then we know about this auxiliary schema. Nothing to do.
+        } else {
+            logger.warn("Auxiliary schema uses unknown reference/aux schema: " + aux_name);
+            osdf_error(response, 'Auxiliary schema uses unknown reference/aux schema.', 422);
+            return;
+        }
+    }
+
+    try {
+        // The last parameter indicates that this worker is the first to receive
+        // this request (we're not responding to a hint from the master process) and
+        // therefore we are the worker responsible for writing the data to disk/storage.
+        aux_schema_change_helper(ns, aux_schema_name, aux_schema_json, true);
+
+        // Can't use 'this', so we have to reach down to the module.exports 
+        // to get the inherited emit() function.
+        module.exports.emit("insert_aux_schema", { 'ns': ns,
+                                                   'name': aux_schema_name,
+                                                   'json': aux_schema_json });
+
+        // Send a message to the master process so that it can notify other
+        // sibling workers about this.
+        process.send({ cmd: 'aux_schema_change',
+                       type: 'update',
+                       ns: ns,
+                       name: aux_schema_name,
+                       json: aux_schema_json
+                     });
+
+        response.send(200, '');
+    } catch (e) {
+        logger.error(e);
+        osdf_error(response, 'Unable to insert auxiliary schema.', 500);
+        return;
+    }
+};
+
+// Handle the details of an auxiliary schema that has been deleted.
+// This is used by both the worker that initially received the request,
 // and the workers that respond to notifications from the master
 // process.
-function insert_schema_helper(namespace, schema_name, schema_json, write) {
-    logger.debug("In schema-handler:insert_schema_helper.");
+function delete_aux_schema_helper(namespace, aux_schema_name) {
+    logger.debug("In schema-handler:delete_aux_schema_helper.");
 
-    if (! global_schemas[namespace].hasOwnProperty('schemas')) {
-        // Should never get here.
-        logger.error("No 'schemas' structure for namespace: " + namespace);
-        throw "No 'schemas' structure for namespace: " + namespace;
-    }
+    if (global_schemas[namespace].hasOwnProperty('aux') &&
+        global_schemas[namespace]['aux'].hasOwnProperty(aux_schema_name)) {
 
-    if ( global_schemas[namespace]['schemas'].hasOwnProperty(schema_name) ) {
-        // Overwriting a schema, so let's just make a note of that.
-        logger.warn("Overwriting existing schema (ns:schema): (" +
-                    namespace + ":" + schema_name + ")");
-    }
+        // Delete from the filesystem, and if successful, from memory.
+        var aux_schema_path = path.join(working_dir, 'namespaces', namespace, 'aux',
+                                        aux_schema_name + '.json');
 
-    if (write) {
-        // Save the schema to the filesystem in the working directory,
-        // and if successful, save it to our in-memory data structure.
-        var schema_path = path.join(working_dir, "namespaces", namespace,
-                                    "schemas", schema_name + '.json');
-
-        var stream = fs.createWriteStream(schema_path);
-
-        stream.once('open', function(fd) {
-            // Write out the prettyfied JSON to the filesystem.
-            stream.write(JSON.stringify(schema_json, null, 4));
-            stream.end();
-
+        // We have to check if the schema file exists because it might have
+        // already been deleted by another worker.
+        fs.exists(aux_schema_path, function (exists) {
+            if (exists) {
+                fs.unlink(aux_schema_path, function (err) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        logger.debug("Successful deletion of auxiliary schema file.");
+                    }
+                });
+            }
         });
-    }
 
-    // And save it to our data structure.
-    global_schemas[namespace]['schemas'][schema_name] = schema_json;
+        logger.debug("Deleting auxiliary schema from memory.");
+        if (global_schemas.hasOwnProperty(namespace) &&
+                global_schemas[namespace].hasOwnProperty('aux') &&
+                global_schemas[namespace]['aux'].hasOwnProperty(aux_schema_name)) {
+            delete global_schemas[namespace]['aux'][aux_schema_name];
+        }
+    } else {
+        logger.warn("Namespace " + namespace + " did not have auxiliary schema: " +
+                    aux_schema_name + ". Nothing to do.");
+    }
 }
 
 // Handle the details of a schema that has been deleted. This is
@@ -421,7 +811,7 @@ function delete_schema_helper(namespace, schema_name) {
                     if (err) {
                         throw err;
                     } else {
-                        logger.debug("Successful deletion of schema file. Deleting from memory...");
+                        logger.debug("Successful deletion of schema file.");
                     }
                 });
             }
@@ -434,25 +824,80 @@ function delete_schema_helper(namespace, schema_name) {
             delete global_schemas[namespace]['schemas'][schema_name];
         }
     } else {
-        logger.warn("Namespace to delete is missing. Nothing to do.");
+        logger.warn("Namespace " + namespace + " did not have schema: " + 
+                    schema_name + ". Nothing to do.");
     }
 }
 
-// Function that is used to check the validity of schema names.
-// This critical for checking new schemas that are inserted by users.
-function valid_schema_name(schema_name) {
-    logger.debug("In valid_schema_name.");
-    var valid = false;
-    var invalid_pattern = /[^A-z0-9_-]/;
+function aux_schema_change_helper(namespace, aux_schema_name, aux_schema_json, write) {
+    logger.debug("In schema-handler:aux_schema_change_helper.");
 
-    var result = invalid_pattern.test(schema_name);
-    if (! result && schema_name.length <= 32) {
-        // Didn't have any invalid characters
-        valid = true;
+    if (! global_schemas[namespace].hasOwnProperty('aux')) {
+        // Should never get here.
+        logger.error("No 'aux' structure for namespace: " + namespace);
+        throw "No 'aux' structure for namespace: " + namespace;
     }
 
-    return valid;
+    if ( global_schemas[namespace]['aux'].hasOwnProperty(aux_schema_name) ) {
+        // Overwriting an auxiliary schema, so let's just make a note of that.
+        logger.warn("Overwriting existing auxiliary schema (ns:aux_schema): (" +
+                    namespace + ":" + aux_schema_name + ")");
+    }
+
+    if (write) {
+        // Save the schema to the filesystem in the working directory,
+        // and if successful, save it to our in-memory data structure.
+        var schema_path = path.join(working_dir, "namespaces", namespace,
+                                    "aux", aux_schema_name + '.json');
+
+        var stream = fs.createWriteStream(schema_path);
+
+        stream.once('open', function(fd) {
+            // Write out the prettyfied JSON to the filesystem.
+            stream.write(JSON.stringify(aux_schema_json, null, 4));
+            stream.end();
+        });
+    }
+
+    // And save it to our data structure.
+    global_schemas[namespace]['aux'][aux_schema_name] = aux_schema_json;
 }
+
+/*
+function insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json, write) {
+    logger.debug("In schema-handler:insert_aux_schema_helper.");
+
+    if (! global_schemas[namespace].hasOwnProperty('aux')) {
+        // Should never get here.
+        logger.error("No 'aux' structure for namespace: " + namespace);
+        throw "No 'aux' structure for namespace: " + namespace;
+    }
+
+    if ( global_schemas[namespace]['aux'].hasOwnProperty(aux_schema_name) ) {
+        // Overwriting an auxiliary schema, so let's just make a note of that.
+        logger.warn("Overwriting existing auxiliary schema (ns:aux_schema): (" +
+                    namespace + ":" + aux_schema_name + ")");
+    }
+
+    if (write) {
+        // Save the schema to the filesystem in the working directory,
+        // and if successful, save it to our in-memory data structure.
+        var schema_path = path.join(working_dir, "namespaces", namespace,
+                                    "aux", aux_schema_name + '.json');
+
+        var stream = fs.createWriteStream(schema_path);
+
+        stream.once('open', function(fd) {
+            // Write out the prettyfied JSON to the filesystem.
+            stream.write(JSON.stringify(aux_schema_json, null, 4));
+            stream.end();
+        });
+    }
+
+    // And save it to our data structure.
+    global_schemas[namespace]['aux'][aux_schema_name] = aux_schema_json;
+}
+*/
 
 function get_ns_schemas(ns, callback) {
     var schemas = {};
@@ -486,11 +931,22 @@ function get_ns_schemas(ns, callback) {
                 files,
                 function(file, cb) {
                     try {
-                        var name = path.basename(file, '.json');
-                        var file_text = fs.readFileSync(ns_schema_dir + '/' + file, 'utf8');
-                        var schema_json = JSON.parse(file_text);
-                        schemas[name] = schema_json;
-                        cb();
+                        var file_path = path.join(ns_schema_dir, file);
+
+                        fs.readFile(file_path, 'utf8', function(err, file_text) {
+                            if (err) {
+                                throw err;
+                            }
+
+                            try {
+                                var schema_json = JSON.parse(file_text);
+                                var name = path.basename(file, '.json');
+                                schemas[name] = schema_json;
+                            } catch (parse_error) {
+                                logger.error("Invalid data in " + file_path);
+                            }
+                            cb();
+                        });
                     } catch (err) {
                         logger.error("Error parsing schema file " + file, err);
                         cb();
@@ -524,11 +980,22 @@ function get_ns_schemas(ns, callback) {
                 files,
                 function(file, cb) {
                     try {
-                        var name = path.basename(file, '.json');
-                        var file_text = fs.readFileSync(ns_aux_schema_dir + '/' + file, 'utf8');
-                        var aux_schema_json = JSON.parse(file_text);
-                        aux_schemas[name] = aux_schema_json;
-                        cb();
+                        var file_path = path.join(ns_aux_schema_dir, file);
+
+                        fs.readFile(ns_aux_schema_dir + '/' + file, 'utf8', function(err, file_text) {
+                            if (err) {
+                                throw err;
+                            }
+
+                            try {
+                                var aux_schema_json = JSON.parse(file_text);
+                                var name = path.basename(file, '.json');
+                                aux_schemas[name] = aux_schema_json;
+                            } catch (parse_error) {
+                                logger.error("Invalid data in " + file_path);
+                            }
+                            cb();
+                        });
                     } catch (err) {
                         logger.error("Error parsing aux schema file " + file, err);
                         cb();
@@ -543,4 +1010,41 @@ function get_ns_schemas(ns, callback) {
             callback(final_struct);
         }
     );
+}
+
+// Handle the details of a schema that is being inserted, updated, or modified.
+// This is used by both the worker that initially received the request, and the
+// workers that respond to notifications from the master process.
+function schema_change_helper(namespace, schema_name, schema_json, write) {
+    logger.debug("In schema-handler:schema_change_helper.");
+
+    if (! global_schemas[namespace].hasOwnProperty('schemas')) {
+        // Should never get here.
+        logger.error("No 'schemas' structure for namespace: " + namespace);
+        throw "No 'schemas' structure for namespace: " + namespace;
+    }
+
+    if ( global_schemas[namespace]['schemas'].hasOwnProperty(schema_name) ) {
+        // Overwriting a schema, so let's just make a note of that.
+        logger.warn("Overwriting existing schema (ns:schema): (" +
+                    namespace + ":" + schema_name + ")");
+    }
+
+    if (write) {
+        // Save the schema to the filesystem in the working directory,
+        // and if successful, save it to our in-memory data structure.
+        var schema_path = path.join(working_dir, "namespaces", namespace,
+                                    "schemas", schema_name + '.json');
+
+        var stream = fs.createWriteStream(schema_path);
+
+        stream.once('open', function(fd) {
+            // Write out the prettyfied JSON to the filesystem.
+            stream.write(JSON.stringify(schema_json, null, 4));
+            stream.end();
+        });
+    }
+
+    // And save it to our data structure.
+    global_schemas[namespace]['schemas'][schema_name] = schema_json;
 }

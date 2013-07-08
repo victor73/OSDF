@@ -26,7 +26,7 @@ var couch_port = c.value('global', 'couch_port');
 var couch_user = c.value('global', 'couch_user');
 var couch_pass = c.value('global', 'couch_pass');
 
-var dbname = c.value('global', 'dbname');
+var dbname = c.value('global', 'couch_dbname');
 
 var logger = osdf_utils.get_logger();
 var osdf_error = osdf_utils.send_error;
@@ -93,7 +93,7 @@ exports.get_node = function (request, response) {
     logger.debug("In get_node.");
     
     db.get(request.params.id, function(err, node_data) {
-        retrieval_helper(request, response, err, node_data);
+        node_retrieval_helper(request, response, err, node_data);
     });
 };
 
@@ -212,7 +212,8 @@ exports.insert_node = function (request, response) {
                     
                     var node_url = base_url + ':' + port + '/nodes/' + node_id;
                     logger.info("Successful insertion: " + node_url);
-                    response.send('', {'Location': node_url}, 201); 
+                    response.location(node_url);
+                    response.send(201, ''); 
                 }
             );
         } catch (err) {
@@ -259,16 +260,17 @@ exports.update_node = function(request, response) {
 
     // Check if the json-schema validation reported any errors
     if (report === null || (report !== false && report.errors.length === 0)) {
-        update_helper(node_id, node_data, function(err, update_result) {
+        // If here, then it seems we're okay to attempt the update
+        update_node_helper(node_id, node_data, function(err, update_result) {
             if (err) {
                 logger.error("Unable to update data in couch.", err);
                 osdf_error(response, update_result['msg'], update_result['code']);
             } else {
-                response.send('', update_result['201']);
+                response.send(200, '');
             }
         });
     } else {
-        // If we're here it's because the node data didn't validate
+        // If here, then it's because the node data didn't validate
         // or some other problem occurred.
         if (report !== null) {
             var err_msg = report.errors.shift().message;
@@ -297,7 +299,7 @@ exports.delete_node = function(request, response) {
             }
 
             if (has_dependencies) {
-                osdf_error(response, "Node has dependencies on it.", 403);
+                osdf_error(response, "Node has dependencies on it.", 409);
             } else {
                 logger.debug("No dependencies, so clear to delete.");
                 // Get the user that is making the deletion request.
@@ -446,6 +448,30 @@ exports.get_in_linkage = function(request, response) {
     }
 };
 
+// This message is used to process auxiliary schema deletion events
+// that are relayed to this process from the master process by worker.js.
+exports.process_aux_schema_change = function (msg) {
+    logger.debug("In process_aux_schema_change.");
+
+    if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'aux_schema_change') {
+        var namespace = msg['ns']
+        var aux_schema_name = msg['name']
+
+        if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
+            logger.debug("Got an auxiliary schema insertion.");
+            var aux_schema_json = msg['json'];
+            insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
+        } else if (msg.hasOwnProperty('type') && msg['type'] === 'update') {
+            logger.debug("Got an auxiliary schema update.");
+            var aux_schema_json = msg['json'];
+            update_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
+        } else if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
+            logger.debug("Got an auxiliary schema deletion.");
+            delete_aux_schema_helper(namespace, aux_schema_name);
+        }
+    }
+};
+
 // This message is used to process schema deletion events that are relayed to
 // this process from the master process by worker.js.
 exports.process_schema_change = function (msg) {
@@ -520,6 +546,11 @@ function validate_incoming_node(node_string) {
     return report;
 }
 
+// A function to parse the version of a CouchDB document out
+// from its native CouchDB representation as a string to a
+// numeric form.
+// Parameters: couchdb_version (string)
+// Returns: int
 function parse_version(couchdb_version) {
     logger.debug("In parse_version.");
 
@@ -544,6 +575,11 @@ function get_node_version(node_id, callback) {
     });
 }
 
+// Simple function to retrieve a document from CouchDB backing database It then
+// calls the user provided callback with an error flag, and the document which
+// is null if an error was encountered.
+// Parameters: couchdb_id (string), callback (function)
+// Returns: none
 function get_couch_doc(couchdb_id, callback) {
     logger.debug("In get_couch_doc.");
 
@@ -556,8 +592,8 @@ function get_couch_doc(couchdb_id, callback) {
     });
 }
 
-function update_helper(node_id, node_data, callback) {
-    logger.debug("In update_helper.");
+function update_node_helper(node_id, node_data, callback) {
+    logger.debug("In update_node_helper.");
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
@@ -628,59 +664,11 @@ function update_helper(node_id, node_data, callback) {
     }
 }
 
-function retrieval_helper(request, response, err, data) {
-    if (err) {
-        if (err.error === 'not_found') {
-            logger.debug("User requested non-existent node.");
-            osdf_error(response, 'Non-existent node.', 404);
-        } else {
-            logger.error(err);
-            osdf_error(response, err.error, 500);
-        }
-    } else {
-        var user = auth.get_user(request);
-        if (perms.has_read_permission(user, data)) {
-            var fix = osdf_utils.fix_keys(data); 
-            response.json(fix);
-        } else {
-            osdf_error(response, 'No read access to this node.', 403);
-        }
-    }
-}
-
-// Given a namespace name (string), return the location on the filesystem
-// where the namespace's working directory is. If an optional 'file' path is
-// specified as well, the path to the file in the namespace's workign directory
-// is returned.
-// Parameters: namespace (string)
-//             file (string, optional)
-// Returns: path (string)
-function ns2working(namespace, file) {
-    var location;
-    if (file !== null) {
-        location = path.join(working_dir, 'namespaces', namespace, file);
-    } else {
-        location = path.join(working_dir, 'namespaces', namespace);
-    }
-    return location;
-}
-
-function populate_validators(populate_callback) {
-    logger.debug("In populate_validators.");
-
-    osdf_utils.async_for_each(namespaces, function(ns, cb) {
-        logger.info("Creating validators for namespace: " + ns);
-        define_namespace_validators(ns, function() {
-            cb();
-        }); 
-    }, function() { populate_callback(); });
-}
-
 function define_namespace_validators(namespace, define_cb) {
     logger.debug("In define_namespace_validators: " + namespace);
     var file_idx;
 
-    var a = function(callback) {
+    var schema_registrar = function(callback) {
         var schema_dir = path.join(ns2working(namespace), 'schemas');
 
         // Scan the working area for the namespace for JSON schema files for the node_types.
@@ -703,9 +691,11 @@ function define_namespace_validators(namespace, define_cb) {
                     if (! validators.hasOwnProperty(namespace)) {
                         validators[namespace] = {};
                     }
+
                     if (! validators[namespace].hasOwnProperty(node_type)) {
                         validators[namespace][node_type] = {};
                     }
+
                     try {
                         validators[namespace][node_type]['schema'] = JSON.parse(data);
                     } catch (e) {
@@ -718,7 +708,7 @@ function define_namespace_validators(namespace, define_cb) {
         });
     };
 
-    var b = function(callback) {
+    var aux_schema_registrar = function(callback) {
         register_aux_schemas(namespace, function() {
             logger.info("Finished registering auxiliary schemas for: " + namespace);
             callback();
@@ -726,37 +716,13 @@ function define_namespace_validators(namespace, define_cb) {
     }; 
 
     flow.exec( function() {
-            a(this);
+            schema_registrar(this);
         }, function() {
-            b(this);
+            aux_schema_registrar(this);
         }, function() {
             define_cb();
         }
     );
-}
-
-function validate_against_schema(data) {
-    logger.debug("In validate_against_schema.");
-
-    // TODO: More validation
-    var ns = data.ns;
-    var node_type = data.node_type;
-
-    var env = validators[ns]['env'];
-    var schema = validators[ns][node_type]['schema'];
-    var report = env.validate(data, schema);
-    return report;
-}
-
-function register_aux_schemas(ns, callback) {
-    logger.debug("In register_aux_schemas.");
-
-    // Create a JSON-Schema (Draft 3) environment
-    var environment = JSV.createEnvironment('json-schema-draft-03');
-    register_aux_schemas_to_env(environment, ns, function() {
-        validators[ns]['env'] = environment;
-        callback();
-    });
 }
 
 // This function is used to help out with the deletion of nodes once it has already
@@ -793,7 +759,7 @@ function delete_helper(user, node_id, response) {
                                 } else {
                                     logger.info("Successful deletion: " + node_id);
                                 }
-                                response.send('', 204);
+                                response.send(204, '');
                             });
                         }
                     });
@@ -804,7 +770,7 @@ function delete_helper(user, node_id, response) {
             }
         } catch (e) {
             logger.warn("Failed deletion.", e);
-            response.send('', 500);
+            response.send(500, '');
         }
     });
 }
@@ -824,6 +790,40 @@ function delete_history_node(node_id, callback) {
     });
 }
 
+function delete_aux_schema_helper(namespace, aux_schema_name) {
+    logger.debug("In node-handler:delete_aux_schema_helper.");
+
+    if (validators.hasOwnProperty(namespace)) {
+        var env = validators[namespace]['env'];
+        logger.debug("IMPLEMENTATION Missing.");
+    } else {
+        logger.error("No such namespace: " + namespace);
+    }
+}
+
+function delete_schema_helper(namespace, schema_name) {
+    logger.debug("In node-handler:delete_schema_helper.");
+
+    if (validators.hasOwnProperty(namespace) &&
+            validators[namespace].hasOwnProperty(schema_name)) {
+        logger.debug("Deleting schema " + schema_name + " from " +
+                     namespace + " namespace.");
+        delete validators[namespace][schema_name];
+    } else {
+        logger.error("The specified namespace or schema is not known.")
+    }
+}
+
+// This is the function that is used to save the node data into
+// the 'historical record' every time an update is made to it. The
+// way we actually implement this is by saving the data as an
+// attachment into a special CouchDB document that is paired with
+// with the regular node document, but that has the sole purpose
+// of holding the node's changes over time as attachments.
+// Parameters: id (string) - The CouchDB document ID.
+//             callback (function) - Called when complete with an error
+//                                   argument. Null if operation was successful.
+// Returns: none
 function delete_couch_doc(id, callback) {
     logger.debug("In delete_couch_doc.");
 
@@ -844,42 +844,6 @@ function delete_couch_doc(id, callback) {
             });
         }
     });
-}
-
-function load_reference_schema(env, schema, callback) {
-    var basename = path.basename(schema, '.json');
-
-    fs.readFile(schema, 'utf-8',
-        function(err, data) {
-            if (err) {
-                logger.error("Missing or invalid schema found for " + schema );
-                callback();
-            } else {
-                logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
-                env.createSchema( JSON.parse(data), undefined, basename );
-                callback();
-            }
-        }
-    );
-}
-
-function insert_schema_helper(namespace, name, json) {
-    logger.debug("In node-handler:insert_schema_helper.");
-
-    if (validators.hasOwnProperty(namespace)) {
-        var env = validators[namespace]['env'];
-        env.createSchema( json, undefined, name );
-    } else {
-        logger.error("No such namespace: " + namespace);
-    }
-}
-
-function delete_schema_helper(namespace, schema_name) {
-    logger.debug("In node-handler:delete_schema_helper.");
-
-    if (validators.hasOwnProperty(namespace) && validators[namespace].hasOwnProperty(schema_name)) {
-        delete validators[namespace][schema_name];
-    }
 }
 
 // This function is used to determine if any nodes point to this node.
@@ -927,29 +891,149 @@ function has_dependent_nodes(node, callback) {
     });
 }
 
-function load_aux_schemas(ns, env, schemas, then) {
+// TODO: Merge with insert_aux_schema_helper since the code is identical.
+function update_aux_schema_helper(namespace, name, aux_schema_json) {
+    logger.debug("In node-handler:update_aux_schema_helper.");
+
+    logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
+
+    if (validators.hasOwnProperty(namespace)) {
+        var env = validators[namespace]['env'];
+        load_aux_schema_into_env_from_json(env, name, aux_schema_json, function (err) {
+            if (err) {
+                logger.error("Unable to load aux schema: " + err);
+            }
+            return;
+        });
+    } else {
+        logger.error("No such namespace: " + namespace);
+    }
+}
+
+function insert_aux_schema_helper(namespace, name, aux_schema_json) {
+    logger.debug("In node-handler:insert_aux_schema_helper.");
+
+    logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
+
+    if (validators.hasOwnProperty(namespace)) {
+        var env = validators[namespace]['env'];
+        load_aux_schema_into_env_from_json(env, name, aux_schema_json, function (err) {
+            if (err) {
+                logger.error("Unable to load aux schema: " + err);
+            }
+            return;
+        });
+    } else {
+        logger.error("No such namespace: " + namespace);
+    }
+}
+
+function insert_schema_helper(namespace, name, schema_json) {
+    logger.debug("In node-handler:insert_schema_helper.");
+
+    if (validators.hasOwnProperty(namespace)) {
+        var env = validators[namespace]['env'];
+        try {
+            env.createSchema( schema_json, undefined, name );
+        } catch (err) {
+            logger.error("Unable to load schema: " + err);
+        }
+    } else {
+        logger.error("No such namespace: " + namespace);
+    }
+}
+
+function load_aux_schema_into_env(env, schema, callback) {
+    logger.debug("In load_aux_schema_into_env: " + schema);
+    var basename = path.basename(schema, '.json');
+
+    fs.readFile(schema, 'utf-8',
+        function(err, data) {
+            if (err) {
+                logger.error("Missing or invalid schema found for " + schema );
+                callback(err);
+            } else {
+                logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
+                env.createSchema( JSON.parse(data), undefined, basename );
+                callback(null);
+            }
+        }
+    );
+}
+
+function load_aux_schema_into_env_from_json(env, name, aux_schema_json, callback) {
+    logger.debug("In load_aux_schema_into_env_from_json. Aux schema name: " + name);
+
+    var json_type = typeof(aux_schema_json);
+    try {
+        if (json_type === "object") {
+            env.createSchema(aux_schema_json, undefined, name);
+        } else if (json_type === "string") {
+            env.createSchema(JSON.parse(aux_schema_json), undefined, name);
+            callback(null);
+        } else {
+            callback("Invalid data type for auxiliary schema.");
+        }
+    } catch (err) {
+        callback(err);
+    }
+}
+
+function load_aux_schemas_into_env(ns, env, schemas, then) {
+    logger.debug("In load_aux_schemas_into_env.");
     var loaded = {};
     recursive_load_helper(ns, env, schemas, loaded, then);
 }
 
-function locate_schema_id_source(ns, schema_id) {
-    return path.join(working_dir, 'namespaces', ns, 'aux', schema_id + '.json');
+function locate_aux_schema_by_name(ns, aux_schema_name) {
+    return path.join(working_dir, 'namespaces', ns, 'aux', aux_schema_name + '.json');
 }
 
-function locate_schema_source(ns, schema) {
-    return path.join(working_dir, 'namespaces', ns, 'aux', schema);
+function locate_aux_schema_source(ns, aux_schema) {
+    return path.join(working_dir, 'namespaces', ns, 'aux', aux_schema);
+}
+
+// Given a namespace name (string), return the location on the filesystem
+// where the namespace's working directory is. If an optional 'file' path is
+// specified as well, the path to the file in the namespace's working directory
+// is returned.
+// Parameters: namespace (string)
+// Returns: path (string)
+function ns2working(namespace, file) {
+    var location = path.join(working_dir, 'namespaces', namespace);
+    return location;
+}
+
+// A utility function to establish the various JSON-Schema validator objects
+// for each of the namespaces that we know about. This all happens
+// asynchronously, so the argument to the function is a callback for client
+// code to know when the process is complete.
+// Parameters: populate_callback (function)
+// Returns: none
+function populate_validators(populate_callback) {
+    logger.debug("In populate_validators.");
+
+    osdf_utils.async_for_each(namespaces, function(ns, cb) {
+        logger.info("Creating validators for namespace: " + ns);
+        define_namespace_validators(ns, function() {
+            cb();
+        }); 
+    }, function() {
+        populate_callback();
+    });
 }
 
 // Recursively load all the auxiliary schemas belonging to a namespace
-// into the provided JSV environment for later validatnion.
+// into the provided JSV environment in order to be able to validate incoming
+// nodes for compliance.
 // Parameters
-// ns: the string namespace name
-// env: the JSV environment. Each namespace has one
-// schemas: an array of schema files to load, each may contain references to other schemas
+// ns: The string namespace name
+// env: The JSV environment. Each namespace has one.
+// schemas: An array of schema files to load, each may contain references to other schemas
 // then: a callback that is called when the loading is complete
 function recursive_load_helper(ns, env, schemas, loaded, then) {
     osdf_utils.async_for_each(schemas, function(schema, cb) {
-        var schema_src  = locate_schema_source(ns, schema);
+        var schema_src  = locate_aux_schema_source(ns, schema);
 
         fs.stat(schema_src, function(err, stats) {
             if (err) {
@@ -994,7 +1078,7 @@ function recursive_load_helper(ns, env, schemas, loaded, then) {
                             logger.debug("Already loaded " + schema_id);
                             cb();
                         } else {
-                            load_reference_schema(env, schema_src, cb);
+                            load_aux_schema_into_env(env, schema_src, cb);
                             // Make a note that we loaded this one already
                             loaded[schema_id] = 1;
                         }
@@ -1007,24 +1091,70 @@ function recursive_load_helper(ns, env, schemas, loaded, then) {
     }, then);
 }
 
+function register_aux_schemas(ns, callback) {
+    logger.debug("In register_aux_schemas.");
+
+    // Create a JSON-Schema (Draft 3) environment
+    var environment = JSV.createEnvironment('json-schema-draft-03');
+    register_aux_schemas_to_env(environment, ns, function() {
+        validators[ns]['env'] = environment;
+        callback();
+    });
+}
+
 function register_aux_schemas_to_env(env, ns, then) {
     logger.debug("In register_aux_schemas_to_env.");
+
     flow.exec(
         function() {
             var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
+            // Scan the files contained in the directory and process them
             fs.readdir(aux_dir, this); 
         },
         function(err, files) {
             if (err) {
                 throw err;
             }
-            load_aux_schemas(ns, env, files, this);
+            load_aux_schemas_into_env(ns, env, files, this);
         }, function() {
             then(); 
         }
     );
 }
 
+function node_retrieval_helper(request, response, err, data) {
+    logger.debug("In node_retrieval_helper.");
+
+    if (err) {
+        if (err.error === 'not_found') {
+            logger.debug("User requested non-existent node.");
+            osdf_error(response, 'Non-existent node.', 404);
+        } else {
+            logger.error(err);
+            osdf_error(response, err.error, 500);
+        }
+    } else {
+        var user = auth.get_user(request);
+        if (perms.has_read_permission(user, data)) {
+            var fix = osdf_utils.fix_keys(data); 
+            response.json(fix);
+        } else {
+            logger.info("User does not have read permissions for node.");
+            osdf_error(response, 'No read access to this node.', 403);
+        }
+    }
+}
+
+// This is the function that is used to save the node data into
+// the 'historical record' every time an update is made to it. The
+// way we actually implement this is by saving the data as an
+// attachment into a special CouchDB document that is paired with
+// with the regular node document, but that has the sole purpose
+// of holding the node's changes over time as attachments.
+// Parameters: node_id (string)
+//             node_data (string) - In JSON format
+//             callback (function) - Called when complete
+// Returns: none
 function save_history(node_id, node_data, callback) {
     logger.debug("In save_history.");
     var version = node_data['ver'];
@@ -1036,9 +1166,10 @@ function save_history(node_id, node_data, callback) {
 
     try {
         if (version === 1) {
+            // This is the first time this node is being edited/changed
             db.save(node_id + "_hist", {}, function(err, data) {
                 if (err) {
-                    console.log(err);
+                    logger.error(err);
                     throw err;
                 }
 
@@ -1047,6 +1178,8 @@ function save_history(node_id, node_data, callback) {
                 var doc = { id: node_id + "_hist",
                             rev: first_hist_version
                           };
+
+                // Save the data as an attachment into CouchDB...
                 db.saveAttachment(doc, attachment, function(err, data) {
                     if (err) {
                         logger.error(err);
@@ -1057,6 +1190,7 @@ function save_history(node_id, node_data, callback) {
                 });
             });
         } else {
+            // This is not the first change/edit to this node...
             db.get(node_id + "_hist", function(err, hist_node) {
                 if (err) {
                     logger.error(err);
@@ -1067,6 +1201,7 @@ function save_history(node_id, node_data, callback) {
                             rev: hist_node['_rev']
                           };
 
+                // Save the data as an attachment into CouchDB...
                 db.saveAttachment(doc, attachment, function(err, data) {
                     if (err) {
                         logger.error(err);
@@ -1078,8 +1213,20 @@ function save_history(node_id, node_data, callback) {
                 });
             });
         }
-
     } catch (err) {
         callback(err);
     }
+}
+
+function validate_against_schema(data) {
+    logger.debug("In validate_against_schema.");
+
+    // TODO: More validation
+    var ns = data.ns;
+    var node_type = data.node_type;
+
+    var env = validators[ns]['env'];
+    var schema = validators[ns][node_type]['schema'];
+    var report = env.validate(data, schema);
+    return report;
 }
