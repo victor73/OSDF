@@ -107,9 +107,21 @@ function start_master(config) {
 
             if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
                 // Send messages to all the workers so that they can adjust their
-                // lists of active schemas.
+                // lists of primary schemas.
                 var type = msg['type'];
                 logger.info("Master got a schema change event of type: " + type + ". " +
+                            "Relay this to the workers.");
+
+                _.each(workers_array, function (clustered_worker) {
+                    clustered_worker.send(msg);
+                });
+            }
+
+            if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'aux_schema_change') {
+                // Send messages to all the workers so that they can adjust their
+                // lists of auxiliary schemas.
+                var type = msg['type'];
+                logger.info("Master got an auxiliary schema change event of type: " + type + ". " +
                             "Relay this to the workers.");
 
                 _.each(workers_array, function (clustered_worker) {

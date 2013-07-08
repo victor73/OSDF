@@ -17,8 +17,10 @@ couch_address=couchdb.example.com
 couch_port=5984
 couch_user=test
 couch_pass=test
+
 # The CouchDB database name that we use to store OSDF data.
-dbname=osdf
+couch_dbname=osdf
+
 # How many records are reported on each 'page' of output. For instance, if
 # search/query restults exceed this number, the results will be paginated in
 # groups of 'pagesize' size.

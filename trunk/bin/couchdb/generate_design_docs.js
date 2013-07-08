@@ -183,7 +183,7 @@ function escape(code) {
 
 // Take the code that has been escaped and formatted into a JSON documents
 // (CouchDB design documents) and post tehm into the CouchDB server.
-function post_all_design_docs(design_docs) {
+function post_all_design_docs(design_docs, callback) {
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
     var couch_conn = new(cradle.Connection)('http://' + couchdb_address, couchdb_port, {
@@ -204,8 +204,9 @@ function post_all_design_docs(design_docs) {
             if (err) {
                 if (typeof err === "object" && err.hasOwnProperty('error')) {
                     console.log("Error: " + err['error'] + ". Reason: " + err['reason']);
+                    callback(err);
                 } else {
-                    console.log(err);
+                    callback(err);
                 }
                 process.exit(1);
             } else {

@@ -89,12 +89,19 @@ function listen_for_init_completion(config) {
 function launch(config) {
     var header_fixer = require('fix_headers');
 
-    //app.use(header_fixer.remove_powered_by());
-    var app = express.createServer(
-        express.logger(),
-        header_fixer.remove_powered_by(),
-        auth_enforcer.authenticate()
-    );
+    var app = express();
+
+    // Register various middleware functions
+    // Logging of the request
+    app.use(express.logger());
+
+    // Removed the "X-Powered-By" header (reduce bandwith a bit).
+    app.use(header_fixer.remove_powered_by());
+
+    // Enforce authentication
+    app.use(auth_enforcer.authenticate());
+
+    // This custom middleware is what sets the 'rawBody' property
     app.use (function(req, res, next) {
         var data = '';
         req.setEncoding('utf8');
@@ -132,10 +139,20 @@ function launch(config) {
     });
 
     process.on('message', function(msg) {
-        logger.info("Got a message from the master: " +  msg['cmd']);
-        if (msg['cmd'] === "schema_change") {
-            node_handler.process_schema_change(msg);
-            schema_handler.process_schema_change(msg);
+        if (msg && msg.hasOwnProperty("cmd")) {
+            logger.info("Got a message from the master: " +  msg['cmd']);
+
+            if (msg['cmd'] === "schema_change") {
+                node_handler.process_schema_change(msg);
+                schema_handler.process_schema_change(msg);
+            } else if (msg['cmd'] === "aux_schema_change") {
+                node_handler.process_aux_schema_change(msg);
+                schema_handler.process_aux_schema_change(msg);
+            } else {
+                logger.error("Received unknown process message type.");
+            }
+        } else {
+            logger.error("Received invalid process message.");
         }
     });
 

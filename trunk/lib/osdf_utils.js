@@ -183,5 +183,6 @@ exports.fix_keys = function(data) {
 };
 
 exports.send_error = function(response, error_message, http_code) {
-    response.send('', {'X-OSDF-Error': error_message}, http_code);
+    response.set('X-OSDF-Error', error_message);
+    response.send(http_code, '');
 };

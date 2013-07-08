@@ -32,6 +32,10 @@ exports.set_routes = function (app) {
     app.get('/namespaces/:ns/schemas/aux/:aux', schema_handler.get_aux_schema);
     app.post('/namespaces/:ns/schemas', schema_handler.insert_schema);
     app.post('/namespaces/:ns/schemas/aux', schema_handler.insert_aux_schema);
+
+    app.put('/namespaces/:ns/schemas/:schema', schema_handler.update_schema);
+    app.put('/namespaces/:ns/schemas/aux/:aux', schema_handler.update_aux_schema);
+
     app.delete('/namespaces/:ns/schemas/:schema', schema_handler.delete_schema);
     app.delete('/namespaces/:ns/schemas/aux/:aux', schema_handler.delete_aux_schema);
 };
