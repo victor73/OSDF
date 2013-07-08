@@ -68,12 +68,12 @@ exports['insert_aux_schema'] = function (test) {
 
             test.done();
 
-            // Cleanup. Remove the schema that we inserted.
-            try {
-                tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
-            } catch (e) {
-                console.log("Problem deleting the test auxiliary schema during cleanup.", e);
-            }
+            this();
+        }, function() {
+            // Perform cleanup by deleting the auxiliary schema we attempted to
+            // insert. It should not have been inserted, but delete it anyway
+            // just in case the implementation failed to reject it.
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e) {});
         }
     );
 };
@@ -85,17 +85,19 @@ exports['insert_aux_schema_with_malformed_json'] = function (test) {
 
     var aux_schema_name = osdf_utils.random_string(8);
 
+    var bad_data = "\\\\\/////";
+
     flow.exec(
         function() {
             // First we insert a schema
             var aux_schema_doc = { name: aux_schema_name,
-                                   schema: "\\\\\/////" };
+                                   schema: bad_data };
 
             tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 422, "Correct status for auxiliary schema insertion.");
 
-            test.ok(data === '', "No content returned on an auxiliary schema insertion.");
+            test.equal(data, 0, "No content returned on an auxiliary schema insertion.");
 
             // then try to retrieve it 
             tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
@@ -103,7 +105,7 @@ exports['insert_aux_schema_with_malformed_json'] = function (test) {
             test.equal(response.statusCode, 404,
                        "Auxiliary schema retrieval yielded correct status code.")
 
-            test.ok(data.length === 0, "No data returned on auxiliary schema retrieval.");
+            test.equal(data.length, 0, "No data returned on auxiliary schema retrieval.");
 
             // If for whatever reason, the auxiliary schema actually made it
             // into the server we try to remove it so that the test doesn't
@@ -169,15 +171,15 @@ exports['insert_conflicting_aux_schema'] = function (test) {
                        "Duplicate schema did NOT overwrite the original aux schema.");
 
             test.done();
+
+            this();
+        }, function() {
+            // Perform cleanup by deleting the auxiliary schema we attempted to
+            // insert. It should not have been inserted, but delete it anyway
+            // just in case the implementation failed to reject it.
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e) {});
         }
     );
-
-    // Cleanup by removing the schema that we inserted.
-    try {
-        tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e) {});
-    } catch (e) {
-        console.log("Problem deleting the test auxiliary schema during cleanup.", e);
-    }
 };
 
 // Test insertion of a schema when no authentication credentials are provided.
@@ -230,20 +232,29 @@ exports['insert_aux_schema_with_unknown_auxiliary'] = function (test) {
             tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 422,
-                       "Correct status code for auxiliary schema insertion with an unknown auxiliary.");
+                       "Correct status code for aux schema insertion " + 
+                       "with an unknown auxiliary.");
 
-            test.ok(data === '', 
-                    "No content returned for auxiliary schema insertion with an unknown auxiliary.");
+            test.equal(data, 0, 
+                       "No content returned for aux schema insertion " +
+                       "with an unknown auxiliary.");
 
             tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
         }, function(data, response) {
             test.equal(response.statusCode, 404,
                        "Correct status code for failed auxiliary schema insertion.");
 
-            test.ok(data === '', 
-                    "No content returned for auxiliary schema retrieval.");
+            test.equal(data, 0, 
+                       "No content returned for auxiliary schema retrieval.");
 
             test.done();
+
+            this();
+        }, function() {
+            // Perform cleanup by deleting the auxiliary schema we attempted to
+            // insert. It should not have been inserted, but delete it anyway
+            // just in case the implementation failed to reject it.
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
         }
     );
 };
@@ -293,13 +304,13 @@ function invalid_credentials_helper(test, test_auth) {
                     "Auxiliary schema was not registered into master list.");
 
             test.done();
+
+            this();
+        }, function() {
+            // Perform cleanup by deleting the auxiliary schema we attempted to
+            // insert. It should not have been inserted, but delete it anyway
+            // just in case the implementation failed to reject it.
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
         }
     );
-
-    // Cleanup. Remove the schema that we inserted. Use valid credentials here.
-    try {
-        tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
-    } catch (e) {
-        console.log("Problem deleting the test auxiliary schema during cleanup.", e);
-    }
 }
