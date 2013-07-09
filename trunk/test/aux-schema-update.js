@@ -127,9 +127,12 @@ exports['update_aux_schema'] = function (test) {
 
             test.done();
 
-            // Cleanup. Remove the schema that we inserted.
+            this();
+        }, function() {
+            // Cleanup. Remove the aux and primary schemas that we inserted.
             try {
                 tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
+                tutils.delete_schema(test_ns, primary_schema_name, auth, function(e){} );
             } catch (e) {
                 console.log("Problem deleting the test auxiliary schema during cleanup.", e);
             }

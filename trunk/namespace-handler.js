@@ -25,7 +25,7 @@ exports.get_all_namespaces = function (request, response) {
         json.result_count = files_array.length;
         json.page = 1;
         json.results = files_array;
-        response.json(json);
+        response.jsonp(json);
     };
 
     // Scan the directory containing the namespace descriptors for JSON
@@ -98,7 +98,7 @@ exports.get_namespace = function (request, response) {
                     osdf_error(response, err.error, 500);
                 } else {
                     var ns_data = JSON.parse(file_text);
-                    response.json(ns_data);
+                    response.jsonp(ns_data);
                 }
             });
         }

@@ -150,14 +150,14 @@ exports.get_node_by_version = function (request, response) {
                             // they are using the 'by version' method to get the current
                             // version.
                             if (requested_version === current_node_version) {
-                                response.json(osdf_utils.fix_keys(current_node));
+                                response.jsonp(osdf_utils.fix_keys(current_node));
                             } else {
                                 osdf_error(response, "Unable to retrieve node version.", 404);
                             }
                         }
                     });
                 } else {
-                    response.json(couch_response);
+                    response.jsonp(couch_response);
                 }
             }
             return;
@@ -373,7 +373,7 @@ exports.get_out_linkage = function(request, response) {
                 report['results'].push( filtered_result );
             });
             
-            response.json(report);
+            response.jsonp(report);
         });
     } catch (e) {
         logger.error(e);
@@ -440,7 +440,7 @@ exports.get_in_linkage = function(request, response) {
                 report['results'].push( filtered_result );
             });
 
-            response.json(report);
+            response.jsonp(report);
         });
     } catch (e) {
         logger.error(e);
@@ -1137,7 +1137,7 @@ function node_retrieval_helper(request, response, err, data) {
         var user = auth.get_user(request);
         if (perms.has_read_permission(user, data)) {
             var fix = osdf_utils.fix_keys(data); 
-            response.json(fix);
+            response.jsonp(fix);
         } else {
             logger.info("User does not have read permissions for node.");
             osdf_error(response, 'No read access to this node.', 403);

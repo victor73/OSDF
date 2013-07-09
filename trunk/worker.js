@@ -87,8 +87,6 @@ function listen_for_init_completion(config) {
 // This is the function that launches the app when all
 // initialization is complete.
 function launch(config) {
-    var header_fixer = require('fix_headers');
-
     var app = express();
 
     // Register various middleware functions
@@ -96,7 +94,7 @@ function launch(config) {
     app.use(express.logger());
 
     // Removed the "X-Powered-By" header (reduce bandwidth a bit).
-    app.use(header_fixer.remove_powered_by());
+    app.disable('x-powered-by');
 
     // Enforce authentication
     app.use(auth_enforcer.authenticate());
