@@ -102,8 +102,10 @@ exports.perform_query = function (request, response) {
     var perms_handler = require('perms-handler');
     var user = auth.get_user(request);
     var namespace = request.params.ns;
+
     // Parse int for later calculations
-    var requested_page = request.params.page ? parseInt(request.params.page, 10) : undefined;
+    var requested_page = request.params.page ?
+                             parseInt(request.params.page, 10) : undefined;
     var user_acls = perms_handler.get_user_acls(namespace, user);
     var content = request.rawBody;
 
@@ -127,8 +129,9 @@ exports.perform_query = function (request, response) {
         elastic_query["sort"] = user_query["sort"];
     }
 
-    // If user requested a specific page number, ignore any from and size vars in the 
-    // query that was sent and set from to the first result of the requested page
+    // If user requested a specific page number, ignore any from and size vars
+    // in the query that was sent and set from to the first result of the
+    // requested page
     if (requested_page) {
         // Calculate the first result number to return for the top of this page
         elastic_query["from"] = (requested_page - 1) * page_size;
@@ -143,10 +146,11 @@ exports.perform_query = function (request, response) {
         elastic_query["size"] = page_size;
     } else {
         // Check against max page size allowed
-        elastic_query["size"] = (user_query["size"] > page_size ? page_size : user_query["size"]);
+        elastic_query["size"] = (user_query["size"] > page_size ?
+                                    page_size : user_query["size"]);
     }
 
-    logger.debug("submitting elastic_query:\n" + util.inspect(elastic_query, true, null));
+    logger.debug("Submitting elastic_query:\n" + util.inspect(elastic_query, true, null));
 
     try {
         // from the elastical docs:
@@ -168,8 +172,8 @@ exports.perform_query = function (request, response) {
                     // not specify both from and size in the query
                     if (! user_query["from"] && ! user_query["size"]) {
                         partial_result = true;
-                        //if there was no page requested in this url
-                        //then it would be page 1, so return 2
+                        // If there was no page requested in this url
+                        // then it would be page 1, so return 2
                         next_page_url = base_url + ':' + port
                             + '/nodes/query/' + namespace + '/page/'
                             + (requested_page ? requested_page + 1 : 2);
@@ -183,9 +187,11 @@ exports.perform_query = function (request, response) {
                     + " search results; page " + results.page);
 
                 if (partial_result) {
-                    response.json(results, {'X-OSDF-Query-ResultSet': next_page_url}, 206);
+                    response.jsonp(results,
+                                   {'X-OSDF-Query-ResultSet': next_page_url},
+                                   206);
                 } else {
-                    response.json(results, 200);
+                    response.jsonp(results, 200);
                 }
             }
         });

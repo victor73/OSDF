@@ -14,7 +14,7 @@ exports.init = function(emitter) {
 
 exports.info = function(request, response) {
     logger.debug("In info.");
-    response.json(info);
+    response.jsonp(info);
 }
 
 exports.update = function() {

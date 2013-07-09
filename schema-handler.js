@@ -78,7 +78,7 @@ exports.get_all_schemas = function (request, response) {
 
     // First of all, is the requested namespace even known to us?
     if (global_schemas.hasOwnProperty(ns)) {
-        response.json(global_schemas[ns]);
+        response.jsonp(global_schemas[ns]);
     } else {
         logger.warn("User requested schemas for unknown namespace: " + ns);
         osdf_error(response, 'Namespace or schema not found.', 404);
@@ -96,10 +96,10 @@ exports.get_all_aux_schemas = function (request, response) {
         // Need to return all the auxuilary schemas, which are found
         // under global_schemas[ns]['aux'].
         if (global_schemas[ns].hasOwnProperty('aux')) {
-            response.json(global_schemas[ns]['aux']);
+            response.jsonp(global_schemas[ns]['aux']);
         } else {
             // Send an emtpy object
-            response.json({});
+            response.jsonp({});
         }
     } else {
         logger.warn("Unknown ns: " + ns);
@@ -119,7 +119,7 @@ exports.get_aux_schema = function (request, response) {
     if (global_schemas.hasOwnProperty(ns)) {
         if (global_schemas[ns].hasOwnProperty('aux') &&
                 global_schemas[ns]['aux'].hasOwnProperty(aux)) {
-            response.json(global_schemas[ns]['aux'][aux]);
+            response.jsonp(global_schemas[ns]['aux'][aux]);
         } else {
             logger.warn("Unknown ns:aux: " + ns + ":" + aux);
             osdf_error(response, 'Auxiliary schema not found.', 404);
@@ -141,7 +141,7 @@ exports.get_schema = function (request, response) {
     if (global_schemas.hasOwnProperty(ns)) {
         if (global_schemas[ns].hasOwnProperty('schemas') &&
                 global_schemas[ns]['schemas'].hasOwnProperty(schema)) {
-            response.json(global_schemas[ns]['schemas'][schema]);
+            response.jsonp(global_schemas[ns]['schemas'][schema]);
         } else {
             logger.warn("Unknown ns:schema: " + ns + ":" + schema);
             osdf_error(response, 'Schema not found.', 404);
