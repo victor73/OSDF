@@ -95,7 +95,7 @@ function launch(config) {
     // Logging of the request
     app.use(express.logger());
 
-    // Removed the "X-Powered-By" header (reduce bandwith a bit).
+    // Removed the "X-Powered-By" header (reduce bandwidth a bit).
     app.use(header_fixer.remove_powered_by());
 
     // Enforce authentication
