@@ -2,11 +2,12 @@ osdf (0.3-1) unstable; urgency=low
 
   * Updated code to deal with changes in node.js 0.10.x
   * Updated node modules to latest versions: express, connect, etc...
-  * Implemented methods to deal with JSON-Schema management (primary and auxiliary schemas)
+  * Implemented methods to deal with JSON-Schema management (primary and
+    auxiliary schemas)
   * New tests to exercise schema management portions of the OSDF API
   * Beginning work to integrate grunt
 
- -- Victor <victor73@github.com>  Fri, 26 Oct 2012 22:54:30 -0400
+ -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
 osdf (0.2-1) unstable; urgency=low
 
