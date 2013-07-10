@@ -1,7 +1,7 @@
 Source: osdf
 Section: devel
 Priority: extra
-Maintainer: Victor Felix <vfelix@som.umaryland.edu>
+Maintainer: Victor <victor73@github.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.2
 Homepage: http://sourceforge.net/projects/osdf/
