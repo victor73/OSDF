@@ -3,7 +3,7 @@ Section: devel
 Priority: extra
 Maintainer: Victor <victor73@github.com>
 Build-Depends: debhelper (>= 8.0.0)
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Homepage: http://sourceforge.net/projects/osdf/
 #Vcs-Git: git://git.debian.org/collab-maint/osdf.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/osdf.git;a=summary
