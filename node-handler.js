@@ -40,7 +40,7 @@ var db;
 // This initializes the handler. The things we need to do before the
 // handler is ready to begin its work are: establish a connection to the
 // CouchDB server, determine what the installed namespaces are, and create
-// the various validators for each of the node types inside each namespace. 
+// the various validators for each of the node types inside each namespace.
 exports.init = function(emitter, working_dir_custom) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
@@ -77,6 +77,7 @@ exports.init = function(emitter, working_dir_custom) {
     osdf_utils.get_namespace_names( function(names) {
         namespaces = names;
         logger.info("Namespaces: ", namespaces);
+console.log("NS: " , namespaces);
 
         // Setup all the JSON validators for the namespaces and their node types.
         // Then, send a notificatino that we have completed initialization and
@@ -91,7 +92,7 @@ exports.init = function(emitter, working_dir_custom) {
 // GET the node.
 exports.get_node = function (request, response) {
     logger.debug("In get_node.");
-    
+
     db.get(request.params.id, function(err, node_data) {
         node_retrieval_helper(request, response, err, node_data);
     });
@@ -102,7 +103,7 @@ exports.get_node = function (request, response) {
 // the url.
 exports.get_node_by_version = function (request, response) {
     logger.debug("In get_node_by_version.");
-    
+
     var node_id = request.params.id;
     var requested_version = parseInt(request.params.ver, 10);
 
@@ -209,11 +210,11 @@ exports.insert_node = function (request, response) {
                     if (err) {
                         throw err;
                     }
-                    
+
                     var node_url = base_url + ':' + port + '/nodes/' + node_id;
                     logger.info("Successful insertion: " + node_url);
                     response.location(node_url);
-                    response.send(201, ''); 
+                    response.send(201, '');
                 }
             );
         } catch (err) {
@@ -372,7 +373,7 @@ exports.get_out_linkage = function(request, response) {
             _.each(filtered, function(filtered_result) {
                 report['results'].push( filtered_result );
             });
-            
+
             response.jsonp(report);
         });
     } catch (e) {
@@ -519,7 +520,7 @@ function validate_incoming_node(node_string) {
     if (! (node.acl.hasOwnProperty('write') && node.acl['write'] instanceof Array)) {
         throw "Node acl object doesn't have a correctly defined 'write' key.";
     }
-    
+
     if (! osdf_utils.contains(node.ns, namespaces)) {
         var msg = "Node belongs to an unrecognized namespace.";
         logger.error(msg);
@@ -527,7 +528,7 @@ function validate_incoming_node(node_string) {
     }
 
     var report = null;
-    if ( validators.hasOwnProperty(node.ns) && 
+    if ( validators.hasOwnProperty(node.ns) &&
              validators[node.ns].hasOwnProperty(node.node_type) ) {
         // Look up the schema for this node type from our validators data structure.
         var schema = validators[node.ns][node.node_type]['schema'];
@@ -541,7 +542,7 @@ function validate_incoming_node(node_string) {
     } else {
         logger.debug("No validator found for namespace/node_type of " +
                     node.ns + "/" + node.node_type + ".");
-    } 
+    }
 
     return report;
 }
@@ -678,33 +679,38 @@ function define_namespace_validators(namespace, define_cb) {
                 throw err;
             }
 
-            for (file_idx = 0; file_idx < files.length; file_idx++) {
-                var node_type_schema = files[file_idx];
+            if (files.length === 0) {
+                validators[namespace] = {};
+                callback();
+            } else {
+                for (file_idx = 0; file_idx < files.length; file_idx++) {
+                    var node_type_schema = files[file_idx];
 
-                if ( path.extname(node_type_schema) === '.json') {
-                    logger.info("Found a schema! " + node_type_schema);
+                    if ( path.extname(node_type_schema) === '.json') {
+                        logger.info("Found a schema! " + node_type_schema);
 
-                    var node_type = path.basename(node_type_schema, '.json');
+                        var node_type = path.basename(node_type_schema, '.json');
 
-                    var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
+                        var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
 
-                    if (! validators.hasOwnProperty(namespace)) {
-                        validators[namespace] = {};
-                    }
+                        if (! validators.hasOwnProperty(namespace)) {
+                            validators[namespace] = {};
+                        }
 
-                    if (! validators[namespace].hasOwnProperty(node_type)) {
-                        validators[namespace][node_type] = {};
-                    }
+                        if (! validators[namespace].hasOwnProperty(node_type)) {
+                            validators[namespace][node_type] = {};
+                        }
 
-                    try {
-                        validators[namespace][node_type]['schema'] = JSON.parse(data);
-                    } catch (e) {
-                        logger.warn("ERROR: Unable to parse schema " +
-                                    node_type_schema + " to JSON !!!");
+                        try {
+                            validators[namespace][node_type]['schema'] = JSON.parse(data);
+                        } catch (e) {
+                            logger.warn("ERROR: Unable to parse schema " +
+                                        node_type_schema + " to JSON !!!");
+                        }
                     }
                 }
+                callback();
             }
-            callback();
         });
     };
 
@@ -712,8 +718,8 @@ function define_namespace_validators(namespace, define_cb) {
         register_aux_schemas(namespace, function() {
             logger.info("Finished registering auxiliary schemas for: " + namespace);
             callback();
-        }); 
-    }; 
+        });
+    };
 
     flow.exec( function() {
             schema_registrar(this);
@@ -1017,7 +1023,7 @@ function populate_validators(populate_callback) {
         logger.info("Creating validators for namespace: " + ns);
         define_namespace_validators(ns, function() {
             cb();
-        }); 
+        });
     }, function() {
         populate_callback();
     });
@@ -1109,7 +1115,7 @@ function register_aux_schemas_to_env(env, ns, then) {
         function() {
             var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
             // Scan the files contained in the directory and process them
-            fs.readdir(aux_dir, this); 
+            fs.readdir(aux_dir, this);
         },
         function(err, files) {
             if (err) {
@@ -1117,7 +1123,7 @@ function register_aux_schemas_to_env(env, ns, then) {
             }
             load_aux_schemas_into_env(ns, env, files, this);
         }, function() {
-            then(); 
+            then();
         }
     );
 }
@@ -1136,7 +1142,7 @@ function node_retrieval_helper(request, response, err, data) {
     } else {
         var user = auth.get_user(request);
         if (perms.has_read_permission(user, data)) {
-            var fix = osdf_utils.fix_keys(data); 
+            var fix = osdf_utils.fix_keys(data);
             response.jsonp(fix);
         } else {
             logger.info("User does not have read permissions for node.");
