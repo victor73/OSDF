@@ -187,11 +187,10 @@ exports.perform_query = function (request, response) {
                     + " search results; page " + results.page);
 
                 if (partial_result) {
-                    response.jsonp(results,
-                                   {'X-OSDF-Query-ResultSet': next_page_url},
-                                   206);
+                	response.set('X-OSDF-Query-ResultSet': next_page_url);
+                    response.jsonp(206, results);
                 } else {
-                    response.jsonp(results, 200);
+                    response.jsonp(200, results);
                 }
             }
         });
