@@ -1,6 +1,6 @@
 var fs = require('fs');
 var events = require('events');
-var flow = require('flow');
+var async = require('async');
 var osdf_utils = require('osdf_utils');
 var schema_utils = require('schema_utils');
 var path = require('path');
@@ -43,31 +43,34 @@ exports.init = function (emitter, working_dir_custom) {
 
     var ns_schema_dir;
 
-    flow.exec(
-        function() {
+    async.series([
+        function(callback) {
             // Get all the namespace names into a list of strings
-            osdf_utils.get_namespace_names(this);
-        },
-        function(namespaces) {
-            logger.debug("Namespaces to scan: " + namespaces.length);
+            osdf_utils.get_namespace_names(function(namespaces) {
+                logger.debug("Namespaces to scan: " + namespaces.length);
 
-            osdf_utils.async_for_each(
-                namespaces,
-                function(ns, cb) {
-                    get_ns_schemas(ns, function(ns_schemas) {
-                        global_schemas[ns] = ns_schemas;
-                        cb();
-                    });
-                },
-                this
-            );
+                osdf_utils.async_for_each(
+                    namespaces,
+                    function(ns, cb) {
+                        get_ns_schemas(ns, function(err, ns_schemas) {
+                            if (err) {
+                                logger.error(err);
+                            } else {
+                                global_schemas[ns] = ns_schemas;
+                            }
+                            cb();
+                        });
+                    },
+                    callback(null)
+                );
+            });
         },
-        function() {
+        function(callback) {
             logger.debug("Finished scanning all schemas.");
 
             emitter.emit('schema_handler_initialized');
         }
-    );
+    ]);
 };
 
 // Retrieves all the primary schemas belonging to a namespace.
@@ -232,7 +235,7 @@ exports.insert_aux_schema = function (request, response) {
         // therefore we are the worker responsible for writing the data to disk/storage.
         aux_schema_change_helper(ns, aux_schema_name, aux_schema_json, true);
 
-        // Can't use 'this', so we have to reach down to the module.exports 
+        // Can't use 'this', so we have to reach down to the module.exports
         // to get the inherited emit() function.
         module.exports.emit("insert_aux_schema", { 'ns': ns,
                                                    'name': aux_schema_name,
@@ -348,14 +351,14 @@ exports.insert_schema = function (request, response) {
             return;
         }
     }
-   
+
     try {
         // The last parameter indicates that this worker is the first to receive
         // this request (we're not responding to a hint from the master process) and
         // therefore we are the worker responsible for writing the data to disk/storage.
         schema_change_helper(ns, schema_name, schema_json, true);
 
-        // Can't use 'this', so we have to reach down to the module.exports 
+        // Can't use 'this', so we have to reach down to the module.exports
         // to get the inherited emit() function.
         module.exports.emit("insert_schema", { 'ns': ns, 'name': schema_name, 'json': schema_json });
 
@@ -405,7 +408,7 @@ exports.delete_schema = function (request, response) {
         try {
             delete_schema_helper(ns, schema_name);
 
-            // Can't use 'this', so we have to reach down to the module.exports 
+            // Can't use 'this', so we have to reach down to the module.exports
             // to get the inherited emit() function.
             module.exports.emit("delete_schema", { 'ns': ns, 'name': schema_name });
 
@@ -463,7 +466,7 @@ exports.delete_aux_schema = function (request, response) {
 
             delete_aux_schema_helper(ns, aux_schema_name);
 
-            // Can't use 'this', so we have to reach down to the module.exports 
+            // Can't use 'this', so we have to reach down to the module.exports
             // to get the inherited emit() function.
             module.exports.emit("delete_aux_schema",
                                 { 'ns': ns,
@@ -568,7 +571,7 @@ exports.update_schema = function (request, response) {
     }
 
     // Parse the data provided. If it's invalid/malformed, we're about to find out.
-    var schema_json; 
+    var schema_json;
     try {
         schema_json = JSON.parse(content);
     } catch (err) {
@@ -619,14 +622,14 @@ exports.update_schema = function (request, response) {
             return;
         }
     }
-   
+
     try {
         // The last parameter indicates that this worker is the first to receive
         // this request (we're not responding to a hint from the master process) and
         // therefore we are the worker responsible for writing the data to disk/storage.
         schema_change_helper(ns, schema_name, schema_json, true);
 
-        // Can't use 'this', so we have to reach down to the module.exports 
+        // Can't use 'this', so we have to reach down to the module.exports
         // to get the inherited emit() function.
         module.exports.emit("update_schema",
                             { 'ns': ns,
@@ -726,7 +729,7 @@ exports.update_aux_schema = function (request, response) {
         // therefore we are the worker responsible for writing the data to disk/storage.
         aux_schema_change_helper(ns, aux_schema_name, aux_schema_json, true);
 
-        // Can't use 'this', so we have to reach down to the module.exports 
+        // Can't use 'this', so we have to reach down to the module.exports
         // to get the inherited emit() function.
         module.exports.emit("insert_aux_schema", { 'ns': ns,
                                                    'name': aux_schema_name,
@@ -824,7 +827,7 @@ function delete_schema_helper(namespace, schema_name) {
             delete global_schemas[namespace]['schemas'][schema_name];
         }
     } else {
-        logger.warn("Namespace " + namespace + " did not have schema: " + 
+        logger.warn("Namespace " + namespace + " did not have schema: " +
                     schema_name + ". Nothing to do.");
     }
 }
@@ -900,32 +903,37 @@ function insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json, w
 */
 
 function get_ns_schemas(ns, callback) {
-    var schemas = {};
-    var aux_schemas = {};
+    logger.debug("In get_ns_schemas.");
+
     var ns_schema_dir;
     var ns_aux_schema_dir;
 
-    flow.exec(
-        function () {
+    async.waterfall([
+        function(callback) {
             // Determine the directory to the schemas for this namespace.
             ns_schema_dir = path.join(working_dir, 'namespaces', ns, 'schemas');
             logger.debug("Schema dir for namespace " + ns + ": " + ns_schema_dir);
 
             // Scan the directory for the schema files.
-            fs.readdir(ns_schema_dir, this);
-        },
-        function (err, files) {
-            if (err) {
-                logger.error("Unable to scan schema directory for namespace " + ns, err);
-                throw err;
-            }
+            fs.readdir(ns_schema_dir, function(err, files) {
+                if (err) {
+                    logger.error("Unable to scan schema directory for namespace " + ns, err);
 
-            // Reject any hidden files/directories, such as .svn directories
-            files = _.reject(files, function(file) {
-                return file.substr(0, 1) === '.';
+                    callback(err);
+                } else {
+                    // Reject any hidden files/directories, such as .svn directories
+                    files = _.reject(files, function(file) {
+                        return file.substr(0, 1) === '.';
+                    });
+
+                    callback(null, files);
+                }
             });
-
+        },
+        function (files, callback) {
             logger.debug("Scanned " + files.length + " schemas.");
+
+            var schemas = {};
 
             osdf_utils.async_for_each(
                 files,
@@ -935,7 +943,8 @@ function get_ns_schemas(ns, callback) {
 
                         fs.readFile(file_path, 'utf8', function(err, file_text) {
                             if (err) {
-                                throw err;
+                                logger.error(err);
+                                callback(err);
                             }
 
                             try {
@@ -952,29 +961,33 @@ function get_ns_schemas(ns, callback) {
                         cb();
                     }
                 },
-                this
+                function() { callback(null, schemas) }
             );
         },
-        function() {
+        function(schemas, callback) {
             // Determine the directory to the auxiliary schemas for this namespace.
             ns_aux_schema_dir = path.join(working_dir, 'namespaces', ns, 'aux');
             logger.debug("Aux schema dir for namespace " + ns + ": " + ns_aux_schema_dir);
 
             // Scan the directory for the schema files.
-            fs.readdir(ns_aux_schema_dir, this);
-        },
-        function(err, files) {
-            if (err) {
-                logger.error("Unable to scan schema directory for namespace " + ns, err);
-                throw err;
-            }
+            fs.readdir(ns_aux_schema_dir, function(err, files) {
+                if (err) {
+                    logger.error("Unable to scan auxiliary schema directory for namespace " + ns, err);
+                    callback(err);
+                }
 
-            // Reject any hidden files/directories, such as .svn directories
-            files = _.reject(files, function(file) {
-                return file.substr(0, 1) === '.';
+                // Reject any hidden files/directories, such as .svn directories
+                files = _.reject(files, function(file) {
+                    return file.substr(0, 1) === '.';
+                });
+
+                callback(null, files, schemas);
             });
-
+        },
+        function(files, schemas, callback) {
             logger.debug("Scanned " + files.length + " auxiliary schemas.");
+
+            var aux_schemas = {};
 
             osdf_utils.async_for_each(
                 files,
@@ -1001,13 +1014,17 @@ function get_ns_schemas(ns, callback) {
                         cb();
                     }
                 },
-                this
+                function() {
+                    // Assemble an object to contain both the schemas and auxiliary schemas
+                    // for this namespace.
+                    var ns_final_struct = { 'schemas': schemas,
+                                            'aux': aux_schemas };
+                    callback(null, ns_final_struct);
+                }
             );
-        },
-        function() {
-            var final_struct = { 'schemas': schemas,
-                                 'aux': aux_schemas };
-            callback(final_struct);
+        }],
+        function(err, ns_final_struct) {
+            callback(err, ns_final_struct);
         }
     );
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/node
 
 var osdf_utils = require('osdf_utils');
+var async = require('async');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
-var flow = require('flow');
 
 var test_ns = 'test';
 
@@ -31,21 +31,25 @@ exports['insert_schema'] = function (test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert a schema
             var schema_doc = { name: schema_name,
                                schema: test_schema };
 
-            tutils.insert_schema(test_ns, schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
             test.ok(data === '', "No content returned on a schema insertion.");
 
-            // then try to retrieve it 
-            tutils.retrieve_schema(test_ns, schema_name, auth, this);
-        }, function(data, response) {
+            // then try to retrieve it
+            tutils.retrieve_schema(test_ns, schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Schema retrieval yielded correct status code.")
 
@@ -59,7 +63,7 @@ exports['insert_schema'] = function (test) {
             } catch (e) {
                 console.log("Problem deleting the test schema during cleanup.", e);
             }
-        }
+        }]
     );
 };
 
@@ -70,21 +74,25 @@ exports['insert_schema_with_malformed_json'] = function (test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert a schema
             var schema_doc = { name: schema_name,
                                schema: "\\\\\/////" };
 
-            tutils.insert_schema(test_ns, schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 422, "Correct status for insertion.");
 
             test.ok(data === '', "No content returned on a schema insertion.");
 
-            // then try to retrieve it 
-            tutils.retrieve_schema(test_ns, schema_name, auth, this);
-        }, function(data, response) {
+            // then try to retrieve it
+            tutils.retrieve_schema(test_ns, schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 404,
                        "Schema retrieval yielded correct status code.")
 
@@ -94,17 +102,14 @@ exports['insert_schema_with_malformed_json'] = function (test) {
             // we try to remove it so that the test doesn't leave a residue behind.
             if (response.statusCode !== 404) {
                 // Cleanup. Remove the schema that we inserted.
-                try {
-                    tutils.delete_schema(test_ns, schema_name, auth, this );
-                } catch (e) {
-                    console.log("Problem deleting the test schema during cleanup.", e);
-                    this();
-                }
-            } else {
-                test.done();
+                tutils.delete_schema(test_ns, schema_name, auth, function(data, response) {
+                    // ignored
+                });
             }
 
-        }, function(data, response) {
+            callback(null);
+        }],
+        function(err, results) {
             test.done();
         }
     );
@@ -121,30 +126,32 @@ exports['insert_conflicting_schema'] = function (test) {
     var schema_doc = { name: schema_name,
                        schema: test_schema };
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert a schema
-            tutils.insert_schema(test_ns, schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201, "Correct status for insertion.");
 
             // Now, try inserting the same thing again...
-            tutils.insert_schema(test_ns, schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.notEqual(response.statusCode, 201,
                        "Insertion of a schema with an existing name did not succeed.")
 
             test.ok(data.length === 0, "No data returned on subsequent insertion.");
 
             // Cleanup by removing the schema that we inserted.
-            try {
-                tutils.delete_schema(test_ns, schema_name, auth, function(e) {
-                    test.done();
-                });
-            } catch (e) {
-                console.log("Problem deleting the test schema during cleanup.", e);
-                test.done();
-            }
+            tutils.delete_schema(test_ns, schema_name, auth, function(data, response) {
+                callback(null);
+            });
+        }],
+        function(err, results) {
+            test.done();
         }
     );
 };
@@ -173,49 +180,53 @@ exports['insert_schema_with_unknown_auxiliary'] = function (test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    // Let's take the test schema, add a $ref to it using a
-    // randomly generated name, and attempt to insert it. This
-    // should fail.
-    var random_aux_name = osdf_utils.random_string(8);
-    var test_schema_modified = test_schema;
+    async.waterfall([
+        function(callback) {
+            // Let's take the test schema, add a $ref to it using a
+            // randomly generated name, and attempt to insert it. This
+            // should fail.
+            var random_aux_name = osdf_utils.random_string(8);
+            var test_schema_modified = test_schema;
 
-    test_schema_modified['properties']['$ref'] = random_aux_name;
+            test_schema_modified['properties']['$ref'] = random_aux_name;
 
-    var schema_doc = { name: schema_name,
-                       schema: test_schema_modified };
+            var schema_doc = { name: schema_name,
+                               schema: test_schema_modified };
 
-    var schema_utils = require('schema_utils.js');
-    var refs = schema_utils.extractRefNames(test_schema_modified);
+            var schema_utils = require('schema_utils.js');
+            var refs = schema_utils.extractRefNames(test_schema_modified);
 
-    flow.exec(
-        function() {
             test.ok(Array.isArray(refs), "Got an array of references to test.");
 
             test.equal(refs.length, 1, "Got the expected number of reference names.");
-            
+
             test.equal(refs[0], random_aux_name,
                        "The extracted ref name matches the random name we generated.");
 
             // Attempt to insert the schema.
-            tutils.insert_schema(test_ns, schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 422,
                        "Correct status code for insertion with an unknown auxiliary.");
 
-            test.equal(data.length, 0, 
+            test.equal(data.length, 0,
                        "No content returned for schema insertion with an unknown auxiliary.");
 
             // Now retrieve it and make sure it wasn't registered on the server.
-            tutils.retrieve_schema(test_ns, schema_name, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_schema(test_ns, schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 404,
                        "Correct status code for failed insertion.");
 
-            test.equal(data.length, 0, 
+            test.equal(data.length, 0,
                        "No content returned for schema retrieval.");
 
             test.done();
-        }
+        }]
     );
 };
 
@@ -224,37 +235,42 @@ function invalid_credentials_helper(test, test_auth) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert a schema
             var schema_doc = { name: schema_name,
                                schema: test_schema };
 
             // Attempt the insertion with invalid credentials...
-            tutils.insert_schema(test_ns, schema_doc, test_auth, this);
-        }, function(data, response) {
+            tutils.insert_schema(test_ns, schema_doc, test_auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 403,
                        "Correct status for insertion without credentials.");
 
             test.equal(data.length, 0,
                        "No content returned on a schema insertion with no credentials.");
 
-            // then try to retrieve it. 
-            tutils.retrieve_schema(test_ns, schema_name, auth, this);
-        }, function(data, response) {
+            // then try to retrieve it.
+            tutils.retrieve_schema(test_ns, schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 404,
                        "Schema retrieval of failed insertion yielded correct code.")
 
             test.equal(data.length, 0, "No data returned on retrieval.");
 
-            test.done();
-
             // Cleanup. Remove the schema that we inserted.
-            try {
-                tutils.delete_schema(test_ns, schema_name, auth, function(e){} );
-            } catch (e) {
-                console.log("Problem deleting the test schema during cleanup.", e);
-            }
+            tutils.delete_schema(test_ns, schema_name, auth, function(data, response) {
+                // ignored
+            });
+
+            callback(null);
+        }],
+        function(err, results) {
+            test.done();
         }
     );
 }

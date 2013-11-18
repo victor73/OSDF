@@ -59,7 +59,7 @@ function configure() {
     }
 
     if (log_file_path === null || typeof log_file_path === 'undefined') {
-        //log_file_path = path.join(osdf_utils.get_osdf_root(), '/logs/osdf.log'); 
+        log_file_path = path.join(osdf_utils.get_osdf_root(), '/logs/osdf.log');
     } else {
         // Set the path to the log file and...
         osdf_utils.set_log_file(log_file_path);
@@ -141,10 +141,14 @@ function start_master(config) {
 
                 if (workers_ready === cpu_count) {
                     // Show some details about the server after it's up and running.
-                    var bind_address = config.value("global", "bind_address");
-                    var port = config.value("global", "port");
+                    var bind_address = config.value('global', 'bind_address');
+                    var port = config.value('global', 'port');
+                    var cors_enabled = config.value('global', 'cors_enabled');
+
                     ready_data['address'] = bind_address;
                     ready_data['port'] = port;
+                    ready_data['cors_enabled'] = cors_enabled;
+
                     show_ready(ready_data);
                 }
             }
@@ -154,7 +158,7 @@ function start_master(config) {
     // This is for node.js .6.x, in wich the event is called 'death'.
     cluster.on('death', function(worker) {
         if (! letWorkersDie) {
-            console.error('Worker ' + worker.pid + ' died. Starting a replacement...');
+            console.error('Worker ' + process.pid + ' died. Starting a replacement...');
             cluster.fork();
         }
     });
@@ -163,7 +167,7 @@ function start_master(config) {
     // See here: https://github.com/joyent/node/wiki/API-changes-between-v0.6-and-v0.8
     cluster.on('exit', function(worker) {
         if (! letWorkersDie) {
-            console.error('Worker ' + worker.pid + ' died. Starting a replacement...');
+            console.error('Worker ' + process.pid + ' died. Starting a replacement...');
             cluster.fork();
         }
     });
@@ -192,7 +196,7 @@ function start_master(config) {
 function destroy_workers(workers) {
     // Iterate through the workers, and destroy each of them.
     _.each(workers, function(worker) {
-        console.error('Destroying worker ' + worker.pid);
+        console.error('Destroying worker ' + process.pid);
         if (worker.kill) {
             // This is for node.js 0.6.x
             worker.kill();
@@ -207,6 +211,7 @@ function show_ready(ready_data) {
     var user_count = ready_data['user_count'];
     var address = ready_data['address'];
     var port = ready_data['port'];
+    var cors_enabled = ready_data['cors_enabled'];
 
     if (custom_config) {
         console.log("Configured settings file: " + config_path);
@@ -220,6 +225,12 @@ function show_ready(ready_data) {
         console.log("Configured log file: " + log_file_path);
     }
 
+    var cors = false;
+    if (cors_enabled !== 'undefined' && cors_enabled !== null &&
+           (cors_enabled === 'true' || cors_enabled === 'yes')) {
+        cors = true;
+    }
+    console.log("CORS enabled: " + cors);
     console.log("Total number of registered OSDF users: " + user_count);
     console.log("=================================");
     console.log("Welcome to");

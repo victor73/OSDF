@@ -1,8 +1,9 @@
 // cradle - for interactions with CouchDB
 // JSV - Used for JSON validation with JSON-Schema
-// flow - For handling complicated async workflows
+// async - For handling complicated async workflows
 
 var _ = require('underscore');
+var async = require('async');
 var cradle = require('cradle');
 var http = require('http');
 var fs = require('fs');
@@ -11,7 +12,6 @@ var schema_utils = require('schema_utils');
 var path = require('path');
 var JSV = require('./node_modules/JSV/jsv').JSV;
 var config = require('config');
-var flow = require('flow');
 var perms = require('perms-handler');
 var auth = require('auth_enforcer');
 var sprintf = require('sprintf').sprintf;
@@ -77,7 +77,6 @@ exports.init = function(emitter, working_dir_custom) {
     osdf_utils.get_namespace_names( function(names) {
         namespaces = names;
         logger.info("Namespaces: ", namespaces);
-console.log("NS: " , namespaces);
 
         // Setup all the JSON validators for the namespaces and their node types.
         // Then, send a notificatino that we have completed initialization and
@@ -183,44 +182,51 @@ exports.insert_node = function (request, response) {
     if (report === null || (report !== false && report.errors.length === 0)) {
         // Either we have a good report, or there is no schema for the node type. Either way,
         // we're free to go ahead and insert the data.
-        try {
-            var node_data = JSON.parse(content);
+        var node_data = JSON.parse(content);
 
-            var node_id;
-
-            flow.exec( function() {
-                    db.save(node_data, this);
-                }, function(err, couch_response) {
+        async.waterfall([
+            function(callback) {
+                db.save(node_data, function(err, couch_response) {
                     if (err) {
-                        throw err;
-                    }
-
-                    node_id = couch_response.id;
-
-                    if (couch_response.ok === true) {
-                        // Save the history
-                        node_data['id'] = node_id;
-                        node_data['ver'] = 1;
-                        save_history(node_id, node_data, this);
+                        logger.error(err);
+                        callback(err);
                     } else {
-                        // This shouldn't happen, but...
-                        throw "No error, but couchdb response was not 'ok'.";
+                        callback(null, couch_response);
                     }
-                }, function(err) {
-                    if (err) {
-                        throw err;
-                    }
+                });
+            }, function(couch_response, callback) {
+                var node_id = couch_response.id;
 
-                    var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                if (couch_response.ok === true) {
+                    // Save the history
+                    node_data['id'] = node_id;
+                    node_data['ver'] = 1;
+                    save_history(node_id, node_data, function(err) {
+                        if (err) {
+                            logger.error(msg);
+                            callback(new Error(msg));
+                        } else {
+                            var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                            callback(null, node_url);
+                        }
+                    });
+                } else {
+                    // This shouldn't happen, but...
+                    var msg = "No error, but couchdb response was not 'ok'.";
+                    logger.error(msg);
+                    callback(new Error(msg));
+                }
+            }], function (err, node_url) {
+                if (err) {
+                    logger.error(err);
+                    osdf_error(response, "Unable to save node.", 500);
+                } else {
                     logger.info("Successful insertion: " + node_url);
                     response.location(node_url);
                     response.send(201, '');
                 }
-            );
-        } catch (err) {
-            logger.error(err);
-            osdf_error(response, "Unable to save node.", 500);
-        }
+            }
+        );
     } else {
         if (report !== null) {
             var err_msg = report.errors.shift().message;
@@ -264,8 +270,10 @@ exports.update_node = function(request, response) {
         // If here, then it seems we're okay to attempt the update
         update_node_helper(node_id, node_data, function(err, update_result) {
             if (err) {
-                logger.error("Unable to update data in couch.", err);
-                osdf_error(response, update_result['msg'], update_result['code']);
+                logger.error("Unable to update data in couchdb.", reason);
+                var reason = update_result['msg'];
+                var code = update_result['code'];
+                osdf_error(response, reason, code);
             } else {
                 response.send(200, '');
             }
@@ -598,71 +606,88 @@ function update_node_helper(node_id, node_data, callback) {
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
-    var previous_node;
 
-    try {
-        flow.exec(
-            function() {
-                get_couch_doc(node_id, this);
-            },
-            function(err, data) {
+    async.waterfall([
+        function(callback) {
+            get_couch_doc(node_id, function(err, data) {
                 if (err) {
                     result['msg'] = "Unable to perform update operation.";
                     result['code'] = 500;
-                    throw err;
+
+                    // This should stop the waterfall...
+                    callback(err);
+                } else {
+                    callback(null, data);
                 }
+            });
+        },
+        function(data, callback) {
+            var previous_node = data;
+            var couchdb_version = previous_node['_rev'];
+            var version = parse_version(couchdb_version);
 
-                previous_node = data;
-                var couchdb_version = previous_node['_rev'];
-                var version = parse_version(couchdb_version);
+            if ( node_version !== version ) {
+                var msg = "Version provided (" + node_version + ") doesn't match " +
+                          "saved (" + version + ").";
 
-                if ( node_version !== version ) {
-                    var msg = "Version provided (" + node_version + ") doesn't match " +
-                              "saved (" + version + ").";
+                result['msg'] = msg;
+                result['code'] = 422;
 
-                    result['msg'] = msg;
-                    result['code'] = 422;
-                    throw msg;
-                }
-
-                // Okay to proceed with the update because the versions match
-                db.save(node_id, couchdb_version, node_data, this);
-            },
-            function(err, couch_response) {
+                // This should stop the waterfall...
+                callback(msg);
+            } else {
+                callback(null, previous_node, couchdb_version);
+            }
+        },
+        function(previous_node, couchdb_version, callback) {
+            // Okay to proceed with the update because the versions match
+            db.save(node_id, couchdb_version, node_data, function(err, couch_response) {
                 if (err) {
                     result['msg'] = err.error;
                     result['code'] = 500;
-                    throw err;
+
+                    callback(err);
                 }
 
                 if (! couch_response.ok) {
-                    result['msg'] = err.error;
+                    result['msg'] =  "Unable to save node data.";
                     result['code'] = 500;
-                    throw err;
+
+                    callback(result['msg']);
                 }
 
                 logger.info("Successful update for node id: " + node_id);
-
-                // Save the history
-                save_history(node_id, osdf_utils.fix_keys(previous_node), this);
-            },
-            function(err) {
+                callback(null, previous_node);
+            });
+        },
+        function(previous_node, callback) {
+            // Save the history
+            save_history(node_id, osdf_utils.fix_keys(previous_node), function(err) {
                 if (err) {
+                    logger.error(err);
+
                     result['msg'] = err.error;
                     result['code'] = 500;
-                    throw err;
+
+                    callback(err);
+                } else {
+                    result['msg'] = '';
+                    result['code'] = 200;
+
+                    callback(null);
                 }
-
-                result['msg'] = '';
-                result['code'] = 200;
-
-                callback(null, result);
-            }
-        );
-
-    } catch (err) {
-        callback(err, result);
-    }
+            });
+        }
+    ], function(err) {
+        // In both cases (failure and success) the caller is going to need
+        // 'result' so we know what error code and message to return back
+        // to the client.
+        if (err) {
+            callback(err, result);
+        } else {
+            callback(null, result);
+        }
+    });
 }
 
 function define_namespace_validators(namespace, define_cb) {
@@ -715,17 +740,22 @@ function define_namespace_validators(namespace, define_cb) {
     };
 
     var aux_schema_registrar = function(callback) {
-        register_aux_schemas(namespace, function() {
+        register_aux_schemas(namespace, function(err) {
             logger.info("Finished registering auxiliary schemas for: " + namespace);
             callback();
         });
     };
 
-    flow.exec( function() {
-            schema_registrar(this);
-        }, function() {
-            aux_schema_registrar(this);
-        }, function() {
+    async.series([
+        function(callback) {
+            schema_registrar(function() {
+                callback(null);
+            });
+        }, function(callback) {
+            aux_schema_registrar(function() {
+                callback(null);
+            });
+        }], function(err, callback) {
             define_cb();
         }
     );
@@ -1102,7 +1132,10 @@ function register_aux_schemas(ns, callback) {
 
     // Create a JSON-Schema (Draft 3) environment
     var environment = JSV.createEnvironment('json-schema-draft-03');
-    register_aux_schemas_to_env(environment, ns, function() {
+    register_aux_schemas_to_env(environment, ns, function(err) {
+        if (err) {
+            throw new Error(err);
+        }
         validators[ns]['env'] = environment;
         callback();
     });
@@ -1111,19 +1144,25 @@ function register_aux_schemas(ns, callback) {
 function register_aux_schemas_to_env(env, ns, then) {
     logger.debug("In register_aux_schemas_to_env.");
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
             // Scan the files contained in the directory and process them
-            fs.readdir(aux_dir, this);
+            fs.readdir(aux_dir, function(err, files) {
+                if (err) {
+                    logger.error(err);
+                    callback(err);
+                } else {
+                    callback(null, files);
+                }
+            });
         },
-        function(err, files) {
-            if (err) {
-                throw err;
-            }
-            load_aux_schemas_into_env(ns, env, files, this);
-        }, function() {
-            then();
+        function(files, callback) {
+            load_aux_schemas_into_env(ns, env, files, function() {
+                callback(null);
+            });
+        }], function(err, results) {
+            then(err);
         }
     );
 }

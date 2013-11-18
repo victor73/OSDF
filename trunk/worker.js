@@ -40,7 +40,7 @@ function initialize(working_path) {
             logger.info('Detected that the configuration has been updated.');
             info_handler.update();
         }
-    }); 
+    });
 }
 
 // This function sets up the mechanism to wait for all the handlers
@@ -53,9 +53,8 @@ function listen_for_init_completion(config) {
 
     var examine_handlers = function() {
         if (++handler_count === handlers.length) {
-            console.log("Handlers initialized for worker " +
-                        process.env.NODE_WORKER_ID + " (PID " +
-                        process.pid + ").");
+            console.log("Handlers initialized for worker with PID " +
+                        process.pid + ".");
 
             // Send message to master process
             process.send({ cmd: 'init_completed' });
@@ -84,20 +83,39 @@ function listen_for_init_completion(config) {
     });
 }
 
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    // intercept OPTIONS method
+    if (req.method == 'OPTIONS' ) {
+        res.send(200);
+    } else {
+        next();
+    }
+};
+
 // This is the function that launches the app when all
 // initialization is complete.
 function launch(config) {
     var app = express();
 
+    // Check if CORS Support should be enabled or not.
+    var cors = config.value("global", "cors_enabled");
+    if (typeof cors !== 'undefined' && cors !== null && (cors === "true" || cors === "yes")) {
+        app.use(allowCrossDomain);
+    }
+
     // Register various middleware functions
     // Logging of the request
     app.use(express.logger());
 
-    // Removed the "X-Powered-By" header (reduce bandwidth a bit).
-    app.disable('x-powered-by');
-
     // Enforce authentication
     app.use(auth_enforcer.authenticate());
+
+    // Removed the "X-Powered-By" header (reduce bandwidth a bit).
+    app.disable('x-powered-by');
 
     // This custom middleware is what sets the 'rawBody' property
     app.use (function(req, res, next) {
@@ -115,17 +133,17 @@ function launch(config) {
     // Node handler functions
     var routes = require('routes');
     routes.set_routes(app);
-    
+
     var bind_address = config.value("global", "bind_address");
     var port = config.value("global", "port");
 
     // Check that we have some valid settings.
-    if (bind_address === null || bind_address.length === 0) {
+    if (typeof bind_address === 'undefined' || bind_address === null || bind_address.length === 0) {
         console.log("The 'bind_address' setting is not configured.");
         process.exit(1);
     }
 
-    if (port === null || port.length === 0) {
+    if (typeof port === 'undefined' || port === null || port.length === 0) {
         console.log("The 'port' setting is not configured.");
         process.exit(1);
     }
@@ -155,7 +173,7 @@ function launch(config) {
     });
 
     app.listen(port, bind_address);
-    
+
     // If we are being started via sys-v style init scripts we are probably being
     // invoked as root. If we need to listen on a well known port, we need to be
     // launched as root to bind to the port, but then drop down to another UID.
@@ -167,7 +185,7 @@ function launch(config) {
             process.exit(1);
         }
 
-        console.log("Launched as root. Switching to " + user); 
+        console.log("Launched as root. Switching to " + user);
         process.setuid(user);
     }
 }

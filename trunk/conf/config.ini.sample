@@ -3,6 +3,10 @@
 # all interfaces that the host has configured.
 bind_address=0.0.0.0
 base_url=http://osdf.example.com
+
+# Enable Support for CORS (Cross-origin Resource Sharing)
+cors_enabled=false
+
 # The TCP port number to listen on.
 port=8123
 # The username to run the service as. This setting is only relevant when

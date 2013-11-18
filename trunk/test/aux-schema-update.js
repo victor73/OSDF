@@ -1,9 +1,9 @@
 #!/usr/bin/node
 
+var async = require('async');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
-var flow = require('flow');
 var _ = require('underscore');
 var clone = require('clone');
 
@@ -32,34 +32,33 @@ var test_aux_schema = {
 };
 
 // Test basic update of an auxiliary schema. The approach is to insert an
-// auxiliary schema, then perform an update/edit operation, then check that
-// the update worked by retrieving it and examining the results. We also
-// need to check that the update "stuck" by attempting to insert a node to
-// see whether the update auxiliary schema is used by the validation engine
-// or not. After those tests are performed, we do cleanup.
+// auxiliary schema, then perform an update/edit operation, then check that the
+// update worked by retrieving it and examining the results. We also need to
+// check that the update "stuck" by attempting to insert a node to see whether
+// the update auxiliary schema is used by the validation engine or not. After
+// those tests are performed, we do cleanup.
 exports['update_aux_schema'] = function (test) {
     test.expect(14);
 
     var primary_schema_name = osdf_utils.random_string(8);
     var aux_schema_name = osdf_utils.random_string(8);
-    var aux_schema_doc;
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert an auxiliary schema
-            aux_schema_doc = { name: aux_schema_name,
-                               schema: test_aux_schema };
+            var aux_schema_doc = { name: aux_schema_name,
+                                   schema: test_aux_schema };
 
-            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201,
                        "Correct status for primary schema insertion.");
 
-            test.equal(data.length, 0,
-                       "No content returned on auxiliary schema insertion.");
+            test.ok(data === '', "No content returned on auxiliary schema insertion.");
 
-            // Make a primary schema that refers to the auxiliary schema
-            // that we just inserted
+            // Make a primary schema that refers to the auxiliary schema that we just inserted
             var schema = test_primary_schema;
             schema['properties']['testprop'] = {};
             schema['properties']['testprop']['$ref'] = aux_schema_name;
@@ -67,40 +66,50 @@ exports['update_aux_schema'] = function (test) {
             var primary_schema_doc = { name: primary_schema_name,
                                        schema: schema };
 
-            // Then we insert the schema that refers to the newly inserted
-            // auxiliary schema
-            tutils.insert_schema(test_ns, primary_schema_doc, auth, this);
-        }, function(data, response) {
+            // Then we insert the schema that refers to the newly inserted auxiliary schema
+            tutils.insert_schema(test_ns, primary_schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201,
                        "Correct status for primary schema insertion.");
 
-            test.equal(data.length, 0,
-                       "No content returned on a schema insertion.");
+            test.ok(data === '', "No content returned on a schema insertion.");
 
             // Make an altered version of the test aux schema.
             var new_aux_schema = clone(test_aux_schema);
             new_aux_schema['enum'] = [ "x-ray", "yankee", "zulu" ];
 
             // then we update the auxiliary schema with the altered version
-            tutils.update_aux_schema(test_ns, aux_schema_name, new_aux_schema, auth, this);
-        }, function(data, response) {
+            tutils.update_aux_schema(test_ns, aux_schema_name, new_aux_schema, auth,
+                function(data, response) {
+                    callback(null, data, response);
+                }
+            );
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Auxiliary schema update yielded correct status code.")
 
-            test.equal(data.length, 0,
-                       "No data returned on auxiliary schema update.");
+            test.ok(data === '', "No data returned on auxiliary schema update.");
 
             // Retrieve the auxiliary schema by name and see if the update/edit
             // was honored.
-            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
-                       "Retrieval of auxiliary schema yielded correct status code.")
+                       "Retrieval of auxiliary schema yielded correct status code.");
 
             test.ok(data.length > 0,
                     "Data returned on auxiliary schema retrieval.");
-        
-            var aux_schema = JSON.parse(data);
+
+            var aux_schema;
+            try {
+                aux_schema = JSON.parse(data);
+            } catch (err) {
+                callback(err);
+            }
 
             test.ok(aux_schema.hasOwnProperty('enum') && (aux_schema['enum'].length === 3),
                     "Retrieved auxiliary schema has the correct structure.");
@@ -110,14 +119,21 @@ exports['update_aux_schema'] = function (test) {
 
             // Get all the auxiliary schemas for the namespace and see if the
             // one we just updated is there and that it has the updated form
-            tutils.retrieve_all_aux_schemas(test_ns, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_all_aux_schemas(test_ns, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
-                       "Retrieval of all auxiliary schemas yielded correct status code.")
+                       "Retrieval of all auxiliary schemas yielded correct status code.");
 
             test.ok(data.length > 0, "Data returned on auxiliary schema listing.");
-        
-            var aux_schemas = JSON.parse(data);
+
+            var aux_schemas;
+            try {
+                aux_schemas = JSON.parse(data);
+            } catch (err) {
+                callback(err);
+            }
 
             test.ok(aux_schemas.hasOwnProperty(aux_schema_name),
                     "Namespace's auxiliary schema listing includes test aux schema.");
@@ -125,17 +141,18 @@ exports['update_aux_schema'] = function (test) {
             test.equal(aux_schemas[aux_schema_name]['enum'][2], 'zulu',
                       "Auxiliary schema update took effect in namespace's schema listing.");
 
-            test.done();
-
-            this();
-        }, function() {
             // Cleanup. Remove the aux and primary schemas that we inserted.
-            try {
-                tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
-                tutils.delete_schema(test_ns, primary_schema_name, auth, function(e){} );
-            } catch (e) {
-                console.log("Problem deleting the test auxiliary schema during cleanup.", e);
-            }
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                // ignored
+            });
+            tutils.delete_schema(test_ns, primary_schema_name, auth, function(data, response) {
+                // ignored
+            });
+
+            callback(null);
+        }],
+        function(err, results) {
+            test.done();
         }
     );
 };
@@ -148,53 +165,60 @@ exports['update_aux_schema_with_malformed_json'] = function (test) {
     var aux_schema_name = osdf_utils.random_string(8);
     var bad_data = "\\\\\/////";
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First, we create the auxiliary schema document
             var aux_schema_doc = { name: aux_schema_name,
                                    schema: test_aux_schema };
 
             // Now we insert the auxiliary schema
-            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201,
                        "Correct status for auxiliary schema insertion.");
 
-            test.ok(data.length === 0,
+            test.ok(data === '',
                     "No data returned from auxiliary schema insertion.");
 
-            tutils.update_aux_schema(test_ns, aux_schema_name, bad_data, auth, this);
-        }, function(data, response) {
+            tutils.update_aux_schema(test_ns, aux_schema_name, bad_data, auth,
+                function(data, response) {
+                    callback(null, data, response);
+                }
+            );
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 422,
                        "Correct status for invalid auxiliary schema update.");
 
-            test.equal(data.length, 0,
-                       "No data returned on an auxiliary schema update.");
+            test.ok(data === '',
+                    "No data returned on an auxiliary schema update.");
 
-            // Next, try to retrieve it 
-            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
-        }, function(data, response) {
+            // Next, try to retrieve it
+            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Auxiliary schema retrieval yielded correct status code.")
 
             test.ok(data.length > 0,
-                       "Data returned on auxiliary schema retrieval.");
+                    "Data returned on auxiliary schema retrieval.");
 
             test.ok(data !== bad_data,
                    "Bad data did not make it into the server.")
 
-            test.done();
-
-            this();
-        }, function() {
             // If for whatever reason, the auxiliary schema actually made it
             // into the server we try to remove it so that the test doesn't
             // leave a residue behind.
-            try {
-                tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(){} );
-            } catch (e) {
-                // ignored 
-            }
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                // ignored
+            });
+
+            callback(null);
+        }],
+        function(err, results) {
+            test.done();
         }
     );
 };
@@ -227,17 +251,19 @@ exports['update_aux_schema_with_unknown_auxiliary'] = function (test) {
 
     var random_aux_name = osdf_utils.random_string(8);
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First, we insert the auxiliary schema that we will use to try
             // the update.
-            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201,
                        "Correct status code for auxiliary schema insertion.");
 
-            test.equal(data.length, 0,
-                       "No content returned for auxiliary schema insertion.");
+            test.ok(data === '',
+                    "No content returned for auxiliary schema insertion.");
 
             // Now make a modified version of the test auxiliary schema.
             var test_aux_schema_modified = clone(test_aux_schema);
@@ -258,24 +284,28 @@ exports['update_aux_schema_with_unknown_auxiliary'] = function (test) {
             test.ok(Array.isArray(refs), "Got an array of references to test.");
 
             test.equal(refs.length, 1, "Got the expected number of reference names.");
-            
+
             test.equal(refs[0], random_aux_name,
                        "The extracted ref name matches the random name we generated.");
 
             // Now attempt an auxiliary schema update with the bad reference.
             tutils.update_aux_schema(test_ns, aux_schema_name,
-                                     test_aux_schema_modified, auth, this);
-        }, function(data, response) {
+                                     test_aux_schema_modified, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 422,
                        "Correct status code for auxiliary schema update " +
                        "with bad reference.");
 
-            test.equal(data.length, 0,
-                       "No content returned for auxiliary schema update.");
+            test.ok(data === '',
+                    "No content returned for auxiliary schema update.");
 
             // Check to see that the auxiliary schema was NOT updated.
-            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Correct status code for auxiliary schema retrieval.");
 
@@ -288,12 +318,15 @@ exports['update_aux_schema_with_unknown_auxiliary'] = function (test) {
             test.equal(_.indexOf(refs_retrieved, random_aux_name), -1,
                        "Schema update was not honored.");
 
-            test.done();
-
-            this();
-        }, function() {
             // Perform cleanup by removing the auxiliary schema we inserted
-            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(){});
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                // ignored
+            });
+
+            callback(null);
+        }],
+        function(err, results) {
+            test.done();
         }
     );
 };
@@ -306,24 +339,30 @@ function invalid_credentials_helper(test, test_auth) {
     var aux_schema_doc = { name: aux_schema_name,
                            schema: test_aux_schema };
 
-    flow.exec(
-        function() {
+    async.waterfall([
+        function(callback) {
             // First we insert an auxiliary schema
             // Make sure we use the valid credentials here
-            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, this);
-        }, function(data, response) {
+            tutils.insert_aux_schema(test_ns, aux_schema_doc, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 201,
                        "Correct status for auxiliary schema insertion.");
 
-            test.equal(data.length, 0,
+            test.ok(data === '',
                     "No content returned on an auxiliary schema insertion.");
 
             var modified = clone(test_aux_schema);
             modified['enum'] = [ 'xray', 'yankee', 'zulu' ];
 
             // Now, try to update it (with the test/invalid credentials)
-            tutils.update_aux_schema(test_ns, aux_schema_name, modified, test_auth, this);
-        }, function(data, response) {
+            tutils.update_aux_schema(test_ns, aux_schema_name, modified, test_auth,
+                function(data, response) {
+                    callback(null, data, response);
+                }
+            );
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 403,
                        "Auxiliary schema update had correct code.")
 
@@ -331,30 +370,47 @@ function invalid_credentials_helper(test, test_auth) {
                     "No data returned on auxiliary schema update.");
 
             // Next, check that the modified schema did not get registered
-            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth,
+                function(data, response) {
+                    callback(null, data, response);
+                }
+            );
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Correct status for auxiliary schema retrieval.");
 
             test.ok(data.length > 0,
                     "Auxiliary schema retrieval returned data.");
 
-            var registered = JSON.parse(data);
+            var registered;
+            try {
+                registered = JSON.parse(data);
+            } catch (err) {
+                callback(err);
+            }
+
             test.equal(registered['enum'][0], "alpha",
                        "Attempted update with invalid creds was not honored.");
 
             // Finally, also check to see that the modified auxiliary schema
             // did NOT find its way into the namespace's master list of
             // auxiliary schemas.
-            tutils.retrieve_all_aux_schemas(test_ns, auth, this);
-        }, function(data, response) {
+            tutils.retrieve_all_aux_schemas(test_ns, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
                        "Correct status for the auxiliary schema listing.");
 
             test.ok(data.length > 0,
                     "Got data back for the auxiliary schema listing.");
 
-            var aux_schemas = JSON.parse(data);
+            var aux_schemas;
+            try {
+                aux_schemas = JSON.parse(data);
+            } catch (err) {
+                callback(err);
+            }
 
             test.ok(aux_schemas.hasOwnProperty(aux_schema_name),
                     "Auxiliary schema is present in the namespace's list.");
@@ -362,17 +418,15 @@ function invalid_credentials_helper(test, test_auth) {
             test.equal(aux_schemas[aux_schema_name]['enum'][0], "alpha",
                        "Attempted update with invalid creds was not honored.");
 
-            test.done();
+            // Cleanup. Remove the schema that we inserted. Use valid credentials here.
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
+                // ignored
+            });
 
-            this();
-        }, function() {
-            // Cleanup. Remove the schema that we inserted. Use valid
-            // credentials here.
-            try {
-                tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(e){} );
-            } catch (e) {
-                console.log("Problem deleting the test auxiliary schema during cleanup.", e);
-            }
+            callback(null);
+        }],
+        function() {
+            test.done();
         }
     );
 }
