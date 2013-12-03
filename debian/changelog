@@ -1,3 +1,11 @@
+osdf (0.4-1) unstable; urgency=low
+
+  * Replaced flow.js with async.js in base code as well as tests
+  * New test for handling of bad version numbers during node updates
+  * Improved CORS configurability
+
+ -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
+
 osdf (0.3-1) unstable; urgency=low
 
   * Updated code to deal with changes in node.js 0.10.x
