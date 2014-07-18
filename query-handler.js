@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var path = require('path');
 var auth = require('auth_enforcer');
 var elastical = require('elastical');
@@ -49,7 +49,7 @@ exports.init = function (emitter) {
                 emitter.emit('query_handler_aborted', "ElasticSearch river '" +
                     es_river_name + "' doesn't seem to exist.");
             } else {
-                logger.debug("Connected to ElasticSearch at " + 
+                logger.debug("Connected to ElasticSearch at " +
                             elasticsearch_address + ":" + elasticsearch_port);
 
                 // Emit an event to notify of successful initialization.
@@ -82,7 +82,7 @@ exports.init = function (emitter) {
                 eclient = new elastical.Client(elasticsearch_address,
                               {port: elasticsearch_port});
 
-                logger.debug("Connected to ElasticSearch at " + 
+                logger.debug("Connected to ElasticSearch at " +
                             elasticsearch_address + ":" + elasticsearch_port);
 
                 // Emit an event to notify of successful initialization.
@@ -115,7 +115,7 @@ exports.perform_query = function (request, response) {
         user_query = JSON.parse(content);
     } catch (err) {
         logger.error("Bad query json provided.  " + err);
-        osdf_error(response, 'Bad query json provided. ' + err, 422);  
+        osdf_error(response, 'Bad query json provided. ' + err, 422);
         return;
     }
 
@@ -168,7 +168,7 @@ exports.perform_query = function (request, response) {
                 // Determine if this is a partial result response
                 var first_result_number = elastic_query["from"] || 0;
                 if (first_result_number + results.hits.length < results.total) {
-                    // Only count this as a partial result if the user did 
+                    // Only count this as a partial result if the user did
                     // not specify both from and size in the query
                     if (! user_query["from"] && ! user_query["size"]) {
                         partial_result = true;

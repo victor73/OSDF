@@ -1,8 +1,8 @@
 #!/usr/bin/node
 
+var _ = require('lodash');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
-var _ = require('underscore');
 var logger = osdf_utils.get_logger();
 
 var host = 'localhost';

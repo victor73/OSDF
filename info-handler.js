@@ -10,12 +10,12 @@ exports.init = function(emitter) {
     exports.update();
 
     emitter.emit("info_handler_initialized");
-}
+};
 
 exports.info = function(request, response) {
     logger.debug("In info.");
     response.jsonp(info);
-}
+};
 
 exports.update = function() {
     logger.debug("In update.");
@@ -32,4 +32,4 @@ exports.update = function() {
     info['technical_contact2'] = c.value("info", "technical_contact2");
     info['comment1'] = c.value("info", "comment1");
     info['comment2'] = c.value("info", "comment2");
-}
+};

@@ -4,7 +4,7 @@ var async = require('async');
 var osdf_utils = require('osdf_utils');
 var schema_utils = require('schema_utils');
 var path = require('path');
-var _ = require('underscore');
+var _ = require('lodash');
 var util = require('util');
 var JSV = require('./node_modules/JSV/jsv').JSV;
 require('config');

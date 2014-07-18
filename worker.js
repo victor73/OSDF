@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var auth_enforcer = require('auth_enforcer');
 var fs = require('fs');
 var osdf_utils = require('osdf_utils');

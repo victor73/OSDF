@@ -298,7 +298,7 @@ function invalid_credentials_helper(test, test_auth) {
     var aux_schema_name = osdf_utils.random_string(8);
 
     async.waterfall([
-        function() {
+        function(callback) {
             // First we insert a schema
             var aux_schema_doc = { name: aux_schema_name,
                                    schema: test_aux_schema };
@@ -320,7 +320,7 @@ function invalid_credentials_helper(test, test_auth) {
             });
         }, function(data, response, callback) {
             test.equal(response.statusCode, 404,
-                       "Auxiliary schema retrieval of failed insertion had correct code.")
+                       "Auxiliary schema retrieval of failed insertion had correct code.");
 
             test.ok(data === '',
                     "No data returned on auxiliary schema retrieval.");
@@ -353,9 +353,11 @@ function invalid_credentials_helper(test, test_auth) {
             tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
                 // ignored
             });
+
+            callback(null);
         }],
-        function() {
+        function(err, results) {
             test.done();
         }
     );
-};
+}

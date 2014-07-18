@@ -1,8 +1,9 @@
+// lodash - for generic utility functions
 // cradle - for interactions with CouchDB
 // JSV - Used for JSON validation with JSON-Schema
 // async - For handling complicated async workflows
 
-var _ = require('underscore');
+var _ = require('lodash');
 var async = require('async');
 var cradle = require('cradle');
 var http = require('http');

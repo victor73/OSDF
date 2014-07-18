@@ -7,13 +7,13 @@
 // CouchDB design documents before being registered with the configured
 // CouchDB server.
 
+var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
 var cradle = require('cradle');
 var cli = require('commander');
 var async = require('async');
 var pw = require('pw');
-var _ = require('underscore');
 
 cli.option('-a, --address <Couch IP address/name>',
            'Specify an alternate configuration file.')
@@ -23,7 +23,7 @@ cli.option('-a, --address <Couch IP address/name>',
             'Specify the username of the CouchDB administrator.')
     .option('-p, --port <port number (default of 5984)>',
             'Specify the port number that CouchDB is listening on.')
-    .parse(process.argv); 
+    .parse(process.argv);
 
 var couchdb_admin = cli.username;
 var couchdb_address = cli.address;
@@ -99,7 +99,7 @@ function getDesignDocs(files, design_doc_names, callback) {
 
                 var pieces = base.split('-');
                 var view_name = pieces[1];
-                
+
                 var map_code = fs.readFileSync(file, "utf-8");
 
                 var reduce_file = base + '-reduce.js';
@@ -151,7 +151,7 @@ function strEndsWith(str, suffix) {
 // Create a Couchdb "map" key/value for a "view" design document.
 // The first argument is the name of the map, and the second
 // argument is the javascript code to execute.
-function create_map(name, code) { 
+function create_map(name, code) {
     var view = '"' + name + '": {' + "\n";
     view += '"map": "' + escape(code) + '"}';
     return view;

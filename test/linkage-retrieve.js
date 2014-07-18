@@ -355,7 +355,7 @@ exports['in_linkage_no_auth'] = function (test) {
 
             // then try to retrieve the linkage for the first node with no authentication token.
             tutils.retrieve_node_in_links(node_id1, null, function(data, response) {
-                callback(data, response);
+                callback(null, data, response);
             });
         }, function(data, response, callback) {
             test.equal(response.statusCode, 403,
