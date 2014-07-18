@@ -1,10 +1,10 @@
 #!/usr/bin/node
 
+var _ = require('lodash');
 var async = require('async');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
-var _ = require('underscore');
 var clone = require('clone');
 
 var test_ns = 'test';

@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
@@ -25,7 +25,7 @@ exports.init = function(emitter) {
         osdf_utils.async_for_each(namespaces, function(namespace, cb) {
 
             var acl_dir = path.join(osdf_utils.get_working_dir(), 'namespaces',
-                                    namespace, 'acls'); 
+                                    namespace, 'acls');
 
             fs.readdir(acl_dir, function(err, files) {
                 if (err) {
@@ -49,7 +49,7 @@ exports.init = function(emitter) {
                             throw err;
                         }
 
-                        var members = data.split('\n'); 
+                        var members = data.split('\n');
 
                         // Reject any strange members
                         members = _.reject(members, function(member) {
@@ -59,7 +59,7 @@ exports.init = function(emitter) {
                         // Remove any that have spaces in them.
                         members = _.reject(members, function(member) {
                             return osdf_utils.has_white_space(member);
-                        }); 
+                        });
 
                         // Sort them
                         members = _.sortBy(members, function(member) { return member; });
@@ -69,19 +69,19 @@ exports.init = function(emitter) {
 
                         //populate the acl object
                         acl[namespace][file] = members;
-        
+
                         //populate the namespace_user_acls object
-                        _.each(members, function(member) { 
+                        _.each(members, function(member) {
                         	if (!namespace_user_acls[namespace][member]) {
                         		namespace_user_acls[namespace][member] = [];
                         	}
                         	namespace_user_acls[namespace][member].push(file);
                         });
-                        
+
                         file_cb();
                     });
                 }, function() { cb(); });
-               
+
             });
         }, function() {
             emitter.emit('perms_handler_initialized');
@@ -155,7 +155,7 @@ exports.has_write_permission = function(user, node) {
     if (acl.hasOwnProperty(namespace)) {
         var acl_idx;
         for (acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
-            var write_acl = write_acls[acl_idx]; 
+            var write_acl = write_acls[acl_idx];
 
             if (  osdf_utils.contains(user, acl[namespace][write_acl])) {
                 can_write = true;

@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
@@ -29,7 +29,7 @@ exports.get_all_namespaces = function (request, response) {
     };
 
     // Scan the directory containing the namespace descriptors for JSON
-    // files. Do it ASYNCHRONOUSLY, so we DO NOT use the "sync" version 
+    // files. Do it ASYNCHRONOUSLY, so we DO NOT use the "sync" version
     // of readdir(), readDirSync().
     fs.readdir(ns_path, function(err, files) {
         if (err) {
@@ -86,7 +86,7 @@ exports.get_namespace = function (request, response) {
 
     // Check to see if we have a file descriptor (JSON) for the namespace the user
     // has specified. This is also an asynchronous call.
-    path.exists(ns_file, function(exists) { 
+    path.exists(ns_file, function(exists) {
         if (! exists) {
             // The namespace is unknown to us.
             osdf_error(response, "Namespace doesn't exit.", 404);

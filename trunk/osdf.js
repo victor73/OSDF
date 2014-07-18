@@ -1,6 +1,6 @@
 #!/usr/bin/node
 
-var _ = require('underscore');
+var _ = require('lodash');
 var cluster = require('cluster');
 var path = require('path');
 var os = require('os');

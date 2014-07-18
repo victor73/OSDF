@@ -1,5 +1,6 @@
 #!/usr/bin/node
 
+var clone = require('clone');
 var events = require('events');
 var ee = new events.EventEmitter();
 ee.setMaxListeners(0);
@@ -58,8 +59,8 @@ exports['basic_update'] = function (test) {
             var inserted = JSON.parse(data);
             initial_version = inserted['ver'];
 
-            // Okay, now to modify the node, I have to put the version in
-            var modified_node = test_node;
+            // Okay, now to modify the node, we have to put the version in
+            var modified_node = clone(test_node);
             modified_node.meta['modified'] = true;
             modified_node['ver'] = initial_version;
 
@@ -117,7 +118,7 @@ exports['update_no_auth'] = function (test) {
             var location = response.headers.location;
             var node_id = location.split('/').pop();
 
-            var modified_node = test_node;
+            var modified_node = clone(test_node);
             modified_node.meta['modified'] = true;
 
             // then try to update it with no authentication
@@ -165,7 +166,7 @@ exports['update_bad_auth'] = function (test) {
             var location = response.headers.location;
             var node_id = location.split('/').pop();
 
-            var modified_node = test_node;
+            var modified_node = clone(test_node);
             modified_node.meta['modified'] = true;
 
             // then try to update it with no authentication
@@ -337,7 +338,7 @@ exports['update_into_unknown_namespace'] = function (test) {
         }, function(data, response, callback) {
             var initial_node = JSON.parse(data);
             var initial_version = initial_node.ver;
-            var modified_node = test_node;
+            var modified_node = clone(test_node);
             modified_node['ver'] = initial_version;
 
             // Use a bogus namespace value to attempt to place the node into
@@ -409,7 +410,7 @@ exports['update_with_invalid_version'] = function (test) {
             test.equal(response.statusCode, 422,
                 "Correct status for update with invalid version.");
 
-            test.ok(data == '', "No content returned.");
+            test.ok(data === '', "No content returned.");
 
             callback(null);
         }],
