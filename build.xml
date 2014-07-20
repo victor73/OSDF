@@ -16,7 +16,7 @@
     <!-- Project specific properties -->
     <property name="app.name" value="${ant.project.name}"/>
     <property name="app.name.lc" value="osdf"/>
-    <property name="app.version" value="0.4"/>
+    <property name="app.version" value="0.5"/>
     <property name="app.packager" value="Victor Felix &lt;vfelix@som.umaryland.edu&gt;"/>
 
     <target name="prepare" description="Creates the necessary directories for building.">
