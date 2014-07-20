@@ -19,8 +19,8 @@ var eclient;
 
 // This initializes the handler. The things we need to do before the
 // handler is ready to begin its work are: establish a connection to the
-// CouchDB server, determine what the installed namespaces are, and create
-// the various validators for each of the node types inside each namespace.
+// ElasticSearch server and determine if the OSDF river (listening for
+// changes from CouchDB changes feed) is available.
 exports.init = function (emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
@@ -29,21 +29,14 @@ exports.init = function (emitter) {
     var elasticsearch_address = c.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
 
-    /*
-    At the time of writing this code, the 'elastical' library has a documented bug
-    concerning the getRiver() method/function, which prevents its use here. As a
-    workaround, we issue a direct HTTP request using the 'request' library to
-    ElasticSearch directly until such time that the bug is fixed.
-    */
-
-/*
     eclient = new elastical.Client(elasticsearch_address, {port: elasticsearch_port});
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
-    eclient.getRiver( es_river_name, function(err, data) {
+    eclient.getRiver(es_river_name, function(err, data) {
         if (err) {
-            emitter.emit('query_handler_aborted', "Unable to determine if ElasticSearch " +
-                         "river exists.");
+            var err_msg = 'Unable to determine if ElasticSearch river exists.';
+            logger.error(err_msg);
+            emitter.emit('query_handler_aborted', err_msg);
         } else {
             if (data === null || data === "") {
                 emitter.emit('query_handler_aborted', "ElasticSearch river '" +
@@ -54,42 +47,6 @@ exports.init = function (emitter) {
 
                 // Emit an event to notify of successful initialization.
                 emitter.emit('query_handler_initialized');
-            }
-        }
-    });
-*/
-
-    // See above notice about why we are using 'request' here instead of the 'elastical'
-    // library.
-
-    // Abort the server start-up if ElasticSearch or the index we need isn't there.
-    var url = sprintf("http://%s:%s/_river/%s/_status",
-                      elasticsearch_address,
-                      elasticsearch_port,
-                      es_river_name );
-
-    var request = require('request');
-
-    request.get( url, function(err, response, body) {
-        if (err) {
-            emitter.emit('query_handler_aborted',
-                         "Unable to contact ElasticSearch: " + err);
-        } else {
-            if (response.statusCode === 200) {
-                logger.info("Creating elasticsearch connection.");
-
-                // Establish the connection to the ElasticSearch server
-                eclient = new elastical.Client(elasticsearch_address,
-                              {port: elasticsearch_port});
-
-                logger.debug("Connected to ElasticSearch at " +
-                            elasticsearch_address + ":" + elasticsearch_port);
-
-                // Emit an event to notify of successful initialization.
-                emitter.emit('query_handler_initialized');
-            } else {
-                emitter.emit('query_handler_aborted', "ElasticSearch river '" +
-                    es_river_name + "' doesn't seem to exist.");
             }
         }
     });
@@ -135,14 +92,14 @@ exports.perform_query = function (request, response) {
     if (requested_page) {
         // Calculate the first result number to return for the top of this page
         elastic_query["from"] = (requested_page - 1) * page_size;
-        logger.debug("User requested page " + requested_page
-            + " so setting elastic_query['from'] to " + elastic_query["from"]);
+        logger.debug("User requested page " + requested_page +
+                     " so setting elastic_query['from'] to " + elastic_query["from"]);
     } else if (user_query["from"]) {
         // If user specified from (begin index for pagination)
         elastic_query["from"] = user_query["from"];
     }
 
-    if (!user_query["size"]) {
+    if (! user_query["size"]) {
         elastic_query["size"] = page_size;
     } else {
         // Check against max page size allowed
@@ -174,17 +131,17 @@ exports.perform_query = function (request, response) {
                         partial_result = true;
                         // If there was no page requested in this url
                         // then it would be page 1, so return 2
-                        next_page_url = base_url + ':' + port
-                            + '/nodes/query/' + namespace + '/page/'
-                            + (requested_page ? requested_page + 1 : 2);
+                        next_page_url = base_url + ':' + port +
+                            '/nodes/query/' + namespace + '/page/' +
+                            (requested_page ? requested_page + 1 : 2);
                     }
                 }
 
                 format_query_results(results, requested_page);
 
-                logger.info("Returning " + results.result_count
-                    + " of " + results.search_result_total
-                    + " search results; page " + results.page);
+                logger.info("Returning " + results.result_count +
+                            " of " + results.search_result_total +
+                            " search results; page " + results.page);
 
                 if (partial_result) {
                     response.set('X-OSDF-Query-ResultSet', next_page_url);
@@ -196,7 +153,7 @@ exports.perform_query = function (request, response) {
         });
     } catch (e) {
         logger.error("Error running query. " + e);
-        osdf_error(response, 'Error running query: ' + e, 500)
+        osdf_error(response, 'Error running query: ' + e, 500);
         return;
     }
 };

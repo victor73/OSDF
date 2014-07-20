@@ -5,6 +5,7 @@ var osdf_utils = require('osdf_utils');
 var logger = osdf_utils.get_logger();
 var events = require('events');
 var express = require('express');
+var morgan = require('morgan');
 
 var node_handler = require('node-handler');
 var info_handler = require('info-handler');
@@ -109,7 +110,7 @@ function launch(config) {
 
     // Register various middleware functions
     // Logging of the request
-    app.use(express.logger());
+    app.use(morgan());
 
     // Enforce authentication
     app.use(auth_enforcer.authenticate());

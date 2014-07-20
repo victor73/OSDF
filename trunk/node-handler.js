@@ -463,17 +463,19 @@ exports.get_in_linkage = function(request, response) {
 exports.process_aux_schema_change = function (msg) {
     logger.debug("In process_aux_schema_change.");
 
+    var aux_schema_json;
+
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'aux_schema_change') {
         var namespace = msg['ns']
         var aux_schema_name = msg['name']
 
         if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
             logger.debug("Got an auxiliary schema insertion.");
-            var aux_schema_json = msg['json'];
+            aux_schema_json = msg['json'];
             insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
         } else if (msg.hasOwnProperty('type') && msg['type'] === 'update') {
             logger.debug("Got an auxiliary schema update.");
-            var aux_schema_json = msg['json'];
+            aux_schema_json = msg['json'];
             update_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
         } else if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
             logger.debug("Got an auxiliary schema deletion.");
