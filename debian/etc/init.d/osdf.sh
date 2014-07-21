@@ -10,16 +10,22 @@
 # Required-Stop:     $all
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Starts osdf
-# Description:       Starts osdf using start-stop-daemon
+# Short-Description: Starts OSDF
+# Description:       Starts OSDF using start-stop-daemon
 ### END INIT INFO
 
 set -e
 
+if [ -f /sbin/initctl -a -f /etc/init/osdf.conf ]; then
+    echo "Presence of upstart detected. Use 'service osdf start/stop'." >&2
+    exit 0
+fi
+
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-NAME=osdf
+NAME=OSDF
+LCNAME=osdf
 DESC="OSDF Server"
-DEFAULT=/etc/default/$NAME
+DEFAULT=/etc/default/$LCNAME
 
 if [ `id -u` -ne 0 ]; then
     echo "You need root privileges to run this script"
@@ -32,27 +38,27 @@ if [ -r /etc/default/rcS ]; then
     . /etc/default/rcS
 fi
 
-
 # The following variables can be overwritten in $DEFAULT
+
+# For node.js version >= 0.6
+ENVIRONMENT=production
 
 # Run OSDF as this user ID and group ID
 OSDF_USER=osdf
 OSDF_GROUP=osdf
 
-# Directory where the OSDF binary distribution resides
-NODE_HOME=/usr/share/$NAME
-
-# OSDF log directory
-LOG_DIR=/var/log/$NAME
+# OSDF log directory and log file
+LOG_DIR=/var/log/$LCNAME
+LOG=$LOG_DIR/$LCNAME.log
 
 # OSDF data directory
-DATA_DIR=/var/lib/$NAME
+DATA_DIR=/var/lib/$LCNAME
 
 # OSDF work directory
-WORK_DIR=/tmp/$NAME
+WORKING_DIR=/var/lib/$LCNAME/working
 
 # OSDF configuration directory
-CONF_DIR=/etc/$NAME
+CONF_DIR=/etc/$LCNAME
 
 # OSDF configuration file
 CONF_FILE=$CONF_DIR/config.ini
@@ -64,30 +70,39 @@ if [ -f "$DEFAULT" ]; then
     . "$DEFAULT"
 fi
 
-# Define other required variables
-PID_FILE=/var/run/$NAME.pid
-DAEMON=/usr/bin/node
-DAEMON_OPTS=""
+# Directory where the OSDF binary distribution resides
+OSDF_HOME=/usr/lib/$LCNAME
 
-# Check DAEMON exists
-test -x $DAEMON || exit 0
+PID_FILE=/var/run/$LCNAME.pid
+NODE=/usr/bin/node
+NODE_OPTS=""
+
+# Check that Node.js exists
+test -x $NODE || exit 0
 
 case "$1" in
   start)
     log_daemon_msg "Starting $DESC"
-    
+
+    # Define required variables
+    export NODE_ENV=$ENVIRONMENT
+    export NODE_PATH=$OSDF_HOME:$OSDF_HOME/lib
+
     if start-stop-daemon --test --start --pidfile "$PID_FILE" \
         --user "$OSDF_USER" --exec "$NODE" \
         >/dev/null; then
         
         # Prepare environment
-        mkdir -p "$LOG_DIR" "$DATA_DIR" "$WORK_DIR" && chown "$OSDF_USER":"$OSDF_GROUP" "$LOG_DIR" "$DATA_DIR" "$WORK_DIR"
+        mkdir -p "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR" && chown "$OSDF_USER":"$OSDF_GROUP" "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR"
         touch "$PID_FILE" && chown "$OSDF_USER":"$OSDF_GROUP" "$PID_FILE"
         ulimit -n 65535
 
+        APP_ARGS="${LCNAME}.js --config $CONF_FILE --working $WORKING_DIR --log $LOG"
+
         # Start Daemon
-        start-stop-daemon --start --background --chuid "$OSDF_USER" --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" --exec /bin/bash -- -c "$DAEMON $DAEMON_OPTS"
+        start-stop-daemon --start --background --chdir "$OSDF_HOME" --chuid "$OSDF_USER" \
+            --make-pidfile --pidfile "$PID_FILE" --user "$OSDF_USER" \
+            --exec $NODE -- $NODE_OPTS $APP_ARGS
 
         sleep 1
         if start-stop-daemon --test --start --pidfile "$PID_FILE" \
@@ -112,8 +127,7 @@ case "$1" in
     set +e
     if [ -f "$PID_FILE" ]; then 
         start-stop-daemon --stop --pidfile "$PID_FILE" \
-            --user "$OSDF_USER" \
-            --retry=TERM/20/KILL/5 >/dev/null
+            --user "$OSDF_USER" --signal TERM --retry=5 >/dev/null
         if [ $? -eq 1 ]; then
             log_progress_msg "$DESC is not running but pid file exists, cleaning up"
         elif [ $? -eq 3 ]; then

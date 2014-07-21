@@ -47,6 +47,8 @@ binary: install token-replace
 	dh_install lib /usr/lib/osdf/
 	dh_install working /var/lib/osdf/
 	dh_install debian/etc/default/osdf /etc/default/
+	dh_install debian/etc/init/osdf.conf /etc/init/
+	dh_install debian/etc/init/osdf-sleep.conf /etc/init/
 	dh_install debian/etc/logrotate.d/osdf /etc/logrotate.d/
 	cp conf/config.ini.sample conf/config.ini
 	dh_install conf/config.ini /etc/osdf/
