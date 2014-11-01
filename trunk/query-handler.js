@@ -1,7 +1,7 @@
 var _ = require('lodash');
 var path = require('path');
 var auth = require('auth_enforcer');
-var elastical = require('elastical');
+var elasticsearch = require('elasticsearch');
 var osdf_utils = require('osdf_utils');
 var util = require('util');
 var logger = osdf_utils.get_logger();
@@ -15,7 +15,7 @@ var port = c.value('global', 'port');
 var page_size = c.value('global', 'pagesize');
 
 var osdf_error = osdf_utils.send_error;
-var eclient;
+var elastic_client;
 
 // This initializes the handler. The things we need to do before the
 // handler is ready to begin its work are: establish a connection to the
@@ -29,26 +29,29 @@ exports.init = function (emitter) {
     var elasticsearch_address = c.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
 
-    eclient = new elastical.Client(elasticsearch_address, {port: elasticsearch_port});
+    elastic_client = new elasticsearch.Client({ host: elasticsearch_address + ":" + elasticsearch_port  });
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
-    eclient.getRiver(es_river_name, function(err, data) {
-        if (err) {
-            var err_msg = 'Unable to determine if ElasticSearch river exists.';
-            logger.error(err_msg);
-            emitter.emit('query_handler_aborted', err_msg);
-        } else {
-            if (data === null || data === "") {
-                emitter.emit('query_handler_aborted', "ElasticSearch river '" +
-                    es_river_name + "' doesn't seem to exist.");
-            } else {
-                logger.debug("Connected to ElasticSearch at " +
-                            elasticsearch_address + ":" + elasticsearch_port);
+    elastic_client.indices.existsType({index: 'osdf',
+                                       type: 'osdf' },
+                                       function (err, result) {
+          if (err) {
+              var err_msg = 'Unable to determine if ElasticSearch CouchDB river exists.';
+              logger.error(err_msg);
+              emitter.emit('query_handler_aborted', err_msg);
+          }
 
-                // Emit an event to notify of successful initialization.
-                emitter.emit('query_handler_initialized');
-            }
-        }
+          if (result === true) {
+              logger.debug("Connected to ElasticSearch at " +
+                          elasticsearch_address + ":" + elasticsearch_port);
+
+              // Emit an event to notify of successful initialization.
+              emitter.emit('query_handler_initialized');
+
+          } else {
+              emitter.emit('query_handler_aborted', "ElasticSearch CouchDB river '" +
+                  es_river_name + "' doesn't seem to exist.");
+          }
     });
 };
 
@@ -81,9 +84,19 @@ exports.perform_query = function (request, response) {
     // Insert the client supplied query into the basic filtered query
     elastic_query["query"]["filtered"]["query"] = user_query['query'];
 
+    if (user_query.hasOwnProperty("aggregations") || user_query.hasOwnProperty("aggs")) {
+        logger.debug("User query specified aggregations.");
+        if (user_query.hasOwnProperty("aggregations")) {
+            elastic_query["aggregations"] = user_query['aggregations'];
+        } else {
+            elastic_query["aggregations"] = user_query['aggs'];
+        }
+    }
+
     // If user specified sort, insert the sort element into the elastic query
-    if (user_query["sort"]) {
-        elastic_query["sort"] = user_query["sort"];
+    if (user_query.hasOwnProperty("sort")) {
+        logger.debug("User query specified a sort.");
+        elastic_query['sort'] = user_query['sort'];
     }
 
     // If user requested a specific page number, ignore any from and size vars
@@ -99,22 +112,23 @@ exports.perform_query = function (request, response) {
         elastic_query["from"] = user_query["from"];
     }
 
-    if (! user_query["size"]) {
-        elastic_query["size"] = page_size;
-    } else {
+    if (user_query.hasOwnProperty("size")) {
+        logger.info("User specified size.");
         // Check against max page size allowed
         elastic_query["size"] = (user_query["size"] > page_size ?
                                     page_size : user_query["size"]);
+    } else {
+        elastic_query["size"] = page_size;
     }
 
     logger.debug("Submitting elastic_query:\n" + util.inspect(elastic_query, true, null));
 
     try {
-        // from the elastical docs:
         // `err` is an Error, or `null` on success.
-        // `results` is an object containing search hits.
-        // `res` is the full parsed ElasticSearch response data.
-        eclient.search(elastic_query, function (err, results, res) {
+        // `results` is an object containing the search results.
+        elastic_client.search({ index: "osdf",
+                                body: elastic_query },
+                                function (err, results) {
             if (err) {
                 logger.error("Error running query. " + err);
                 osdf_error(response, err, 500);
@@ -180,17 +194,26 @@ function build_empty_filtered_query(namespace, user_acls) {
 }
 
 function format_query_results(results, requested_page) {
+    if (results['hits'].hasOwnProperty('total')) {
+        results["search_result_total"] = results['hits']['total'];
+    } else {
+        results["search_result_total"] = 0;
+    }
+
     // Convert hits from couchdb format to OSDF format
-    results.hits = _.map(results.hits, function (hit) {
+    //results.hits = _.map(results.hits.hits, function (hit) {
+    results.results = _.map(results.hits.hits, function (hit) {
         return osdf_utils.fix_keys(hit._source);
     });
 
-    results["results"] = results.hits;
-    results["result_count"] = results.hits.length;
-    results["search_result_total"] = results.total;
+    //results["results"] = results.hits;
+    results["result_count"] = results.length;
     results["page"] = (requested_page || 1);
 
     delete results.hits;
-    delete results.total;
+    delete results._shards;
     delete results.max_score;
+    delete results.total;
+    delete results.timed_out;
+    delete results.took;
 }
