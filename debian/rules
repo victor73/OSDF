@@ -58,7 +58,7 @@ binary: install token-replace
 	# to the dh_installinit script. This means the sysadmin/user installing the package
 	# will need to start the sript him/herself (most likely after making the appropriate
 	# changes to /etc/osdf/config.ini and/or /etc/default/osdf).
-	dh_installinit --no-start --name=osdf --init-script=debian/etc/init.d/osdf.sh
+	dh_installinit --no-start 
 	dh_lintian osdf.lintian-overrides
 	dh_compress -A
 	dh_fixperms
