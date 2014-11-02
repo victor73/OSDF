@@ -201,13 +201,11 @@ function format_query_results(results, requested_page) {
     }
 
     // Convert hits from couchdb format to OSDF format
-    //results.hits = _.map(results.hits.hits, function (hit) {
     results.results = _.map(results.hits.hits, function (hit) {
         return osdf_utils.fix_keys(hit._source);
     });
 
-    //results["results"] = results.hits;
-    results["result_count"] = results.length;
+    results["result_count"] = results.hits.hits.length;
     results["page"] = (requested_page || 1);
 
     delete results.hits;
