@@ -1,3 +1,17 @@
+0.6
+  * Updated debian rules file to deal with new dh_installinit usage
+  * Switched from elastical to the official nodejs elasticsearch library
+  * Elasticsearch queries with aggregations supported
+0.5
+  * Updated libraries
+  * Added configurable CORS support
+  * Switched from underscore to lowdash
+  * Improved startup via upstart
+0.4
+  * Required nodejs 0.10 or better
+  * Support for schema management through the API
+0.3
+  * Required nodejs 0.10 or better
 0.2
   * Debian/Ubuntu package containing utility scripts from bin
   * RPM package now depending on the elasticsearch-plugin-river-couchdb
