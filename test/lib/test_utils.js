@@ -431,7 +431,6 @@ exports.retrieve_schema = function (namespace, schema_name, auth, callback ) {
 };
 
 exports.update_aux_schema = function (namespace, aux_schema_name, aux_schema_doc, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -458,7 +457,6 @@ exports.update_aux_schema = function (namespace, aux_schema_name, aux_schema_doc
 };
 
 exports.update_schema = function (namespace, schema_name, schema_doc, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
