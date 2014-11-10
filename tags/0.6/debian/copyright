@@ -1,0 +1,33 @@
+This is the Debian GNU prepackaged version of the OSDF RESTful HTTP servers.
+This package provides the reference implementation source code, utilities, test
+scripts, and documentation needed to run an instance of OSDF.
+
+This package is authored and maintained by Victor Felix. The source for this
+release was taken from:
+
+http://ftp.sourceforge.net/projects/osdf/osdf-0.1.tar.gz
+
+The changes were very minimal:
+
+- Adding support for the Debian package maintenance scheme, by adding
+  various debian/* files.
+
+Program Copyright 2012
+
+Modifications for Debian Copyright (C) 2012 Victor Felix.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+On Debian systems, the complete text of the GNU General Public License
+can be found in `/usr/share/common-licenses/GPL'.

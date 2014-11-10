@@ -1,0 +1,177 @@
+#!/bin/bash
+#
+# /etc/init.d/osdf -- startup script for OSDF
+#
+# Written by Victor Felix for OSDF <victor73@gmail.com>.
+#
+### BEGIN INIT INFO
+# Provides:          osdf
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts OSDF
+# Description:       Starts OSDF using start-stop-daemon
+### END INIT INFO
+
+set -e
+
+if [ -f /sbin/initctl -a -f /etc/init/osdf.conf ]; then
+    echo "Presence of upstart detected. Use 'service osdf start/stop'." >&2
+    exit 0
+fi
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+NAME=OSDF
+LCNAME=osdf
+DESC="OSDF Server"
+DEFAULT=/etc/default/$LCNAME
+
+if [ `id -u` -ne 0 ]; then
+    echo "You need root privileges to run this script"
+    exit 1
+fi
+
+. /lib/lsb/init-functions
+
+if [ -r /etc/default/rcS ]; then
+    . /etc/default/rcS
+fi
+
+# The following variables can be overwritten in $DEFAULT
+
+# For node.js version >= 0.6
+ENVIRONMENT=production
+
+# Run OSDF as this user ID and group ID
+OSDF_USER=osdf
+OSDF_GROUP=osdf
+
+# OSDF log directory and log file
+LOG_DIR=/var/log/$LCNAME
+LOG=$LOG_DIR/$LCNAME.log
+
+# OSDF data directory
+DATA_DIR=/var/lib/$LCNAME
+
+# OSDF work directory
+WORKING_DIR=/var/lib/$LCNAME/working
+
+# OSDF configuration directory
+CONF_DIR=/etc/$LCNAME
+
+# OSDF configuration file
+CONF_FILE=$CONF_DIR/config.ini
+
+# End of the variables that can be overwritten in $DEFAULT
+
+# overwrite settings from default file
+if [ -f "$DEFAULT" ]; then
+    . "$DEFAULT"
+fi
+
+# Directory where the OSDF binary distribution resides
+OSDF_HOME=/usr/lib/$LCNAME
+
+PID_FILE=/var/run/$LCNAME.pid
+NODE=/usr/bin/node
+NODE_OPTS=""
+
+# Check that Node.js exists
+test -x $NODE || exit 0
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $DESC"
+
+    # Define required variables
+    export NODE_ENV=$ENVIRONMENT
+    export NODE_PATH=$OSDF_HOME:$OSDF_HOME/lib
+
+    if start-stop-daemon --test --start --pidfile "$PID_FILE" \
+        --user "$OSDF_USER" --exec "$NODE" \
+        >/dev/null; then
+        
+        # Prepare environment
+        mkdir -p "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR" && chown "$OSDF_USER":"$OSDF_GROUP" "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR"
+        touch "$PID_FILE" && chown "$OSDF_USER":"$OSDF_GROUP" "$PID_FILE"
+        ulimit -n 65535
+
+        APP_ARGS="${LCNAME}.js --config $CONF_FILE --working $WORKING_DIR --log $LOG"
+
+        # Start Daemon
+        start-stop-daemon --start --background --chdir "$OSDF_HOME" --chuid "$OSDF_USER" \
+            --make-pidfile --pidfile "$PID_FILE" --user "$OSDF_USER" \
+            --exec $NODE -- $NODE_OPTS $APP_ARGS
+
+        sleep 1
+        if start-stop-daemon --test --start --pidfile "$PID_FILE" \
+            --user "$OSDF_USER" --exec "$NODE" \
+            >/dev/null; then
+            if [ -f "$PID_FILE" ]; then
+                rm -f "$PID_FILE"
+            fi
+            log_end_msg 1
+        else
+            log_end_msg 0
+        fi
+        
+    else
+        log_progress_msg "(already running)"
+        log_end_msg 0
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping $DESC"
+
+    set +e
+    if [ -f "$PID_FILE" ]; then 
+        start-stop-daemon --stop --pidfile "$PID_FILE" \
+            --user "$OSDF_USER" --signal TERM --retry=5 >/dev/null
+        if [ $? -eq 1 ]; then
+            log_progress_msg "$DESC is not running but pid file exists, cleaning up"
+        elif [ $? -eq 3 ]; then
+            PID="`cat $PID_FILE`"
+            log_failure_msg "Failed to stop $DESC (pid $PID)"
+            exit 1
+        fi
+        rm -f "$PID_FILE"
+    else
+        log_progress_msg "(not running)"
+    fi
+    log_end_msg 0
+    set -e
+    ;;
+  status)
+    set +e
+    start-stop-daemon --test --start --pidfile "$PID_FILE" \
+        --user "$OSDF_USER" --exec "$NODE" \
+        >/dev/null 2>&1
+    if [ "$?" = "0" ]; then
+
+        if [ -f "$PID_FILE" ]; then
+            log_success_msg "$DESC is not running, but pid file exists."
+            exit 1
+        else
+            log_success_msg "$DESC is not running."
+            exit 3
+        fi
+    else
+        log_success_msg "$DESC is running with pid `cat $PID_FILE`"
+    fi
+    set -e
+    ;;
+  restart|force-reload)
+    if [ -f "$PID_FILE" ]; then
+        $0 stop
+        sleep 1
+    fi
+    $0 start
+    ;;
+  *)
+    log_success_msg "Usage: $0 {start|stop|restart|force-reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0

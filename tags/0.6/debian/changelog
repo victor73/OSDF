@@ -1,0 +1,39 @@
+osdf (0.5-1) unstable; urgency=low
+
+  * Upgraded modules (express, cradle, elastical, etc) to latest versions
+  * Some fixes to test suite
+  * Changes to code to deal with Express 4
+  * Replace underscore with lowdash
+
+ -- Victor <victor73@github.com>  Sun, 20 Jul 2014 00:00:00 -0400
+
+osdf (0.4-1) unstable; urgency=low
+
+  * Replaced flow.js with async.js in base code as well as tests
+  * New test for handling of bad version numbers during node updates
+  * Improved CORS configurability
+
+ -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
+
+osdf (0.3-1) unstable; urgency=low
+
+  * Updated code to deal with changes in node.js 0.10.x
+  * Updated node modules to latest versions: express, connect, etc...
+  * Implemented methods to deal with JSON-Schema management (primary and
+    auxiliary schemas)
+  * New tests to exercise schema management portions of the OSDF API
+  * Beginning work to integrate grunt
+
+ -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
+
+osdf (0.2-1) unstable; urgency=low
+
+  * New version
+
+ -- Victor <victor73@github.com>  Fri, 26 Oct 2012 22:54:30 -0400
+
+osdf (0.1-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Victor <victor73@github.com>  Wed, 06 Jun 2012 16:51:47 -0400

@@ -1,0 +1,8 @@
+/var/log/osdf/*.log {
+    daily
+    rotate 10
+    missingok
+    compress
+    copytruncate
+    notifempty
+}

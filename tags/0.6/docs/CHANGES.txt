@@ -1,0 +1,28 @@
+0.6
+  * Updated debian rules file to deal with new dh_installinit usage
+  * Switched from elastical to the official nodejs elasticsearch library
+  * Elasticsearch queries with aggregations supported
+0.5
+  * Updated libraries
+  * Added configurable CORS support
+  * Switched from underscore to lowdash
+  * Improved startup via upstart
+0.4
+  * Required nodejs 0.10 or better
+  * Support for schema management through the API
+0.3
+  * Required nodejs 0.10 or better
+0.2
+  * Debian/Ubuntu package containing utility scripts from bin
+  * RPM package now depending on the elasticsearch-plugin-river-couchdb
+    while the DEB package executes the ElasticSearch 'plugin' utility for
+    river installation
+  * Requiring nodejs 0.8 or better
+  * Fixes for schema creation and deletion
+  * Fixed issue with retrieving the current node version
+    using the /nodes/ver/# REST method
+  * API documentation updated and rewritten in markdown
+  * Improved log rotation of logrotate configs
+  * Expanded installation documentation
+0.1
+  * Initial release

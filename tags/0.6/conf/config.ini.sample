@@ -1,0 +1,53 @@
+[global]
+# The IP address that OSDF should listen on. Use '0.0.0.0' to listen on
+# all interfaces that the host has configured.
+bind_address=0.0.0.0
+base_url=http://osdf.example.com
+
+# Enable Support for CORS (Cross-origin Resource Sharing)
+cors_enabled=false
+
+# The TCP port number to listen on.
+port=8123
+# The username to run the service as. This setting is only relevant when
+# we are invoked as root, for instance, to bind to a low numbered port.
+user=nobody
+
+# The hostname or IP address of the CouchDB server that is used to store the
+# node data.
+couch_address=couchdb.example.com
+
+# The port number that the CouchDB server is listening on.
+couch_port=5984
+couch_user=test
+couch_pass=test
+
+# The CouchDB database name that we use to store OSDF data.
+couch_dbname=osdf
+
+# How many records are reported on each 'page' of output. For instance, if
+# search/query restults exceed this number, the results will be paginated in
+# groups of 'pagesize' size.
+pagesize=1000
+
+[elasticsearch]
+# The IP address or hostname of teh Elastic Search server that powers the
+# query function of OSDF.
+elasticsearch_address=es.example.com
+elasticsearch_port=9200
+
+# This file is monitored for changes. If the file is updated, the 'info'
+# section is scanned and reloaded for new values. The values can therefore be
+# "hot" modified, that is, a server restart is not required to update these
+# values.
+[info]
+api_version=0.1
+title=EXAMPLE-OSDF
+description=This is an instance of the Open Science Data Framework (OSDF)
+url=http://osdf.example.com
+admin_contact_email1=osdf-admin@example.edu
+admin_contact_email2=help@example.edu
+technical_contact1=osdf@example.edu
+technical_contact2=osdf-helpdesk@example.edu
+comment1=comment1
+comment2=comment2

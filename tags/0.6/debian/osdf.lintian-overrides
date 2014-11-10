@@ -1,0 +1,20 @@
+# This package is not for debian, but for ubuntu. It also does not
+# have an ITP bug.
+image-file-in-usr-lib
+new-package-should-close-itp-bug
+package-contains-upstream-install-documentation
+script-not-executable
+unusual-interpreter
+wrong-path-for-interpreter
+# The provided node/npm modules sometimes include their own license files
+extra-license-file
+embedded-javascript-library
+# The provided node/npm modules sometimes include git files, like .gitignore
+package-contains-vcs-control-file
+# The provided node/npm modules sometimes include 'config.log' files
+configure-generated-file-in-source node_modules/log4js/node_modules/compress-buffer/build/config.log
+configure-generated-file-in-source config.log
+osdf: binary-without-manpage usr/bin/new_namespace
+osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/java/classes/js.jar
+osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/jsdebug.jar
+osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/jsrun.jar

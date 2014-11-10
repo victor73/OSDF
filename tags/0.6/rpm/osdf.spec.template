@@ -1,0 +1,125 @@
+# The @--@ tokens are replaced with actual values by the ant build.xml process.
+%define Name @name@
+%define lcName @lc_name@
+%define _prefix /usr/lib/%{lcName}
+
+Summary: %{Name} - REST API for storing and retrieving scientific data.
+Name: %{lcName}
+Version: @version@
+Release: 3
+License: GPL
+Group: System Environment/Daemons
+URL: http://sourceforge.net/projects/%{lcName}/
+Source: http://prdownloads.sourceforge.net/%{Name}/%{lcName}-%{version}.tar.gz
+Packager: @packager@
+
+Requires: nodejs >= 0.8
+Requires: elasticsearch >= 0.18.0
+Requires: elasticsearch-plugin-river-couchdb >= 1.1.0
+Requires: couchdb >= 1.0
+Requires: openssl
+
+Requires(pre):  /usr/sbin/useradd /usr/sbin/groupadd chkconfig initscripts 
+Requires(post): chkconfig initscripts                                                                                       
+Requires(postun): /usr/sbin/userdel /usr/sbin/groupdel chkconfig initscripts
+
+buildarch: noarch
+BuildRoot:      %{_builddir}/%{name}-%{version}-%{release}-root
+
+%description
+This is an implementation of the %{Name} REST API written in Javascript and the
+Node.js framework.
+
+
+%prep
+# unzips the source tarball/zip
+%setup -n %{lcName}-%{version}
+
+%build
+
+%clean                                                                                 
+[ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
+
+%pre
+# Create the group
+if ! /usr/bin/getent group %{lcName} >/dev/null; then
+        /usr/sbin/groupadd -r %{lcName}
+fi
+
+# Create the user
+if ! /usr/bin/getent passwd %{lcName} >/dev/null; then
+        /usr/sbin/useradd -r -g %{lcName} -d "%{_prefix}" \
+            -s /sbin/nologin -c "%{Name}" %{lcName}
+fi
+
+
+%post
+# Register the startup script using chkconfig.
+/sbin/chkconfig --add %{lcName}
+
+%preun
+# Stop the service, if it's running. Then deregister it from
+# the system using chkconfig.
+if [ $1 -eq 0 ]; then
+  /sbin/service %{lcName} stop >/dev/null 2>&1
+  /sbin/chkconfig --del %{lcName}
+fi
+
+%postun
+# Check if this is the last uninstall
+if [ "$1" = "0" ]; then
+  if [ -d %{_bindir}/%{lcName}-%{version} ]; then
+    %__rm -rf %{_bindir}/%{lcName}-%{version}
+  fi
+  if [ -d %{_localstatedir}/%{lcName} ]; then
+    %__rm -rf %{_localstatedir}/%{lcName}
+  fi
+fi
+/usr/sbin/userdel %{lcName} 2>/dev/null
+/usr/sbin/groupdel %{lcName} 1>/dev/null 2>/dev/null || exit 0
+
+%install
+[ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
+# Codebase
+%__mkdir -p %{buildroot}%{_prefix}
+%__mkdir -p %{buildroot}/usr/bin
+%__cp *.js %{buildroot}%{_prefix}
+%__cp -r bin/couchdb %{buildroot}%{_prefix}
+%__cp -r bin/new_namespace %{buildroot}/usr/bin
+%__cp -r lib %{buildroot}%{_prefix}
+%__cp -r node_modules %{buildroot}%{_prefix}
+%__cp nodelint.conf %{buildroot}%{_prefix}
+%__cp -r docs %{buildroot}%{_prefix}
+
+%__mkdir -p %{buildroot}%{_localstatedir}/run/%{lcName}/working
+%__mkdir -p %{buildroot}%{_localstatedir}/run/%{lcName}/working/namespaces
+%__cp -r working/namespaces/test %{buildroot}%{_localstatedir}/run/%{lcName}/working/namespaces
+%__cp working/users.db %{buildroot}%{_localstatedir}/run/%{lcName}/working/
+
+# Startup script and config files
+%__mkdir -p %{buildroot}/%{_sysconfdir}/init.d
+%__mkdir -p %{buildroot}/%{_sysconfdir}/%{lcName}
+%__mkdir -p %{buildroot}/%{_sysconfdir}/logrotate.d
+%__mkdir -p %{buildroot}/%{_sysconfdir}/default
+%__cp rpm/init.sh %{buildroot}/%{_sysconfdir}/init.d/%{lcName}
+%__cp rpm/etc/default/%{lcName} %{buildroot}%{_sysconfdir}/default/%{lcName}
+%__cp rpm/etc/logrotate.d/logrotate.conf %{buildroot}%{_sysconfdir}/logrotate.d/%{lcName}
+sed -i -e "s/@NAME@/%{lcName}/" %{buildroot}/%{_sysconfdir}/logrotate.d/%{lcName}
+
+# Sample Configuration file
+%__cp conf/config.ini.sample %{buildroot}/%{_sysconfdir}/%{lcName}/config.ini
+
+# Log directory
+%__mkdir -p %{buildroot}%{_localstatedir}/log/%{lcName}
+
+%files
+%{_prefix}
+%attr(660,%{lcName},%{lcName}) %{_localstatedir}/run/%{lcName} 
+%doc %{_prefix}/docs
+%config(noreplace) %{_sysconfdir}/%{lcName}/config.ini
+%config(noreplace) %{_sysconfdir}/default/%{lcName}
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{lcName}
+# Startup script
+%attr(755,root,root) %{_sysconfdir}/init.d/%{lcName}
+# Logs
+%dir %{_localstatedir}/log/%{lcName}
