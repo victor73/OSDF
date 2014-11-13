@@ -79,10 +79,10 @@ exports.get_all_schemas = function (request, response) {
     logger.debug("In get_all_schemas: " + ns);
 
     // First of all, is the requested namespace even known to us?
-    if (global_schemas.hasOwnProperty(ns)) {
-        response.jsonp(global_schemas[ns]);
+    if (global_schemas.hasOwnProperty(ns) && global_schemas[ns].hasOwnProperty('schemas')) {
+        response.jsonp(global_schemas[ns]['schemas']);
     } else {
-        logger.warn("User requested schemas for unknown namespace: " + ns);
+        logger.warn("User requested schemas for an unknown namespace: " + ns);
         osdf_error(response, 'Namespace or schema not found.', 404);
         return;
     }
@@ -92,10 +92,11 @@ exports.get_all_schemas = function (request, response) {
 // namespace is specified by the client in the URL.
 exports.get_all_aux_schemas = function (request, response) {
     var ns = request.params.ns;
+
     logger.debug("In get_all_aux_schemas. Namespace: " + ns + ".");
 
     if (global_schemas.hasOwnProperty(ns)) {
-        // Need to return all the auxuilary schemas, which are found
+        // Need to return all the auxiliary schemas, which are found
         // under global_schemas[ns]['aux'].
         if (global_schemas[ns].hasOwnProperty('aux')) {
             response.jsonp(global_schemas[ns]['aux']);
@@ -864,42 +865,6 @@ function aux_schema_change_helper(namespace, aux_schema_name, aux_schema_json, w
     // And save it to our data structure.
     global_schemas[namespace]['aux'][aux_schema_name] = aux_schema_json;
 }
-
-/*
-function insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json, write) {
-    logger.debug("In schema-handler:insert_aux_schema_helper.");
-
-    if (! global_schemas[namespace].hasOwnProperty('aux')) {
-        // Should never get here.
-        logger.error("No 'aux' structure for namespace: " + namespace);
-        throw "No 'aux' structure for namespace: " + namespace;
-    }
-
-    if ( global_schemas[namespace]['aux'].hasOwnProperty(aux_schema_name) ) {
-        // Overwriting an auxiliary schema, so let's just make a note of that.
-        logger.warn("Overwriting existing auxiliary schema (ns:aux_schema): (" +
-                    namespace + ":" + aux_schema_name + ")");
-    }
-
-    if (write) {
-        // Save the schema to the filesystem in the working directory,
-        // and if successful, save it to our in-memory data structure.
-        var schema_path = path.join(working_dir, "namespaces", namespace,
-                                    "aux", aux_schema_name + '.json');
-
-        var stream = fs.createWriteStream(schema_path);
-
-        stream.once('open', function(fd) {
-            // Write out the prettyfied JSON to the filesystem.
-            stream.write(JSON.stringify(aux_schema_json, null, 4));
-            stream.end();
-        });
-    }
-
-    // And save it to our data structure.
-    global_schemas[namespace]['aux'][aux_schema_name] = aux_schema_json;
-}
-*/
 
 function get_ns_schemas(ns, callback) {
     logger.debug("In get_ns_schemas.");

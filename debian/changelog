@@ -1,3 +1,20 @@
+osdf (0.7-1) unstable; urgency=low
+
+  * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
+  * Updated tests and test schemas for JSON-Schema v4 support
+  * Fixed issue with API non-conformance of retrieval of all schemas
+  * Improved logging in several areas.
+
+ -- Victor <victor73@github.com>  Thu, 13 Nov 2014 00:00:00 -0400
+
+osdf (0.6-1) unstable; urgency=low
+
+  * Updated debian rules file to deal with new dh_installinit usage
+  * Switched from elastical to the official nodejs elasticsearch library
+  * Elasticsearch queries with aggregations supported
+
+ -- Victor <victor73@github.com>  Thu, 06 Nov 2014 00:00:00 -0400
+
 osdf (0.5-1) unstable; urgency=low
 
   * Upgraded modules (express, cradle, elastical, etc) to latest versions
