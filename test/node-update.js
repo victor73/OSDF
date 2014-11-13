@@ -20,15 +20,15 @@ var test_node = { ns: 'test',
                   meta: {}
                 };
 
-var test_node_schema = { ns: 'test',
-                         acl: { read: ['all'], write: ['all'] },
-                         linkage: {},
-                         node_type: 'example',
-                         meta: {
-                              description: "my description",
-                              color: "indigo",
-                         }
-                       };
+var test_node_controlled = { ns: 'test',
+                             acl: { read: ['all'], write: ['all'] },
+                             linkage: {},
+                             node_type: 'example',
+                             meta: {
+                                 description: "my description",
+                                 color: "indigo",
+                             }
+                           };
 
 exports['basic_update'] = function (test) {
     test.expect(8);
@@ -210,7 +210,11 @@ exports['valid_update_with_schema_validation'] = function (test) {
         function(callback) {
             // create a node
             tutils.insert_node( test_node, auth, function(data, response) {
-                callback(null, data, response);
+                var err = null;
+                if (response.statusCode !== 201) {
+                    err = "Unable to insert node.";
+                }
+                callback(err, data, response);
             });
         }, function(data, response, callback) {
             var location = response.headers.location;
@@ -227,7 +231,7 @@ exports['valid_update_with_schema_validation'] = function (test) {
                 callback(err);
             }
             initial_version = initial_node.ver;
-            var modified_node = test_node_schema;
+            var modified_node = test_node_controlled;
             modified_node['ver'] = initial_version;
 
             // then try to update it with data that is valid and controlled by a schema
@@ -283,7 +287,7 @@ exports['invalid_update_with_schema_validation'] = function (test) {
         }, function(data, response, callback) {
             var initial_node = JSON.parse(data);
             var initial_version = initial_node.ver;
-            var modified_node = test_node_schema;
+            var modified_node = test_node_controlled;
 
             modified_node['ver'] = initial_version;
 

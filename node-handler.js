@@ -1,6 +1,6 @@
 // lodash - for generic utility functions
 // cradle - for interactions with CouchDB
-// JSV - Used for JSON validation with JSON-Schema
+// tv4 - Used for JSON validation with JSON-Schema
 // async - For handling complicated async workflows
 
 var _ = require('lodash');
@@ -11,7 +11,7 @@ var fs = require('fs');
 var osdf_utils = require('osdf_utils');
 var schema_utils = require('schema_utils');
 var path = require('path');
-var JSV = require('./node_modules/JSV/jsv').JSV;
+var tv4 = require('tv4');
 var config = require('config');
 var perms = require('perms-handler');
 var auth = require('auth_enforcer');
@@ -170,7 +170,7 @@ exports.get_node_by_version = function (request, response) {
 exports.insert_node = function (request, response) {
     logger.debug("In insert_node.");
     var content = request.rawBody;
-    var report;  // To hold the results of validation
+    var report = null;  // To hold the results of validation
 
     try {
         report = validate_incoming_node(content);
@@ -180,9 +180,9 @@ exports.insert_node = function (request, response) {
         return;
     }
 
-    if (report === null || (report !== false && report.errors.length === 0)) {
-        // Either we have a good report, or there is no schema for the node type. Either way,
-        // we're free to go ahead and insert the data.
+    if (successful_validation_report(report)) {
+        // Either we have a good report, or there is no schema for the node type.
+        // Either way, we're free to go ahead and insert the data.
         var node_data = JSON.parse(content);
 
         async.waterfall([
@@ -229,9 +229,9 @@ exports.insert_node = function (request, response) {
             }
         );
     } else {
-        if (report !== null) {
-            var err_msg = report.errors.shift().message;
-            logger.info("Bad node. Error: ", err_msg);
+        if (report !== null && report.error !== null) {
+            var err_msg = report.error.message + " on path " + report.error.dataPath;
+            logger.info("Invalid node. Error: ", err_msg);
             osdf_error(response, err_msg, 422);
         } else {
             osdf_error(response, "Invalid node data.", 422);
@@ -266,9 +266,9 @@ exports.update_node = function(request, response) {
         return;
     }
 
-    // Check if the json-schema validation reported any errors
-    if (report === null || (report !== false && report.errors.length === 0)) {
-        // If here, then it seems we're okay to attempt the update
+    // Check if the JSON-Schema validation reported any errors
+    if (successful_validation_report(report)) {
+        // If here, then we're okay to attempt the update
         update_node_helper(node_id, node_data, function(err, update_result) {
             if (err) {
                 logger.error("Unable to update data in couchdb.", reason);
@@ -282,9 +282,9 @@ exports.update_node = function(request, response) {
     } else {
         // If here, then it's because the node data didn't validate
         // or some other problem occurred.
-        if (report !== null) {
-            var err_msg = report.errors.shift().message;
-            logger.info("Bad node. Error: ", err_msg);
+        if (report !== null && report.hasOwnProperty('error')) {
+            var err_msg = report.error.message;
+            logger.info("Invalid node. Error: ", err_msg);
             osdf_error(response, err_msg, 422);
         } else {
             osdf_error(response, "Node does not validate.", 422);
@@ -297,8 +297,16 @@ exports.update_node = function(request, response) {
 exports.delete_node = function(request, response) {
     logger.debug("In delete_node.");
 
-    // TODO: Check that we actually have the id in the request...
-    var node_id = request.params.id;
+    // Check that we actually have the id in the request...
+    var node_id = null;
+
+    if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
+        node_id = request.params.id;
+    } else {
+        var msg = "No node ID provided.";
+        logger.error(msg);
+        throw msg;
+    }
 
     try {
         // Check if this node has other nodes pointing to it.
@@ -326,8 +334,16 @@ exports.delete_node = function(request, response) {
 exports.get_out_linkage = function(request, response) {
     logger.debug("In get_linkage.");
 
-    // TODO: Check that we actually have the id in the request...
-    var node_id = request.params.id;
+    // Check that we actually have the id in the request...
+    var node_id = null;
+
+    if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
+        node_id = request.params.id;
+    } else {
+        var msg = "No node ID provided.";
+        logger.error(msg);
+        throw msg;
+    }
 
     try {
         // This needs to query a view, not issue N queries...
@@ -519,7 +535,7 @@ function validate_incoming_node(node_string) {
         }
     }
 
-    // TODO: Use a JSON schema check right here instead of the rudimentary check.
+    // TODO: Use a JSON-Schema check right here instead of the rudimentary check.
     if (! node.ns || ! node.acl || ! node.node_type || ! node.meta || ! node.linkage ) {
         throw "Node JSON does not possess the correct structure.";
     }
@@ -549,10 +565,16 @@ function validate_incoming_node(node_string) {
         var meta = node['meta'];
 
         // And validate...
-        report = validators[node.ns]['env'].validate(meta, schema);
+        var tv4 = validators[node.ns]['val'];
+        var valid = tv4.validate(meta, schema);
+
+        report = { valid: valid,
+                   error: tv4.error };
     } else {
         logger.debug("No validator found for namespace/node_type of " +
                     node.ns + "/" + node.node_type + ".");
+        report = { valid: true,
+                   error: null };
     }
 
     return report;
@@ -833,7 +855,7 @@ function delete_aux_schema_helper(namespace, aux_schema_name) {
     logger.debug("In node-handler:delete_aux_schema_helper.");
 
     if (validators.hasOwnProperty(namespace)) {
-        var env = validators[namespace]['env'];
+        var tv4 = validators[namespace]['val'];
         logger.debug("IMPLEMENTATION Missing.");
     } else {
         logger.error("No such namespace: " + namespace);
@@ -937,8 +959,8 @@ function update_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
-        var env = validators[namespace]['env'];
-        load_aux_schema_into_env_from_json(env, name, aux_schema_json, function (err) {
+        var tv4 = validators[namespace]['val'];
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
             if (err) {
                 logger.error("Unable to load aux schema: " + err);
             }
@@ -955,8 +977,8 @@ function insert_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
-        var env = validators[namespace]['env'];
-        load_aux_schema_into_env_from_json(env, name, aux_schema_json, function (err) {
+        var tv4 = validators[namespace]['val'];
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
             if (err) {
                 logger.error("Unable to load aux schema: " + err);
             }
@@ -971,9 +993,9 @@ function insert_schema_helper(namespace, name, schema_json) {
     logger.debug("In node-handler:insert_schema_helper.");
 
     if (validators.hasOwnProperty(namespace)) {
-        var env = validators[namespace]['env'];
+        var tv4 = validators[namespace]['val'];
         try {
-            env.createSchema( schema_json, undefined, name );
+            tv4.addSchema(name, schema_json);
         } catch (err) {
             logger.error("Unable to load schema: " + err);
         }
@@ -982,8 +1004,8 @@ function insert_schema_helper(namespace, name, schema_json) {
     }
 }
 
-function load_aux_schema_into_env(env, schema, callback) {
-    logger.debug("In load_aux_schema_into_env: " + schema);
+function load_aux_schema_into_validator(tv4, schema, callback) {
+    logger.debug("In load_aux_schema_into_validator: " + schema);
     var basename = path.basename(schema, '.json');
 
     fs.readFile(schema, 'utf-8',
@@ -993,22 +1015,22 @@ function load_aux_schema_into_env(env, schema, callback) {
                 callback(err);
             } else {
                 logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
-                env.createSchema( JSON.parse(data), undefined, basename );
+                tv4.addSchema(basename, JSON.parse(data));
                 callback(null);
             }
         }
     );
 }
 
-function load_aux_schema_into_env_from_json(env, name, aux_schema_json, callback) {
-    logger.debug("In load_aux_schema_into_env_from_json. Aux schema name: " + name);
+function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, callback) {
+    logger.debug("In load_aux_schema_into_validator_from_json. Aux schema name: " + name);
 
     var json_type = typeof(aux_schema_json);
     try {
         if (json_type === "object") {
-            env.createSchema(aux_schema_json, undefined, name);
+            tv4.addSchema(name, aux_schema_json);
         } else if (json_type === "string") {
-            env.createSchema(JSON.parse(aux_schema_json), undefined, name);
+            tv4.addSchema(name, JSON.parse(aux_schema_json));
             callback(null);
         } else {
             callback("Invalid data type for auxiliary schema.");
@@ -1018,10 +1040,10 @@ function load_aux_schema_into_env_from_json(env, name, aux_schema_json, callback
     }
 }
 
-function load_aux_schemas_into_env(ns, env, schemas, then) {
-    logger.debug("In load_aux_schemas_into_env.");
+function load_aux_schemas_into_validator(ns, tv4, schemas, then) {
+    logger.debug("In load_aux_schemas_into_validator.");
     var loaded = {};
-    recursive_load_helper(ns, env, schemas, loaded, then);
+    recursive_load_helper(ns, tv4, schemas, loaded, then);
 }
 
 function locate_aux_schema_by_name(ns, aux_schema_name) {
@@ -1063,14 +1085,14 @@ function populate_validators(populate_callback) {
 }
 
 // Recursively load all the auxiliary schemas belonging to a namespace
-// into the provided JSV environment in order to be able to validate incoming
+// into the provided JSON-Schema validator in order to be able to validate incoming
 // nodes for compliance.
 // Parameters
 // ns: The string namespace name
-// env: The JSV environment. Each namespace has one.
+// tv4: The tv4 validator. Each namespace has one.
 // schemas: An array of schema files to load, each may contain references to other schemas
 // then: a callback that is called when the loading is complete
-function recursive_load_helper(ns, env, schemas, loaded, then) {
+function recursive_load_helper(ns, tv4, schemas, loaded, then) {
     osdf_utils.async_for_each(schemas, function(schema, cb) {
         var schema_src  = locate_aux_schema_source(ns, schema);
 
@@ -1112,12 +1134,12 @@ function recursive_load_helper(ns, env, schemas, loaded, then) {
 
                     // Call ourselves and pass along the list of schemas that we have
                     // already loaded.
-                    recursive_load_helper(ns, env, reference_schemas, loaded, function() {
+                    recursive_load_helper(ns, tv4, reference_schemas, loaded, function() {
                         if (loaded.hasOwnProperty(schema_id)) {
                             logger.debug("Already loaded " + schema_id);
                             cb();
                         } else {
-                            load_aux_schema_into_env(env, schema_src, cb);
+                            load_aux_schema_into_validator(tv4, schema_src, cb);
                             // Make a note that we loaded this one already
                             loaded[schema_id] = 1;
                         }
@@ -1133,19 +1155,18 @@ function recursive_load_helper(ns, env, schemas, loaded, then) {
 function register_aux_schemas(ns, callback) {
     logger.debug("In register_aux_schemas.");
 
-    // Create a JSON-Schema (Draft 3) environment
-    var environment = JSV.createEnvironment('json-schema-draft-03');
-    register_aux_schemas_to_env(environment, ns, function(err) {
+    var validator = tv4.freshApi();
+    register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
             throw new Error(err);
         }
-        validators[ns]['env'] = environment;
+        validators[ns]['val'] = validator;
         callback();
     });
 }
 
-function register_aux_schemas_to_env(env, ns, then) {
-    logger.debug("In register_aux_schemas_to_env.");
+function register_aux_schemas_to_validator(tv4, ns, then) {
+    logger.debug("In register_aux_schemas_to_validator.");
 
     async.waterfall([
         function(callback) {
@@ -1161,7 +1182,7 @@ function register_aux_schemas_to_env(env, ns, then) {
             });
         },
         function(files, callback) {
-            load_aux_schemas_into_env(ns, env, files, function() {
+            load_aux_schemas_into_validator(ns, tv4, files, function() {
                 callback(null);
             });
         }], function(err, results) {
@@ -1273,8 +1294,26 @@ function validate_against_schema(data) {
     var ns = data.ns;
     var node_type = data.node_type;
 
-    var env = validators[ns]['env'];
+    var tv4 = validators[ns]['val'];
     var schema = validators[ns][node_type]['schema'];
-    var report = env.validate(data, schema);
+    var valid = tv4.validate(data, schema);
+
+    var report = { valid: valid,
+                   error: tv4.error };
+
     return report;
+}
+
+function successful_validation_report(report) {
+    logger.debug("In successful_validation_report.");
+
+    // Assume it's not valid until proven otherwise
+    var valid = false;
+
+    console.log(report);
+    if (report !== null && (report.valid && report.error === null)) {
+      console.log(report.error);
+        valid = true;
+    }
+    return valid;
 }

@@ -6,7 +6,6 @@ var schema_utils = require('schema_utils');
 var path = require('path');
 var _ = require('lodash');
 var util = require('util');
-var JSV = require('./node_modules/JSV/jsv').JSV;
 require('config');
 
 var logger = osdf_utils.get_logger();
@@ -204,7 +203,7 @@ exports.insert_aux_schema = function (request, response) {
 
     // Check that the JSON-Schema embedded in the user-supplied data is
     // actually valid JSON-Schema and not just a string, or regular JSON that
-    // is not JSON-Schema. For this, we must rely on the JSV library.
+    // is not JSON-Schema.
     logger.info("Checking if aux schema document is valid JSON-Schema.");
     if (! schema_utils.valid_json_schema(aux_schema_json)) {
         logger.warn("User provided invalid JSON-schema.");
@@ -318,11 +317,11 @@ exports.insert_schema = function (request, response) {
     }
 
     // Check that the JSON-Schema embedded in the user-supplied data is
-    // actually valid JSON-Scheme and not just a string, or regular JSON that
-    // is not JSON-Schema. For this, we must rely on the JSV library.
+    // actually valid JSON-Schema and not just a string, or regular JSON that
+    // is not JSON-Schema.
     logger.info("Checking if schema document is valid JSON-Schema.");
     if (! schema_utils.valid_json_schema(schema_json)) {
-        logger.warn("User provided invalid JSON-schema.");
+        logger.warn("User provided invalid JSON-Schema.");
         osdf_error(response, "Invalid JSON-Schema.", 422);
         return;
     }
@@ -589,8 +588,8 @@ exports.update_schema = function (request, response) {
     }
 
     // Check that the JSON-Schema embedded in the user-supplied data is
-    // actually valid JSON-Scheme and not just a string, or regular JSON that
-    // is not JSON-Schema. For this, we must rely on the JSV library.
+    // actually valid JSON-Schema and not just a string, or regular JSON that
+    // is not JSON-Schema.
     logger.info("Checking if schema document is valid JSON-Schema.");
     if (! schema_utils.valid_json_schema(schema_json)) {
         logger.warn("User provided invalid JSON-schema.");
@@ -683,7 +682,7 @@ exports.update_aux_schema = function (request, response) {
 
     // Check that the user-supplied JSON-Schema data is actually valid
     // JSON-Schema and not just a string, or regular JSON that is not
-    // JSON-Schema. For this, we must rely on the JSV library.
+    // JSON-Schema.
     logger.info("Checking if the aux schema document is valid JSON-Schema.");
     if (! schema_utils.valid_json_schema(aux_schema_json)) {
         logger.warn("User provided invalid JSON-schema.");
@@ -967,7 +966,7 @@ function get_ns_schemas(ns, callback) {
         function(schemas, callback) {
             // Determine the directory to the auxiliary schemas for this namespace.
             ns_aux_schema_dir = path.join(working_dir, 'namespaces', ns, 'aux');
-            logger.debug("Aux schema dir for namespace " + ns + ": " + ns_aux_schema_dir);
+            logger.debug("Aux schema dir for namespace \"" + ns + "\": " + ns_aux_schema_dir);
 
             // Scan the directory for the schema files.
             fs.readdir(ns_aux_schema_dir, function(err, files) {

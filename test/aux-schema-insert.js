@@ -17,11 +17,11 @@ var test_aux_schema = {
     properties: {
         prop: {
             title: "A bit of text.",
-            type: "string",
-            required: true
+            type: "string"
         }
     },
-   additionalProperties: false
+   additionalProperties: false,
+   required: [ "prop" ]
 };
 
 // Test basic insertion of an auxiliary schema. The approach is to attempt the
