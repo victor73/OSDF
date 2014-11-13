@@ -29,7 +29,7 @@ var test_schema = {
 // schema with a random name into the 'test' namespace, then we retrieve all
 // the schemas in the namespace and see if it's there or not.
 exports['retrieve_all'] = function (test) {
-    test.expect(7);
+    test.expect(6);
 
     var schema_name = osdf_utils.random_string(8);
 
@@ -66,11 +66,8 @@ exports['retrieve_all'] = function (test) {
 
             test.ok(schema_collection_data !== null, "Data returned was valid JSON.");
 
-            // Test if the JSON returned looks right
-            test.ok( schema_collection_data.hasOwnProperty('schemas') );
-
             // Test if the schema we just inserted is listed in the "all" listing.
-            test.ok(schema_collection_data['schemas'].hasOwnProperty(schema_name),
+            test.ok(schema_collection_data.hasOwnProperty(schema_name),
                     "Schema listing shows inserted test schema.");
 
             // Perform cleanup by removing what we just inserted and retrieved.
