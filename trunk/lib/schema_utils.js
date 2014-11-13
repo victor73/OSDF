@@ -1,8 +1,18 @@
 var _ = require('lodash');
-var jsvutil = require('jsvutil');
-var osdf_utils = require('osdf_utils');
+var fs = require('fs');
 var invalid_pattern = /[^A-z0-9_-]/;
+var osdf_utils = require('osdf_utils');
+var jsonschema = require('jsonschema');
 var logger = osdf_utils.get_logger();
+var path = require('path');
+
+var Validator = require('jsonschema').Validator;
+var checker = new Validator();
+
+var corePath = path.resolve(osdf_utils.get_osdf_root(), 'lib/core_meta_schema.json');
+var core = fs.readFileSync(corePath).toString();
+var core_json = JSON.parse(core);
+
 
 // This function is used to check if an auxiliary schema is in use
 // by a namespace's primiary schemas or not. Returns true if the
@@ -76,17 +86,17 @@ exports.valid_json_schema = function (json_schema) {
     var valid = false;
 
     // Check that the JSON-Schema provided is actually valid JSON-Schema and
-    // not just a string, or regular JSON that is not JSON-Schema. For this, we
-    // rely on the jsvutil library.
+    // not just a string, or regular JSON that is not JSON-Schema.
     try {
         logger.info("Checking if document is valid JSON-Schema.");
-        jsvutil.check(json_schema);
 
-        logger.info("Valid JSON-Schema provided.");
-        valid = true;
+        var results = checker.validate(json_schema, core_json);
+
+        valid = results.valid;
     } catch (err) {
-        logger.warn("Invalid JSON schema provided.", err);
+        logger.warn("Unable to determine if JSON-Schema provided was valid.", err);
     }
+    logger.debug("Provided JSON-Schema valid? " + valid);
 
     return valid;
 };
@@ -105,5 +115,8 @@ exports.valid_schema_name = function (schema_name) {
 
     return valid;
 };
+
+
+
 
 

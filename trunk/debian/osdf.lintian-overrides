@@ -15,6 +15,3 @@ package-contains-vcs-control-file
 configure-generated-file-in-source node_modules/log4js/node_modules/compress-buffer/build/config.log
 configure-generated-file-in-source config.log
 osdf: binary-without-manpage usr/bin/new_namespace
-osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/java/classes/js.jar
-osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/jsdebug.jar
-osdf: jar-not-in-usr-share usr/lib/osdf/node_modules/jsvutil/node_modules/JSV/jsdoc-toolkit/jsrun.jar

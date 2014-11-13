@@ -25,8 +25,7 @@ var test_aux_schema = {
         "bravo",
         "charlie",
         "delta"
-    ],
-    required: true
+    ]
 };
 
 // Test basic deletion of an auxiliary schema. The approach is to insert a test

@@ -11,17 +11,17 @@ var test_ns = 'test';
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
+//    description: "A test schema.",
 var test_schema = {
-    description: "A test schema.",
     type: "object",
     properties: {
         prop: {
             title: "A bit of text.",
-            type: "string",
-            required: true
+            type: "string"
         }
     },
-   additionalProperties: false
+    additionalProperties: false,
+    required: [ "prop" ]
 };
 
 // Test basic insertion of a schema. The approach is to attempt the insertion,
@@ -51,7 +51,7 @@ exports['insert_schema'] = function (test) {
             });
         }, function(data, response, callback) {
             test.equal(response.statusCode, 200,
-                       "Schema retrieval yielded correct status code.")
+                       "Schema retrieval yielded correct status code.");
 
             test.ok(data.length > 0, "Data returned on deletion.");
 

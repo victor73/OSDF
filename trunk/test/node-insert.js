@@ -22,8 +22,8 @@ var test_node_with_schema = {
                   meta: {
                       description: "something",
                       color: "blue"
-                        }
-                  };
+                  }
+              };
 
 exports['basic_insertion'] = function (test) {
     test.expect(3);
@@ -37,7 +37,7 @@ exports['basic_insertion'] = function (test) {
 
         var location = response.headers.location;
         node_id = location.split('/').pop();
-        
+
         test.ok(data == '', "No content returned on a node insertion.");
 
         // Clean-up (delete the inserted node)
@@ -55,7 +55,7 @@ exports['basic_insertion_no_auth'] = function (test) {
     // First we create a node
     tutils.insert_node( test_node, null, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for unauthorized insertion.");
-        
+
         test.ok(data == '', "No content returned on a unauthorized node insertion.");
 
         test.done();
@@ -69,7 +69,7 @@ exports['basic_insertion_bad_auth'] = function (test) {
     // First we create a node
     tutils.insert_node( test_node, bad_auth, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for unauthorized insertion.");
-        
+
         test.ok(data == '', "No content returned on a unauthorized node insertion.");
 
         test.done();
@@ -215,13 +215,13 @@ exports['insertion_into_unknown_namespace_no_auth'] = function (test) {
 
                 // We should NOT have inserted, because the node inserted is invalid, but if we DID
                 // insert anyway (perhaps due to a bug), then we clean up after ourselves by deleting.
-                tutils.delete_node(node_id, auth, function(body, response) { 
+                tutils.delete_node(node_id, auth, function(body, response) {
                     //
                 });
-            } catch (e) { 
+            } catch (e) {
                 console.log("Problem deleting inserted node: ", e);
-            } 
-        } 
+            }
+        }
 
         test.done();
     });

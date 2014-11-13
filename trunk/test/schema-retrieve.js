@@ -16,11 +16,13 @@ var test_schema = {
     properties: {
         prop: {
             title: "A bit of text.",
-            type: "string",
-            required: true
+            type: "string"
         }
     },
-   additionalProperties: false
+    additionalProperties: false,
+    required: [
+        "prop"
+    ]
 };
 
 // Test retrieval of the collection of schemas. We start by inserting a test

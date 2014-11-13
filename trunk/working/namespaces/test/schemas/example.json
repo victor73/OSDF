@@ -1,13 +1,16 @@
 {
    "type": "object",
-   "properties":{
-       "description":{
-           "type":"string",
+   "properties": {
+       "description": {
+           "type": "string",
            "required": true
        },
        "color": {
-            "$ref": "example_aux"
-        }
+           "$ref": "example_aux"
+       }
    },
-   "additionalProperties": false
+   "additionalProperties": false,
+   "required": [
+       "color"
+   ]
 }

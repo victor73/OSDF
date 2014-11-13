@@ -27,8 +27,7 @@ var test_aux_schema = {
         "bravo",
         "charlie",
         "delta"
-    ],
-    required: true
+    ]
 };
 
 // Test basic update of an auxiliary schema. The approach is to insert an

@@ -1,15 +1,14 @@
 {
-  "type":"string",
-  "enum":[
-        "infrared",
-        "red",
-        "orange",
-        "yellow",
-        "green",
-        "blue",
-        "indigo",
-        "violet",
-        "ultraviolet"
-        ],
-  "required": true
+  "type": "string",
+  "enum": [
+      "infrared",
+      "red",
+      "orange",
+      "yellow",
+      "green",
+      "blue",
+      "indigo",
+      "violet",
+      "ultraviolet"
+  ]
 }
