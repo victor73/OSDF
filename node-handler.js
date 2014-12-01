@@ -80,7 +80,7 @@ exports.init = function(emitter, working_dir_custom) {
         logger.info("Namespaces: ", namespaces);
 
         // Setup all the JSON validators for the namespaces and their node types.
-        // Then, send a notificatino that we have completed initialization and
+        // Then, send a notification that we have completed initialization and
         // are ready to begin working.
         populate_validators( function() {
             emitter.emit('node_handler_initialized');
@@ -854,10 +854,7 @@ function delete_history_node(node_id, callback) {
 function delete_aux_schema_helper(namespace, aux_schema_name) {
     logger.debug("In node-handler:delete_aux_schema_helper.");
 
-    if (validators.hasOwnProperty(namespace)) {
-        var tv4 = validators[namespace]['val'];
-        logger.debug("IMPLEMENTATION Missing.");
-    } else {
+    if (! (validators.hasOwnProperty(namespace))) {
         logger.error("No such namespace: " + namespace);
     }
 }
@@ -952,7 +949,8 @@ function has_dependent_nodes(node, callback) {
     });
 }
 
-// TODO: Merge with insert_aux_schema_helper since the code is identical.
+// TODO: Investigate whether tv4 overwrites the previous notion it had
+// for that auxiliary schema. This code assumes that it does.
 function update_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug("In node-handler:update_aux_schema_helper.");
 
