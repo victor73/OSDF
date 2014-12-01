@@ -38,7 +38,7 @@ exports['basic_insertion'] = function (test) {
         var location = response.headers.location;
         node_id = location.split('/').pop();
 
-        test.ok(data == '', "No content returned on a node insertion.");
+        test.ok(data === '', "No content returned on a node insertion.");
 
         // Clean-up (delete the inserted node)
         try {

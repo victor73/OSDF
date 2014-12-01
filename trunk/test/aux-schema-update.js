@@ -34,10 +34,10 @@ var test_aux_schema = {
 // auxiliary schema, then perform an update/edit operation, then check that the
 // update worked by retrieving it and examining the results. We also need to
 // check that the update "stuck" by attempting to insert a node to see whether
-// the update auxiliary schema is used by the validation engine or not. After
+// the updated auxiliary schema is used by the validation engine or not. After
 // those tests are performed, we do cleanup.
 exports['update_aux_schema'] = function (test) {
-    test.expect(14);
+    test.expect(16);
 
     var primary_schema_name = osdf_utils.random_string(8);
     var aux_schema_name = osdf_utils.random_string(8);
@@ -140,15 +140,46 @@ exports['update_aux_schema'] = function (test) {
             test.equal(aux_schemas[aux_schema_name]['enum'][2], 'zulu',
                       "Auxiliary schema update took effect in namespace's schema listing.");
 
-            // Cleanup. Remove the aux and primary schemas that we inserted.
+            // Test an insertion that excersizes the updated auxiliary schema
+            var test_node = {
+                                ns: test_ns,
+                                linkage: {},
+                                acl: { read: ["all"], write: ["all"] },
+                                node_type: primary_schema_name,
+                                meta: {
+                                    testprop: "zulu"
+                                }
+                            };
+            tutils.insert_node(test_node, auth, function(data, response) {
+                callback(null, data, response);
+            });
+        }, function(data, response, callback) {
+            test.equal(response.statusCode, 201, "Correct status for node insertion.");
+
+            test.ok(data === '', "No content returned on a node insertion.");
+
+            var node_id = null;
+            try {
+                var location = response.headers.location;
+                node_id = location.split('/').pop();
+
+                // Cleanup. Remove the node, aux schema, and primary schemas that we inserted.
+                tutils.delete_node(node_id, auth, function(data, response) {
+                    // ignored
+                });
+
+                callback(null);
+            } catch (err) {
+                callback(err);
+            }
+
             tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
                 // ignored
             });
+
             tutils.delete_schema(test_ns, primary_schema_name, auth, function(data, response) {
                 // ignored
             });
-
-            callback(null);
         }],
         function(err, results) {
             test.done();
@@ -210,9 +241,10 @@ exports['update_aux_schema_with_malformed_json'] = function (test) {
             // If for whatever reason, the auxiliary schema actually made it
             // into the server we try to remove it so that the test doesn't
             // leave a residue behind.
-            tutils.delete_aux_schema(test_ns, aux_schema_name, auth, function(data, response) {
-                // ignored
-            });
+            tutils.delete_aux_schema(test_ns, aux_schema_name, auth,
+                                     function(data, response) {
+                                         // ignored
+                                     });
 
             callback(null);
         }],
