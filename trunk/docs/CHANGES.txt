@@ -14,7 +14,9 @@
   -- Victor <victor73@github.com>  Thu, 06 Nov 2014 00:00:00 -0400
 
 0.5
-  * Updated libraries
+  * Upgraded modules (express, cradle, elastical, etc) to latest versions
+  * Some fixes to test suite
+  * Changes to code to deal with Express 4
   * Added configurable CORS support
   * Switched from underscore to lowdash
   * Improved startup via upstart
@@ -22,13 +24,19 @@
   -- Victor <victor73@github.com>  Sun, 20 Jul 2014 00:00:00 -0400
 
 0.4
-  * Required nodejs 0.10 or better
-  * Support for schema management through the API
+  * Replaced flow.js with async.js in base code as well as tests
+  * New test for handling of bad version numbers during node updates
+  * Improved CORS configurability
 
   -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
 0.3
-  * Required nodejs 0.10 or better
+  * Updated code to deal with changes in node.js 0.10.x
+  * Updated node modules to latest versions: express, connect, etc...
+  * Implemented methods to deal with JSON-Schema management (primary and
+    auxiliary schemas)
+  * New tests to exercise schema management portions of the OSDF API
+  * Beginning work to integrate grunt
 
   -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
