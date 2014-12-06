@@ -2,9 +2,9 @@ INSTALLATION
 
 Requirements
 ===============================================================================
-  - Node.js 0.8.x or better
+  - Node.js 0.10.x or better
   - CouchDB 1.0.x or better
-  - ElasticSearch 0.18 or better
+  - ElasticSearch 1.2 or better
   - ElasticSearch CouchDB river plugin (bundled in the Debian/Ubuntu
     ElasticSearch package, or and available via a separate RPM for
     RedHat/CentOS systems). The OSDF package attempts to install the
