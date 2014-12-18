@@ -138,7 +138,7 @@ exports.perform_query = function (request, response) {
 
                 // Determine if this is a partial result response
                 var first_result_number = elastic_query["from"] || 0;
-                if (first_result_number + results.hits.length < results.total) {
+                if (first_result_number + results.hits.hits.length < results.hits.total) {
                     // Only count this as a partial result if the user did
                     // not specify both from and size in the query
                     if (! user_query["from"] && ! user_query["size"]) {
