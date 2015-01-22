@@ -508,6 +508,32 @@ exports.update_node = function (node_id, node_data, auth, callback) {
     request.end();
 };
 
+exports.validate_node = function (node_data, auth, callback) {
+    var request;
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/nodes/validate',
+                    method: 'POST' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    request = http.request(options, cb);
+    request.write(JSON.stringify(node_data));
+    request.end();
+};
 
 // Taken from http://rosskendall.com/blog/web/javascript-function-to-check-an-email-address-conforms-to-rfc822
 // and licensed under the Creative Commons Attribution-ShareAlike 2.5 License, or the GPL.
@@ -525,13 +551,13 @@ exports.isRFC822ValidEmail = function (sEmail) {
     var sLocalPart = sWord + '(\\x2e' + sWord + ')*';
     var sAddrSpec = sLocalPart + '\\x40' + sDomain; // complete RFC822 email address spec
     var sValidEmail = '^' + sAddrSpec + '$'; // as whole string
-    
+
     var reValidEmail = new RegExp(sValidEmail);
-    
+
     if (reValidEmail.test(sEmail)) {
       return true;
     }
-    
+
     return false;
 };
 

@@ -12,6 +12,7 @@
   * [Retrieve a Namespace](#namespace_retrieve)
 * [Nodes](#nodes)
   * [Create a Node](#node_create)
+  * [Validate a Node Document](#node_val)
   * [Retrieve a Node](#node_retrieve)
   * [Retrieve Node Version/History](#node_version)
   * [Retrieve Nodes Linked To](#node_out)
@@ -264,6 +265,81 @@ appropriate entries in the namespaces ACLs will result in an HTTP 403
 "Forbidden" status code.
 
 [top](#top)
+
+### <a name="node_val"></a> Validate a Node Document
+
+**Request: POST /nodes/validate**
+
+Validate a node document's JSON for well-formedness and, if a schema is
+associated with it, against the JSON-Schema that is registered for the
+document's node_type. Validation does not alter the data store in any way, but
+simply returns information about whether the document validates or not, and if
+not, what the errors are. This is typically useful for checking data prior to
+attempted insertions or updates.
+
+Example Request:
+
+    $ curl –u <AUTH> –X POST -d <NODE_DOC> <OSDF_URL>/namespaces/nodes/validate
+
+Abstract Form:
+
+    {
+         "ns": "<namespace_id>",
+        "linkage": { "<ns_linkage_cv1>": ["<osdf_id_1>", "<osdf_id_2>", "<osdf_id_N>" ],
+                     "<ns_linkage_cv2>": ["<osdf_id_1>", "<osdf_id_2>", "<osdf_id_N>" ],
+                     "<ns_linkage_cvN>": ["<osdf_id_1>", "<osdf_id_2>", "<osdf_id_N>" ]
+        },
+        "acl": { "read": [ "<acl1>", "<acl2>", "<aclN>" ],
+                 "write": [ "<acl1>", "<acl2>", "<aclN>" ]
+               },
+        "node_type": "<node_type_cv1>",
+        "meta": {
+           <arbitrary_json>
+        }
+    }
+
+Concrete Example:
+
+    {
+        "ns": "test",  
+        "linkage": { "collected_from" : [ "23435e57" ] },
+        "acl": { "read" : [ "all" ],
+                 "write": [ "researchers" ]
+               },
+        "node_type": "sample",
+        "meta": {
+            "name": "New sample name",
+            "alt_name": “New alternate name",
+            "description": “New description",
+            "tags": [ "female", "oral" ]
+        }
+    }
+
+Command line example (where data.json is a file containing the data):
+
+    $ curl -u <AUTH> -X POST -d @data.json <OSDF_URL>/nodes/validate
+
+**Response:**
+
+Returns HTTP 200 ("OK") on success (the document is a valid OSDF node and
+is acceptable per the JSON-Schema associated with this document's node_type as
+registered in the specified namespace. If no schema is associated with the
+document, the only check performed is that the document contains valid JSON
+and that the basic structure (meta, linkage, acl, etc) is correct. No validation
+is done on the contents of the "meta" field.
+
+Failed validations for malformed JSON data, or a "meta" section that does not
+conform to the node type's registered JSON-Schema, will yield HTTP 422
+("Unprocessable Entity"). The first validation error message may be found in
+the X-OSDF-Error HTTP header. Additional validation errors will be listed in the
+body of the response. Additional Exceptions and other errors may result
+in HTTP 500 ("Server error") responses.
+
+Security related errors for users attempting to validate nodes without
+proper authentication will result in an HTTP 403 ("Forbidden") status code.
+
+[top](#top)
+
 
 ### <a name="node_retrieve"></a> Retrieve a Node
 
@@ -1155,7 +1231,8 @@ achieved by posting a JSON query using the following URL:
 
 **Request: POST /nodes/query/${ns}/page/${page_number}**
 
-Example request:
+Example Request:
+
     $ curl -u <AUTH> -d '{"query" : { "term" : { "node_type" : "sample" }}}' \
       <OSDF_URL>/nodes/query/<NS>/page/<PAGE_NUMBER>
 

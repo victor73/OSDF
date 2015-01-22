@@ -8,16 +8,20 @@ exports.set_routes = function (app) {
     // Node handler functions
     app.get('/nodes/:id', node_handler.get_node);
     app.get('/nodes/:id/ver/:ver', node_handler.get_node_by_version);
-    app.post('/nodes', node_handler.insert_node);
-    app.put('/nodes/:id', node_handler.update_node);
-    app.delete('/nodes/:id', node_handler.delete_node);
     app.get('/nodes/:id/out', node_handler.get_out_linkage);
     app.get('/nodes/:id/in', node_handler.get_in_linkage);
+
+    app.post('/nodes', node_handler.insert_node);
+    app.post('/nodes/validate', node_handler.validate_node);
+
+    app.put('/nodes/:id', node_handler.update_node);
+
+    app.delete('/nodes/:id', node_handler.delete_node);
 
     // Query handler functions
     app.post('/nodes/query/:ns', query_handler.perform_query);
     app.post('/nodes/query/:ns/page/:page', query_handler.perform_query);
-    
+
     // Info handler functions
     app.get('/info', info_handler.info);
 

@@ -88,6 +88,44 @@ exports.init = function(emitter, working_dir_custom) {
     });
 };
 
+// This function handles the deletion of nodes. We must check that the
+// node exists and that the user has write permissions to it.
+exports.delete_node = function(request, response) {
+    logger.debug("In delete_node.");
+
+    // Check that we actually have the id in the request...
+    var node_id = null;
+
+    if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
+        node_id = request.params.id;
+    } else {
+        var msg = "No node ID provided.";
+        logger.error(msg);
+        throw msg;
+    }
+
+    try {
+        // Check if this node has other nodes pointing to it.
+        has_dependent_nodes(node_id, function(err, has_dependencies) {
+            if (err) {
+                logger.error(err);
+                throw err;
+            }
+
+            if (has_dependencies) {
+                osdf_error(response, "Node has dependencies on it.", 409);
+            } else {
+                logger.debug("No dependencies, so clear to delete.");
+                // Get the user that is making the deletion request.
+                var user = auth.get_user(request);
+                delete_helper(user, node_id, response);
+            }
+        });
+    } catch (e) {
+        osdf_error(response, "Unable to delete node.", 500);
+    }
+};
+
 // This is the method that handles node retrieval. It is called when users HTTP
 // GET the node.
 exports.get_node = function (request, response) {
@@ -163,170 +201,6 @@ exports.get_node_by_version = function (request, response) {
             }
             return;
         });
-    }
-};
-
-// This is the method that handles node creation.
-exports.insert_node = function (request, response) {
-    logger.debug("In insert_node.");
-    var content = request.rawBody;
-    var report = null;  // To hold the results of validation
-
-    try {
-        report = validate_incoming_node(content);
-    } catch (report_err) {
-        logger.error(report_err);
-        osdf_error(response, report_err, 422);
-        return;
-    }
-
-    if (successful_validation_report(report)) {
-        // Either we have a good report, or there is no schema for the node type.
-        // Either way, we're free to go ahead and insert the data.
-        var node_data = JSON.parse(content);
-
-        async.waterfall([
-            function(callback) {
-                db.save(node_data, function(err, couch_response) {
-                    if (err) {
-                        logger.error(err);
-                        callback(err);
-                    } else {
-                        callback(null, couch_response);
-                    }
-                });
-            }, function(couch_response, callback) {
-                var node_id = couch_response.id;
-
-                if (couch_response.ok === true) {
-                    // Save the history
-                    node_data['id'] = node_id;
-                    node_data['ver'] = 1;
-                    save_history(node_id, node_data, function(err) {
-                        if (err) {
-                            logger.error(msg);
-                            callback(new Error(msg));
-                        } else {
-                            var node_url = base_url + ':' + port + '/nodes/' + node_id;
-                            callback(null, node_url);
-                        }
-                    });
-                } else {
-                    // This shouldn't happen, but...
-                    var msg = "No error, but couchdb response was not 'ok'.";
-                    logger.error(msg);
-                    callback(new Error(msg));
-                }
-            }], function (err, node_url) {
-                if (err) {
-                    logger.error(err);
-                    osdf_error(response, "Unable to save node.", 500);
-                } else {
-                    logger.info("Successful insertion: " + node_url);
-                    response.location(node_url);
-                    response.send(201, '');
-                }
-            }
-        );
-    } else {
-        if (report !== null && report.error !== null) {
-            var err_msg = report.error.message + " on path " + report.error.dataPath;
-            logger.info("Invalid node. Error: ", err_msg);
-            osdf_error(response, err_msg, 422);
-        } else {
-            osdf_error(response, "Invalid node data.", 422);
-        }
-    }
-};
-
-
-// This is the function that handles edits/modifications to nodes.
-exports.update_node = function(request, response) {
-    logger.debug("In update_node.");
-
-    var node_id = request.params.id;
-    var content = request.rawBody;
-
-    var report; // To hold the results of validation
-
-    var node_data;
-
-    try {
-        node_data = JSON.parse(content);
-
-        // Check that the version has been supplied.
-        if (! (node_data !== null && node_data.hasOwnProperty("ver") )) {
-            throw "Incoming node data does not supply the node version.";
-        }
-
-        report = validate_incoming_node(content);
-    } catch (err) {
-        logger.info("Returning HTTP 422.", err);
-        osdf_error(response, err, 422);
-        return;
-    }
-
-    // Check if the JSON-Schema validation reported any errors
-    if (successful_validation_report(report)) {
-        // If here, then we're okay to attempt the update
-        update_node_helper(node_id, node_data, function(err, update_result) {
-            if (err) {
-                logger.error("Unable to update data in couchdb.", reason);
-                var reason = update_result['msg'];
-                var code = update_result['code'];
-                osdf_error(response, reason, code);
-            } else {
-                response.send(200, '');
-            }
-        });
-    } else {
-        // If here, then it's because the node data didn't validate
-        // or some other problem occurred.
-        if (report !== null && report.hasOwnProperty('error')) {
-            var err_msg = report.error.message;
-            logger.info("Invalid node. Error: ", err_msg);
-            osdf_error(response, err_msg, 422);
-        } else {
-            osdf_error(response, "Node does not validate.", 422);
-        }
-    }
-};
-
-// This function handles the deletion of nodes. We must check that the
-// node exists and that the user has write permissions to it.
-exports.delete_node = function(request, response) {
-    logger.debug("In delete_node.");
-
-    // Check that we actually have the id in the request...
-    var node_id = null;
-
-    if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
-        node_id = request.params.id;
-    } else {
-        var msg = "No node ID provided.";
-        logger.error(msg);
-        throw msg;
-    }
-
-    try {
-        // Check if this node has other nodes pointing to it.
-        has_dependent_nodes(node_id, function(err, has_dependencies) {
-            if (err) {
-                logger.error(err);
-                throw err;
-            }
-
-            if (has_dependencies) {
-                osdf_error(response, "Node has dependencies on it.", 409);
-            } else {
-                logger.debug("No dependencies, so clear to delete.");
-                // Get the user that is making the deletion request.
-                var user = auth.get_user(request);
-                delete_helper(user, node_id, response);
-            }
-        });
-    } catch (e) {
-        osdf_error(response, "Unable to delete node.", 500);
     }
 };
 
@@ -474,6 +348,192 @@ exports.get_in_linkage = function(request, response) {
     }
 };
 
+// This is the method that handles node creation.
+exports.insert_node = function (request, response) {
+    logger.debug("In insert_node.");
+    var content = request.rawBody;
+    var report = null;  // To hold the results of validation
+
+    try {
+        report = validate_incoming_node(content);
+    } catch (report_err) {
+        logger.error(report_err);
+        osdf_error(response, report_err, 422);
+        return;
+    }
+
+    if (successful_validation_report(report)) {
+        // Either we have a good report, or there is no schema for the node type.
+        // Either way, we're free to go ahead and insert the data.
+        var node_data = JSON.parse(content);
+
+        async.waterfall([
+            function(callback) {
+                db.save(node_data, function(err, couch_response) {
+                    if (err) {
+                        logger.error(err);
+                        callback(err);
+                    } else {
+                        callback(null, couch_response);
+                    }
+                });
+            }, function(couch_response, callback) {
+                var node_id = couch_response.id;
+
+                if (couch_response.ok === true) {
+                    // Save the history
+                    node_data['id'] = node_id;
+                    node_data['ver'] = 1;
+                    save_history(node_id, node_data, function(err) {
+                        if (err) {
+                            logger.error(msg);
+                            callback(new Error(msg));
+                        } else {
+                            var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                            callback(null, node_url);
+                        }
+                    });
+                } else {
+                    // This shouldn't happen, but...
+                    var msg = "No error, but couchdb response was not 'ok'.";
+                    logger.error(msg);
+                    callback(new Error(msg));
+                }
+            }], function (err, node_url) {
+                if (err) {
+                    logger.error(err);
+                    osdf_error(response, "Unable to save node.", 500);
+                } else {
+                    logger.info("Successful insertion: " + node_url);
+                    response.location(node_url);
+                    response.send(201, '');
+                }
+            }
+        );
+    } else {
+        if (report !== null && report.errors !== null && report.errors.length > 0) {
+            var first_err = report.errors[0];
+            var err_msg = first_err.message + " on path " + first_err.dataPath;
+            logger.info("Invalid node. Error: ", err_msg);
+            osdf_error(response, err_msg, 422);
+        } else {
+            osdf_error(response, "Invalid node data.", 422);
+        }
+    }
+};
+
+// This is the function that handles edits/modifications to nodes.
+exports.update_node = function(request, response) {
+    logger.debug("In update_node.");
+
+    var node_id = request.params.id;
+    var content = request.rawBody;
+
+    var report; // To hold the results of validation
+
+    var node_data;
+
+    try {
+        node_data = JSON.parse(content);
+
+        // Check that the version has been supplied.
+        if (! (node_data !== null && node_data.hasOwnProperty("ver") )) {
+            throw "Incoming node data does not supply the node version.";
+        }
+
+        report = validate_incoming_node(content);
+    } catch (err) {
+        logger.info("Returning HTTP 422.", err);
+        osdf_error(response, err, 422);
+        return;
+    }
+
+    // Check if the JSON-Schema validation reported any errors
+    if (successful_validation_report(report)) {
+        // If here, then we're okay to attempt the update
+        update_node_helper(node_id, node_data, function(err, update_result) {
+            if (err) {
+                logger.error("Unable to update data in couchdb.", reason);
+                var reason = update_result['msg'];
+                var code = update_result['code'];
+                osdf_error(response, reason, code);
+            } else {
+                response.send(200, '');
+            }
+        });
+    } else {
+        // If here, then it's because the node data didn't validate
+        // or some other problem occurred.
+        if (report !== null && report.hasOwnProperty('error')) {
+            var err_msg = report.error.message;
+            logger.info("Invalid node. Error: ", err_msg);
+            osdf_error(response, err_msg, 422);
+        } else {
+            osdf_error(response, "Node does not validate.", 422);
+        }
+    }
+};
+
+// Just validate a node against a schema if it has one
+// assigned for the specified node_type. If it does NOT
+// then then only a check for well-formedness and basic
+// OSDF structure is performed.
+exports.validate_node = function(request, response) {
+    logger.debug("In update_node.");
+
+    var content = request.rawBody;
+
+    var report; // To hold the results of validation
+
+    var node_data;
+
+    try {
+        node_data = JSON.parse(content);
+
+        report = validate_incoming_node(content);
+    } catch (err) {
+        logger.info("Returning HTTP 422.", err);
+        osdf_error(response, err, 422);
+        return;
+    }
+
+    // Check if the JSON-Schema validation reported any errors
+    if (successful_validation_report(report)) {
+        // If here, then we're valid
+        response.send(200, '');
+    } else {
+        // If here, then it's because the node data didn't validate
+        // or some other problem occurred.
+        if (report !== null && report.hasOwnProperty('errors') && report.errors.length > 0) {
+            var first_err = report.errors[0];
+            var first_err_msg = first_err.message + " on path " + first_err.dataPath;
+            logger.info("Invalid node. First error: ", first_err_msg);
+
+            var error_text = "";
+            for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
+                var err = report.errors[errIdx];
+                if ( err.hasOwnProperty('dataPath') && err.dataPath.length > 0) {
+                     error_text = error_text.concat( err.message + " on path " + err.dataPath + "\n" );
+                } else {
+                     error_text = error_text.concat( err.message + "\n" );
+                }
+            }
+            error_text = error_text.trim();
+
+            // Here we do not simply use the osdf_error() function because
+            // we actually want to list all the error messages without the
+            // user having to inspect HTTP headers. THe first error message
+            // will still be in the headers though...
+            response.set('X-OSDF-Error', first_err_msg);
+            response.send(422, error_text);
+
+            return;
+        } else {
+            osdf_error(response, "Node does not validate.", 422);
+        }
+    }
+};
+
 // This message is used to process auxiliary schema deletion events
 // that are relayed to this process from the master process by worker.js.
 exports.process_aux_schema_change = function (msg) {
@@ -566,15 +626,16 @@ function validate_incoming_node(node_string) {
 
         // And validate...
         var tv4 = validators[node.ns]['val'];
-        var valid = tv4.validate(meta, schema);
+        //var valid = tv4.validate(meta, schema);
+        var result = tv4.validateMultiple(meta, schema);
 
-        report = { valid: valid,
-                   error: tv4.error };
+        report = { valid: result.valid,
+                   errors: result.errors };
     } else {
         logger.debug("No validator found for namespace/node_type of " +
                     node.ns + "/" + node.node_type + ".");
         report = { valid: true,
-                   error: null };
+                   errors: null };
     }
 
     return report;
@@ -1297,7 +1358,7 @@ function validate_against_schema(data) {
     var valid = tv4.validate(data, schema);
 
     var report = { valid: valid,
-                   error: tv4.error };
+                   errors:  [ tv4.error ] };
 
     return report;
 }
@@ -1308,9 +1369,7 @@ function successful_validation_report(report) {
     // Assume it's not valid until proven otherwise
     var valid = false;
 
-    console.log(report);
-    if (report !== null && (report.valid && report.error === null)) {
-      console.log(report.error);
+    if (report !== null && (report.valid && (report.errors === null || report.errors.length === 0))) {
         valid = true;
     }
     return valid;
