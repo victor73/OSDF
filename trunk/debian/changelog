@@ -1,6 +1,8 @@
 osdf (0.7-1) unstable; urgency=low
 
   * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
+  * Added new route and method for node validation. Only performs validation
+    and reporting of any errors.
   * Updated tests and test schemas for JSON-Schema v4 support
   * Fixed issue with API non-conformance of retrieval of all schemas
   * Improved logging in several areas.
