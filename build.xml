@@ -113,10 +113,15 @@
             <copy file="${dist.dir}/${tarball}" tofile="${build.dir}/${debian.orig.tar}"/>
 
             <untar src="${build.dir}/${tarball}" failOnEmptyArchive="true" compression="gzip" dest="${build.dir}"/>
+            <!-- debuild will show a warning if we don't have an executable rules file  -->
+            <chmod file="${build.dir}/${app.name.lc}-${app.version}/debian/rules" perm="a+rx"/>
 
             <exec dir="${build.dir}/${app.name.lc}-${app.version}" executable="debuild" failonerror="true">
               <arg value="-us"/>
               <arg value="-uc"/>
+              <arg value="--lintian-opts"/>
+              <arg value="--suppress-tags"/>
+              <arg value="bad-distribution-in-changes-file"/>
             </exec>
 
             <copy overwrite="true" todir="${dist.dir}">

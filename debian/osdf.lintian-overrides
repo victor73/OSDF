@@ -1,11 +1,17 @@
 # This package is not for debian, but for ubuntu. It also does not
 # have an ITP bug.
-image-file-in-usr-lib
 new-package-should-close-itp-bug
+image-file-in-usr-lib
 package-contains-upstream-install-documentation
 script-not-executable
 unusual-interpreter
 wrong-path-for-interpreter
+# We use a distribution of 'unstable', but ubuntu doesn't recognize it This
+# override actually isn't supported by lintian yet, so we have to use
+# '--lintian-opts --suppress-tags bad-distribution-in-changes-file' arguments
+# to debuild to get rid of the error. However, we have it here anyway for the
+# eventual support to be added
+bad-distribution-in-changes-file
 # The provided node/npm modules sometimes include their own license files
 extra-license-file
 embedded-javascript-library
