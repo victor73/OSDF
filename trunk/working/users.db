@@ -1,4 +1,5 @@
-test:098f6bcd4621d373cade4e832627b4f6
-test_manager:098f6bcd4621d373cade4e832627b4f6
-test_executive:098f6bcd4621d373cade4e832627b4f6
-test_associate:098f6bcd4621d373cade4e832627b4f6
+# All passwords are 'test'
+test:sha1$d7e6a336$1$d96d61f49ed32e79cf9ed90402d691d85d197fff
+test_manager:sha1$d4bd9e14$1$1de422858ae2d59a057b93606c5484c2c6bfb844
+test_executive:sha1$c068dbb6$1$ece6940338ebdf7313d147a7fa07f280f03b52a2
+test_associate:sha1$faad7aaf$1$7338fadb6c4b87966613899020599f766d08ac1d

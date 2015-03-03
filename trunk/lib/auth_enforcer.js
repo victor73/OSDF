@@ -1,7 +1,7 @@
 var linereader = require('FileLineReader');
 var osdf_utils = require('osdf_utils');
 var path = require('path');
-var hash = require('node_hash');
+var pw_hash = require('password-hash');
 
 var logger = osdf_utils.get_logger();
 var users = {};
@@ -9,7 +9,7 @@ var working_dir;
 
 // Initialize the handler by reading the user database file into
 // memory. This should make for faster lookups when we are authenticating
-// access. Notify the top level code that we are finished with the 
+// access. Notify the top level code that we are finished with the
 // initialization process by sending an event using the emitter which
 // is passed in as an argument.
 exports.init = function (emitter, working_dir_custom) {
@@ -39,7 +39,7 @@ exports.init = function (emitter, working_dir_custom) {
             logger.warn("Bad user entry on line " + linecount + ' of ' + user_file);
         }
     }
-     
+
     // Notify that we are finished.
     emitter.emit("auth_handler_initialized", Object.keys(users).length);
 }
@@ -50,12 +50,20 @@ exports.authenticate = function authenticate() {
             var credential_pair = new Buffer(request.headers.authorization.split(' ')[1], 'base64').toString();
             var credentials = credential_pair.split(':');
             var username = credentials[0];
-            var token = credentials[1];
+            var password = credentials[1];
 
-            if ( username in users && users[username] == hash.md5(token) ) {
-                next();
+            if ( username in users ) {
+                var stored_hash = users[username];
+
+                if ( pw_hash.verify(password, stored_hash) ) {
+                    next();
+                } else {
+                    logger.info("Invalid credentials, " + credential_pair + ", from " + request.client.remoteAddress);
+                    response.set('X-OSDF-Error', 'Invalid auth token');
+                    response.send(403, '');
+                }
             } else {
-                logger.info("Invalid credentials, " + credential_pair + ", from " + request.client.remoteAddress);
+                logger.info("Invalid authentication attempt. No such user: " + username);
                 response.set('X-OSDF-Error', 'Invalid auth token');
                 response.send(403, '');
             }
