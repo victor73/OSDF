@@ -22,28 +22,3 @@ read({ prompt: 'Enter the password (not echoed): ', silent: true }, function(err
         }
     }
 });
-
-/*
-var prompt = require('prompt');
-var schema = {
-    properties: {
-        password: {
-            message: "Please enter the password.",
-            hidden: true,
-            required: true
-        }
-    }
-};
-
-// Start the prompt
-prompt.start();
-
-// Get two properties from the user: email, password
-prompt.get(schema, function (err, result) {
-    var password = result.password;
-
-    // Log the results.
-    console.log('  password: ' + password);
-
-});
-*/
