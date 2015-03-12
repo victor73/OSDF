@@ -8,6 +8,11 @@ commander.option('-u, --username <username>',
                  'Specify the username to make a password for.')
          .parse(process.argv);
 
+if (! commander.username) {
+    console.error("-u or --username is required ")
+    process.exit(1)
+}
+
 var username = commander.username;
 
 
