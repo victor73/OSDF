@@ -43,6 +43,7 @@ binary: install token-replace
 	dh_install schema-handler.js /usr/lib/osdf/
 	dh_install node_modules /usr/lib/osdf/
 	dh_install bin/new_namespace /usr/bin
+	dh_install bin/check_river.js /var/lib/osdf/bin
 	dh_install bin/generate_password_hash.js /var/lib/osdf/bin
 	dh_install bin/install_river.js /var/lib/osdf/bin
 	dh_install bin/couchdb /var/lib/osdf/bin
