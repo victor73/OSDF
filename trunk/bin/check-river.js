@@ -40,8 +40,9 @@ elastic_client.indices.existsType({index: 'osdf',
 
       if (result === true) {
           console.log('"ElasticSearch CouchDB river "' + es_river_name + "' exists.");
+          process.exit(0);
       } else {
           console.log('"ElasticSearch CouchDB river "' + es_river_name + "' doesn't seem to exist.");
-          process.exit(1)
+          process.exit(1);
       }
 });
