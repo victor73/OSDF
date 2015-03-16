@@ -2,8 +2,11 @@
   * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
   * Added new route and method for node validation. Only performs validation
     and reporting of any errors.
+  * Using salted SHA1 for password hashing/storage.
   * Updated tests and test schemas for JSON-Schema v4 support
   * Fixed issue with API non-conformance of retrieval of all schemas
+  * Added utility scripts to generate password hashes and to check for the
+    presence of the couchdb river in elasticsearch
   * Improved logging in several areas.
 
   -- Victor <victor73@github.com>  Thu, 22 Jan 2015 00:00:00 -0400
