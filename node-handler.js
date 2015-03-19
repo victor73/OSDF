@@ -518,7 +518,7 @@ exports.validate_node = function(request, response) {
                      error_text = error_text.concat( err.message + "\n" );
                 }
             }
-            error_text = error_text.trim();
+            error_text = error_text.trim() + "\n";
 
             // Here we do not simply use the osdf_error() function because
             // we actually want to list all the error messages without the
