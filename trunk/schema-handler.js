@@ -122,7 +122,7 @@ exports.get_aux_schema = function (request, response) {
     if (global_schemas.hasOwnProperty(ns)) {
         if (global_schemas[ns].hasOwnProperty('aux') &&
                 global_schemas[ns]['aux'].hasOwnProperty(aux)) {
-            response.jsonp(global_schemas[ns]['aux'][aux]);
+            response.jsonp(global_schemas[ns]['aux'][aux]['schema']);
         } else {
             logger.warn("Unknown ns:aux: " + ns + ":" + aux);
             osdf_error(response, 'Auxiliary schema not found.', 404);
