@@ -184,7 +184,7 @@ exports.get_node_by_version = function (request, response) {
                         } else {
                             var current_node_version = parse_version(current_node['_rev']);
 
-                            // The user my be using this method to get the current version.
+                            // The user may be using this method to get the current version.
                             // They 'should' use the regular node retrieval method, but here
                             // they are using the 'by version' method to get the current
                             // version.
@@ -479,7 +479,7 @@ exports.update_node = function(request, response) {
 // then then only a check for well-formedness and basic
 // OSDF structure is performed.
 exports.validate_node = function(request, response) {
-    logger.debug("In update_node.");
+    logger.debug("In validate_node.");
 
     var content = request.rawBody;
 
@@ -500,6 +500,7 @@ exports.validate_node = function(request, response) {
     // Check if the JSON-Schema validation reported any errors
     if (successful_validation_report(report)) {
         // If here, then we're valid
+        logger.debug("Valid node detected. Returning 200.");
         response.send(200, '');
     } else {
         // If here, then it's because the node data didn't validate
@@ -726,6 +727,8 @@ function update_node_helper(node_id, node_data, callback) {
             }
         },
         function(previous_node, couchdb_version, callback) {
+            delete node_data['ver'];
+
             // Okay to proceed with the update because the versions match
             db.save(node_id, couchdb_version, node_data, function(err, couch_response) {
                 if (err) {
