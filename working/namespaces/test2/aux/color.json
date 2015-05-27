@@ -1,0 +1,14 @@
+{
+  "type": "string",
+  "enum": [
+      "infrared",
+      "red",
+      "orange",
+      "yellow",
+      "green",
+      "blue",
+      "indigo",
+      "violet",
+      "ultraviolet"
+  ]
+}

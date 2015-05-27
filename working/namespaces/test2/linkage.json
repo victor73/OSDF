@@ -1,0 +1,20 @@
+{
+  "target": {
+  },
+  "example": {
+      "related_to": [ "target" ]
+  },
+  "example2": {
+      "related_to": [ "target" ],
+      "connected_to": [ "target", "target2" ]
+  },
+  "any_link_to_target": {
+      "*": [ "target" ]
+  },
+  "any_link": {
+      "*": [ "*" ]
+  },
+  "*": {
+    "*": [ "*" ]
+  }
+}
