@@ -106,7 +106,7 @@ exports['out_linkage'] = function (test) {
             test.done();
         }
     );
-}
+};
 
 // Check whether we are able to obtain outbound linkages without using an
 // authentication token.
