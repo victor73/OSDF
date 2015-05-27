@@ -1,0 +1,16 @@
+{
+   "type": "object",
+   "properties": {
+       "description": {
+           "type": "string",
+           "required": true
+       },
+       "color": {
+           "$ref": "color"
+       }
+   },
+   "additionalProperties": false,
+   "required": [
+       "color"
+   ]
+}
