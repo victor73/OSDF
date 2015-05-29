@@ -3,6 +3,7 @@
 // tv4 - Used for JSON validation with JSON-Schema
 // async - For handling complicated async workflows
 
+var util = require('util');
 var _ = require('lodash');
 var async = require('async');
 var cradle = require('cradle');
@@ -16,6 +17,7 @@ var config = require('config');
 var perms = require('perms-handler');
 var auth = require('auth_enforcer');
 var sprintf = require('sprintf').sprintf;
+var linkage_controller = require('linkage-controller');
 
 var c = Config.get_instance(osdf_utils.get_config());
 
@@ -75,17 +77,38 @@ exports.init = function(emitter, working_dir_custom) {
         }
     });
 
-    osdf_utils.get_namespace_names( function(names) {
-        namespaces = names;
-        logger.info("Namespaces: ", namespaces);
+    async.waterfall([
+        function(callback) {
+            // The linkage controller needs its own ability to interact with CouchDB,
+            // to validate nodes, so we give it the connection we established.
+            linkage_controller.set_db_connection(db);
 
-        // Setup all the JSON validators for the namespaces and their node types.
-        // Then, send a notification that we have completed initialization and
-        // are ready to begin working.
-        populate_validators( function() {
-            emitter.emit('node_handler_initialized');
-        });
-    });
+            osdf_utils.get_namespace_names(function(names) {
+                logger.info("Namespaces: ", names);
+                callback(null, names);
+            });
+        }, function(names, callback) {
+            namespaces = names;
+            populate_validators( function() {
+                callback(null);
+            });
+        }, function(callback) {
+            establish_linkage_controls( function(err) {
+                if (err) {
+                    logger.error(err);
+                    callback(err);
+                } else {
+                    callback(null);
+                }
+            });
+        }], function (err) {
+            if (err) {
+                emitter.emit('node_handler_aborted', err);
+            } else {
+                emitter.emit('node_handler_initialized');
+            }
+        }
+    );
 };
 
 // This function handles the deletion of nodes. We must check that the
@@ -369,11 +392,31 @@ exports.insert_node = function (request, response) {
 
         async.waterfall([
             function(callback) {
+                logger.debug("Checking if there are linkage issues.");
+                linkage_controller.valid_linkage(node_data, function(err, valid) {
+                    if (err) {
+                        logger.error(err);
+                        callback({"err": err, "code": 422});
+                    } else {
+                        if (valid === true) {
+                            logger.debug("No linkage control issues stopping insertion...");
+                            callback(null);
+                        } else {
+                            var msg = "Node had invalid linkages.";
+                            logger.error(msg);
+                            callback({"err": msg, "code": 422});
+                        }
+                    }
+                });
+            },
+            function(callback) {
+                logger.debug("Saving node to CouchDB.");
                 db.save(node_data, function(err, couch_response) {
                     if (err) {
                         logger.error(err);
                         callback(err);
                     } else {
+                        logger.debug("Successfully saved node to CouchDB.");
                         callback(null, couch_response);
                     }
                 });
@@ -395,14 +438,18 @@ exports.insert_node = function (request, response) {
                     });
                 } else {
                     // This shouldn't happen, but...
-                    var msg = "No error, but couchdb response was not 'ok'.";
+                    var msg = "No error, but CouchDB response was not 'ok'.";
                     logger.error(msg);
                     callback(new Error(msg));
                 }
             }], function (err, node_url) {
                 if (err) {
-                    logger.error(err);
-                    osdf_error(response, "Unable to save node.", 500);
+                    if (_.isPlainObject(err) && err.hasOwnProperty("code")) {
+                       osdf_error(response, err['err'], err['code']);
+                    } else {
+                        logger.error(err);
+                        osdf_error(response, "Unable to save node.", 500);
+                    }
                 } else {
                     logger.info("Successful insertion: " + node_url);
                     response.location(node_url);
@@ -450,17 +497,51 @@ exports.update_node = function(request, response) {
 
     // Check if the JSON-Schema validation reported any errors
     if (successful_validation_report(report)) {
-        // If here, then we're okay to attempt the update
-        update_node_helper(node_id, node_data, function(err, update_result) {
-            if (err) {
-                logger.error("Unable to update data in couchdb.", reason);
-                var reason = update_result['msg'];
-                var code = update_result['code'];
-                osdf_error(response, reason, code);
-            } else {
-                response.send(200, '');
-            }
-        });
+        async.waterfall([
+            function(callback) {
+                logger.debug("Checking if there are linkage issues.");
+                linkage_controller.valid_linkage(node_data, function(err, valid) {
+                    if (err) {
+                        logger.error(err);
+                        callback({"err": err, "code": 422});
+                    } else {
+                        if (valid === true) {
+                            logger.debug("No linkage control issues stopping insertion...");
+                            callback(null);
+                        } else {
+                            var msg = "Node had invalid linkages.";
+                            logger.error(msg);
+                            callback({"err": msg, "code": 422});
+                        }
+                    }
+                });
+            },
+            function(callback) {
+                // If here, then we're okay to attempt the update
+                update_node_helper(node_id, node_data, function(err, update_result) {
+                    if (err) {
+                        logger.error("Unable to update data in CouchDB.", err);
+                        var msg = update_result['msg'];
+                        var code = update_result['code'];
+                        callback({'err': msg, 'code': code});
+                    } else {
+                        callback(null);
+                    }
+                });
+            }],
+            function(err) {
+                if (err) {
+                    if (_.isPlainObject(err) && err.hasOwnProperty("code")) {
+                       osdf_error(response, err['err'], err['code']);
+                    } else {
+                        logger.error(err);
+                        osdf_error(response, "Unable to update node.", 500);
+                    }
+                } else {
+                    logger.info("Successful update for node id: " + node_id);
+                    response.send(200, '');
+                }
+            });
     } else {
         // If here, then it's because the node data didn't validate
         // or some other problem occurred.
@@ -590,7 +671,7 @@ function validate_incoming_node(node_string) {
     if (typeof node_string === 'string') {
         try {
             node = JSON.parse(node_string);
-        } catch(e) {
+        } catch (e) {
             logger.debug('Unable to parse content into JSON.');
             throw "Unable to parse content into JSON.";
         }
@@ -645,13 +726,13 @@ function validate_incoming_node(node_string) {
 // A function to parse the version of a CouchDB document out
 // from its native CouchDB representation as a string to a
 // numeric form.
-// Parameters: couchdb_version (string)
+// Parameters: CouchDB (string)
 // Returns: int
 function parse_version(couchdb_version) {
     logger.debug("In parse_version.");
 
     if (couchdb_version === null) {
-        throw "Invalid couchdb version provided.";
+        throw "Invalid CouchDB version provided.";
     }
     var couchdb_version_int = parseInt(couchdb_version.split('-')[0], 10);
     return couchdb_version_int;
@@ -727,7 +808,7 @@ function update_node_helper(node_id, node_data, callback) {
             }
         },
         function(previous_node, couchdb_version, callback) {
-            delete node_data['ver'];
+            node_data['ver'] = node_data['ver']++;
 
             // Okay to proceed with the update because the versions match
             db.save(node_id, couchdb_version, node_data, function(err, couch_response) {
@@ -1117,12 +1198,10 @@ function locate_aux_schema_source(ns, aux_schema) {
 }
 
 // Given a namespace name (string), return the location on the filesystem
-// where the namespace's working directory is. If an optional 'file' path is
-// specified as well, the path to the file in the namespace's working directory
-// is returned.
+// where the namespace's working directory is.
 // Parameters: namespace (string)
 // Returns: path (string)
-function ns2working(namespace, file) {
+function ns2working(namespace) {
     var location = path.join(working_dir, 'namespaces', namespace);
     return location;
 }
@@ -1143,6 +1222,48 @@ function populate_validators(populate_callback) {
         });
     }, function() {
         populate_callback();
+    });
+}
+
+function establish_linkage_controls(callback) {
+    logger.debug("In establish_linkage_controls.");
+
+    osdf_utils.async_for_each(namespaces, function(ns, cb) {
+        logger.info("Checking namespace " + ns + " for linkage.json file.");
+        var linkage_path = path.join(ns2working(ns), "linkage.json");
+        logger.debug("Path to linkage.json: " + linkage_path);
+
+        fs.stat(linkage_path, function(err, stat) {
+            if (err === null) {
+                logger.info("Linkage control file exists for namespace " + ns + ".");
+
+                fs.readFile(linkage_path, 'utf8', function(err, file_text) {
+                    if (err) {
+                        logger.error(err);
+                        callback(err);
+                    }
+
+                    var linkage_json;
+
+                    try {
+                        linkage_json = JSON.parse(file_text);
+                    } catch (parse_err) {
+                        var msg = "Unable to parse linkage control file for namespace " + ns + "!";
+                        logger.error(msg);
+                        callback(msg);
+                    }
+
+                    logger.debug("Successfully parsed linkage control file for namespace " + ns + ".");
+                    linkage_controller.set_namespace_linkages(ns, linkage_json);
+                    cb()
+                });
+            } else {
+                logger.info("No linkage control for namespace " + ns + ".");
+                cb();
+            }
+        });
+    }, function() {
+        callback();
     });
 }
 
