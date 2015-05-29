@@ -3,8 +3,7 @@
 var osdf_utils = require('osdf_utils');
 var async = require('async');
 var tutils = require('./lib/test_utils.js');
-var clone = require('clone');
-
+var _ = require('lodash');
 
 // Get a set of valid and invalid credentials for our tests
 var auth = tutils.get_test_auth();
@@ -16,14 +15,13 @@ var test_node = { ns: 'test2',
                   meta: {}
                 };
 
-// at the conclusion of the test.
 exports['insert_all_links_disallowed'] = function (test) {
     test.expect(3);
 
     async.waterfall([
         function(callback) {
             // First we create a starting node
-            var start_node = clone(test_node);
+            var start_node = _.cloneDeep(test_node);
             start_node['node_type'] = "start_test_node";
 
             tutils.insert_node(start_node, auth, function(data, response) {
@@ -33,7 +31,7 @@ exports['insert_all_links_disallowed'] = function (test) {
             });
         }, function(start_node_id, callback) {
             // Now make a "target" node, and attempt to connect it to the 'start' node.
-            var target = clone(test_node);
+            var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = { "relates_to": [ start_node_id ] };
             target['meta']['color'] = "red";
@@ -86,7 +84,7 @@ exports['insert_one_allowance_invalid_link'] = function (test) {
     async.waterfall([
        function(callback) {
             // First we create a starting node
-            var start_node = clone(test_node);
+            var start_node = _.cloneDeep(test_node);
             start_node['node_type'] = "start_test_node";
 
             tutils.insert_node(start_node, auth, function(data, response) {
@@ -99,7 +97,7 @@ exports['insert_one_allowance_invalid_link'] = function (test) {
             // Now create an "example" node, and attempt to connect it to the
             // start node. "example" nodes are only allowed to connect to
             // "target" nodes.
-            var example = clone(test_node);
+            var example = _.cloneDeep(test_node);
             example['node_type'] = 'example';
             example['linkage'] = { "relates_to": [ start_node_id ] };
             example['meta']['color'] = "red";
@@ -155,7 +153,7 @@ exports['insert_wildcard_linkage_valid_target'] = function (test) {
     async.waterfall([
         function(callback) {
             // First we create a "target" node
-            var target2 = clone(test_node);
+            var target2 = _.cloneDeep(test_node);
             target2['node_type'] = 'target';
             target2['meta']['color'] = "red";
 
@@ -169,7 +167,7 @@ exports['insert_wildcard_linkage_valid_target'] = function (test) {
             // Now create an "any_link_to_target" node, and attempt to connect it to the
             // target node. "any_link_to_target" nodes are only allowed to connect to
             // "target" nodes, but can use any linkage/edge name.
-            var any_link_to_target = clone(test_node);
+            var any_link_to_target = _.cloneDeep(test_node);
             any_link_to_target['node_type'] = 'any_link_to_target';
             // "abc123" is intended to be somewhat random
             any_link_to_target['linkage'] = { "abc123": [ target_id ] };
@@ -214,7 +212,7 @@ exports['insert_wildcard_linkage_invalid_target'] = function (test) {
         function(callback) {
             // Create an "other" node to test the insertion
             // (to a non "target" node).
-            var other = clone(test_node);
+            var other = _.cloneDeep(test_node);
             other['node_type'] = 'other';
             other['linkage'] = {};
 
@@ -225,7 +223,7 @@ exports['insert_wildcard_linkage_invalid_target'] = function (test) {
             });
         },
         function(other_id, callback) {
-            var any_link_to_target = clone(test_node);
+            var any_link_to_target = _.cloneDeep(test_node);
             any_link_to_target['node_type'] = 'any_link_to_target';
             // "abc123" is intended to be somewhat random
             any_link_to_target['linkage'] = { "abc123": [ other_id ] };
@@ -278,7 +276,7 @@ exports['insert_wildcard_linkage_wildcard_target'] = function (test) {
     async.waterfall([
         function(callback) {
             // Create a "starting" node to
-            var start_node = clone(test_node);
+            var start_node = _.cloneDeep(test_node);
             start_node['node_type'] = 'start_test_node';
             start_node['linkage'] = {};
 
@@ -290,7 +288,7 @@ exports['insert_wildcard_linkage_wildcard_target'] = function (test) {
         },
         function(start_node_id, callback) {
             // Now make an "any_link" node, and attempt to connect it to the 'start' node.
-            var any_link = clone(test_node);
+            var any_link = _.cloneDeep(test_node);
             any_link['node_type'] = 'any_link';
             // "abc123" is intended to be somewhat random
             any_link['linkage'] = { "abc123": [ start_node_id ] };
@@ -340,7 +338,7 @@ exports['insert_wildcard_node_wildcard_linkage_wildcard_target'] = function (tes
     async.waterfall([
         function(callback) {
             // Create a "starting" node to
-            var start_node = clone(test_node);
+            var start_node = _.cloneDeep(test_node);
             start_node['node_type'] = 'start_test_node';
             start_node['linkage'] = {};
 
@@ -353,7 +351,7 @@ exports['insert_wildcard_node_wildcard_linkage_wildcard_target'] = function (tes
         function(start_node_id, callback) {
             // Now make an node with a randomly generated node type,
             // and attempt to connect it to the 'start' node.
-            var randomly_named_node = clone(test_node);
+            var randomly_named_node = _.cloneDeep(test_node);
             randomly_named_node['node_type'] = osdf_utils.random_string(6);
             var random_linkage_name = osdf_utils.random_string(6);
             randomly_named_node['linkage'] = { random_linkage_name: [ start_node_id ] };
@@ -399,7 +397,7 @@ exports['insert_multi_linkage_multi_target_valid'] = function (test) {
     async.waterfall([
         function(callback) {
             // Make a "target" node to start out with
-            var target = clone(test_node);
+            var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
             target['meta']['color'] = "red";
@@ -412,7 +410,7 @@ exports['insert_multi_linkage_multi_target_valid'] = function (test) {
         },
         function(target_id, callback) {
             // Now make an example2 node
-            var example2 = clone(test_node);
+            var example2 = _.cloneDeep(test_node);
             example2['node_type'] = "example2";
             example2['linkage'] = { "connected_to": [ target_id ] };
 
@@ -456,7 +454,7 @@ exports['insert_multi_linkage_multi_target_invalid'] = function (test) {
     async.waterfall([
         function(callback) {
             // Make a "target" node to start out with
-            var target = clone(test_node);
+            var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
             target['meta']['color'] = "red";
@@ -469,7 +467,7 @@ exports['insert_multi_linkage_multi_target_invalid'] = function (test) {
         },
         function(target_id, callback) {
             // Now make an example2 node
-            var example2 = clone(test_node);
+            var example2 = _.cloneDeep(test_node);
             example2['node_type'] = "example2";
             example2['linkage'] = { "invalid_linkage_to": [ target_id ] };
 
