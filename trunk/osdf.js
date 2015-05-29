@@ -81,21 +81,50 @@ function configure() {
     }
 }
 
+function determine_worker_count(config) {
+    // HOw many workers should we start? Look a thte configruation
+    // file, and if set to auto, or some non-sensical number, then
+    // just use the system's CPU count.
+    var cpu_count = os.cpus().length;
+    var workers = config.value('global', 'workers');
+
+    if (_.isUndefined(workers)) {
+        workers = cpu_count;
+    } else if (_.isString(workers)) {
+        if (workers === "auto") {
+            workers = cpu_count;
+        } else {
+            workers = parseInt(workers, 10);
+        }
+    }
+
+    if (workers <= 0) {
+       workers = cpu_count;
+    }
+
+    return workers;
+}
+
 function start_master(config) {
     console.log("OSDF_ROOT: " + osdf_utils.get_osdf_root());
 
-    var cpu_count = os.cpus().length;
     var workers_ready = 0;
     var worker_idx;
-
-    console.log("Running on " + cpu_count + " CPUs.");
 
     var workers_array = [];
 
     var ready_data = {};
 
+    var workers = determine_worker_count(config);
+
+    if (workers === 1) {
+        console.log("Running on a single CPU.");
+    } else {
+        console.log("Running on " + workers + " CPUs.");
+    }
+
     // Fork a worker for each CPU
-    for (worker_idx = 0; worker_idx < cpu_count; worker_idx++) {
+    for (worker_idx = 0; worker_idx < workers; worker_idx++) {
         var worker = cluster.fork();
 
         workers_array.push(worker);
@@ -139,7 +168,7 @@ function start_master(config) {
             if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'init_completed') {
                 workers_ready++;
 
-                if (workers_ready === cpu_count) {
+                if (workers_ready === workers) {
                     // Show some details about the server after it's up and running.
                     var bind_address = config.value('global', 'bind_address');
                     var port = config.value('global', 'port');
@@ -232,12 +261,13 @@ function show_ready(ready_data) {
     }
     console.log("CORS enabled: " + cors);
     console.log("Total number of registered OSDF users: " + user_count);
-    console.log("=================================");
+    console.log("Running on node.js version: " + process.version);
+    console.log('Listening on server:port : ' + address + ":" + port);
+    console.log("===============================================");
     console.log("Welcome to");
     console.log(new Buffer("ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFw" +
                            "vIF9fLwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=",
                            'base64').toString('utf8'));
     console.log("Open Science Data Framework\n");
-
-    console.log('Listening on server:port : ' + address + ":" + port);
+    console.log("===============================================");
 }
