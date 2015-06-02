@@ -1,3 +1,15 @@
+osdf (0.8-1) unstable; urgency=low
+
+  * Added linkage.json file detection and usage for imposing controls
+    on the linkages between nodes.
+  * Additional nodeunit tests for linkage control testing.
+  * New "test2" namespace added out-of-the-box testing of linkage controls.
+  * Updates to various dependency node modules.
+  * Configurable number of workers, or a setting of "auto".
+  * Output the version of node.js at startup.
+
+ -- Victor <victor73@github.com>  Tue, 02 Jun 2015 00:00:00 -0400
+
 osdf (0.7-1) unstable; urgency=low
 
   * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
