@@ -832,21 +832,32 @@ function update_node_helper(node_id, node_data, callback) {
         },
         function(previous_node, callback) {
             // Save the history
-            save_history(node_id, osdf_utils.fix_keys(previous_node), function(err) {
-                if (err) {
-                    logger.error(err);
+            logger.debug("Saving node history for node: " + node_id);
 
-                    result['msg'] = err.error;
-                    result['code'] = 500;
+            previous_node = osdf_utils.fix_keys(previous_node);
 
-                    callback(err);
-                } else {
-                    result['msg'] = '';
-                    result['code'] = 200;
+            if (previous_node['ver'] !== 1) {
+                save_history(node_id, previous_node, function(err) {
+                    if (err) {
+                        logger.error(err);
 
-                    callback(null);
-                }
-            });
+                         result['msg'] = err.error;
+                         result['code'] = 500;
+
+                         callback(err);
+                    } else {
+                         result['msg'] = '';
+                         result['code'] = 200;
+
+                         callback(null);
+                    }
+                });
+            } else {
+                result['msg'] = '';
+                result['code'] = 200;
+
+                callback(null);
+            }
         }
     ], function(err) {
         // In both cases (failure and success) the caller is going to need
