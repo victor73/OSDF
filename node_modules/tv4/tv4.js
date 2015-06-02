@@ -450,7 +450,11 @@ ValidatorContext.prototype.getSchema = function (url, urlHistory) {
 	}
 };
 ValidatorContext.prototype.searchSchemas = function (schema, url) {
-	if (schema && typeof schema === "object") {
+	if (Array.isArray(schema)) {
+		for (var i = 0; i < schema.length; i++) {
+			this.searchSchemas(schema[i], url);
+		}
+	} else if (schema && typeof schema === "object") {
 		if (typeof schema.id === "string") {
 			if (isTrustedUrl(url, schema.id)) {
 				if (this.schemas[schema.id] === undefined) {
@@ -647,7 +651,7 @@ ValidatorContext.prototype.validateFormat = function (data, schema) {
 	}
 	return null;
 };
-ValidatorContext.prototype.validateDefinedKeywords = function (data, schema) {
+ValidatorContext.prototype.validateDefinedKeywords = function (data, schema, dataPointerPath) {
 	for (var key in this.definedKeywords) {
 		if (typeof schema[key] === 'undefined') {
 			continue;
@@ -655,16 +659,18 @@ ValidatorContext.prototype.validateDefinedKeywords = function (data, schema) {
 		var validationFunctions = this.definedKeywords[key];
 		for (var i = 0; i < validationFunctions.length; i++) {
 			var func = validationFunctions[i];
-			var result = func(data, schema[key], schema);
+			var result = func(data, schema[key], schema, dataPointerPath);
 			if (typeof result === 'string' || typeof result === 'number') {
 				return this.createError(ErrorCodes.KEYWORD_CUSTOM, {key: key, message: result}).prefixWith(null, "format");
 			} else if (result && typeof result === 'object') {
-				var code = result.code || ErrorCodes.KEYWORD_CUSTOM;
+				var code = result.code;
 				if (typeof code === 'string') {
 					if (!ErrorCodes[code]) {
 						throw new Error('Undefined error code (use defineError): ' + code);
 					}
 					code = ErrorCodes[code];
+				} else if (typeof code !== 'number') {
+					code = ErrorCodes.KEYWORD_CUSTOM;
 				}
 				var messageParams = (typeof result.message === 'object') ? result.message : {key: key, message: result.message || "?"};
 				var schemaPath = result.schemaPath ||( "/" + key.replace(/~/g, '~0').replace(/\//g, '~1'));
@@ -769,13 +775,16 @@ ValidatorContext.prototype.validateNumeric = function validateNumeric(data, sche
 		|| null;
 };
 
+var CLOSE_ENOUGH_LOW = Math.pow(2, -51);
+var CLOSE_ENOUGH_HIGH = 1 - CLOSE_ENOUGH_LOW;
 ValidatorContext.prototype.validateMultipleOf = function validateMultipleOf(data, schema) {
 	var multipleOf = schema.multipleOf || schema.divisibleBy;
 	if (multipleOf === undefined) {
 		return null;
 	}
 	if (typeof data === "number") {
-		if (data % multipleOf !== 0) {
+		var remainder = (data/multipleOf)%1;
+		if (remainder >= CLOSE_ENOUGH_LOW && remainder < CLOSE_ENOUGH_HIGH) {
 			return this.createError(ErrorCodes.NUMBER_MULTIPLE_OF, {value: data, multipleOf: multipleOf});
 		}
 	}
