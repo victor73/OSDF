@@ -1,4 +1,9 @@
 [global]
+# The number of cluster processes to start by forking. Can also think of
+# this as how many CPUs to use. Use positive integers as values, or just
+# set to "auto" to use the number of CPUs detected.
+workers=auto 
+
 # The IP address that OSDF should listen on. Use '0.0.0.0' to listen on
 # all interfaces that the host has configured.
 bind_address=0.0.0.0
