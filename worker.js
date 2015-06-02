@@ -110,7 +110,7 @@ function launch(config) {
 
     // Register various middleware functions
     // Logging of the request
-    app.use(morgan());
+    app.use(morgan('common'));
 
     // Enforce authentication
     app.use(auth_enforcer.authenticate());
