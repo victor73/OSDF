@@ -3,13 +3,14 @@ var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
 var working_dir = osdf_utils.get_working_dir();
+var logger = osdf_utils.get_logger();
 
 var osdf_error = osdf_utils.send_error;
 
 // This is the code that is responsible for assembling the complete list
 // of namespaces that this OSDF instance is aware of.
 exports.get_all_namespaces = function (request, response) {
-    console.log("In get_all_namespaces.");
+    logger.debug("In get_all_namespaces.");
 
     var ns_path = path.join(working_dir, 'namespaces');
 
@@ -43,7 +44,7 @@ exports.get_all_namespaces = function (request, response) {
 
         // So, if we're here, the scan has been completed and the 'files'
         // array is populated without incident.
-        console.log("Found " + files.length + " files.");
+        logger.info("Found " + files.length + " files.");
 
         osdf_utils.async_for_each(
             files,
@@ -58,7 +59,7 @@ exports.get_all_namespaces = function (request, response) {
                         var info_file = path.join(ns_path, ns_dir, 'info.json');
                         fs.readFile(info_file, function (err, file_text) {
                             if (err) {
-                                console.log(err);
+                                logger.error(err);
                             } else {
                                 var file_obj = JSON.parse(file_text);
                                 files_array.push(file_obj);
@@ -66,7 +67,7 @@ exports.get_all_namespaces = function (request, response) {
                             callback();
                         });
                     } else {
-                        console.log("Invalid entry " + file);
+                        logger.warn("Invalid entry " + file);
                         callback();
                     }
                 });
@@ -80,13 +81,13 @@ exports.get_all_namespaces = function (request, response) {
 // This is the code that is responsible for responding to requests for individual
 // namespaces.
 exports.get_namespace = function (request, response) {
-    console.log("In get_namespace.");
+    logger.debug("In get_namespace.");
 
     var ns_file = path.join(working_dir, 'namespaces', request.params.ns, "info.json");
 
     // Check to see if we have a file descriptor (JSON) for the namespace the user
     // has specified. This is also an asynchronous call.
-    path.exists(ns_file, function(exists) {
+    fs.exists(ns_file, function(exists) {
         if (! exists) {
             // The namespace is unknown to us.
             osdf_error(response, "Namespace doesn't exit.", 404);
@@ -94,7 +95,7 @@ exports.get_namespace = function (request, response) {
             // File exists. So, let us read the data and send it back.
             fs.readFile(ns_file, function (err, file_text) {
                 if (err) {
-                    console.log(err);
+                    logger.error(err);
                     osdf_error(response, err.error, 500);
                 } else {
                     var ns_data = JSON.parse(file_text);
