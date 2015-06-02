@@ -37,6 +37,7 @@ binary: install token-replace
 	dh_install routes.js /usr/lib/osdf/
 	dh_install info-handler.js /usr/lib/osdf/
 	dh_install namespace-handler.js /usr/lib/osdf/
+	dh_install linkage-controller.js /usr/lib/osdf/
 	dh_install node-handler.js /usr/lib/osdf/
 	dh_install perms-handler.js /usr/lib/osdf/
 	dh_install query-handler.js /usr/lib/osdf/
