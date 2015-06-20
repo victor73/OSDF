@@ -20,10 +20,25 @@ read({ prompt: 'Enter the password (not echoed): ', silent: true }, function(err
     if (err) {
         console.log("An error occurred: " + err);
     } else {
-        var hashedPassword = pw_hash.generate(password);
-
-        if (pw_hash.verify(password, hashedPassword)) {
-            console.log(username + ":" + hashedPassword);
-        }
+        confirm(password);
     }
 });
+
+function confirm(password) {
+    read({ prompt: 'Confirm your password (not echoed): ', silent: true }, function(err, password2) {
+        if (err) {
+            console.log("An error occurred: " + err);
+        } else {
+            if (password === password2) {
+                var hashedPassword = pw_hash.generate(password);
+
+                if (pw_hash.verify(password, hashedPassword)) {
+                    console.log(username + ":" + hashedPassword);
+                }
+            } else {
+                console.error("*** ERROR: Passwords do not match. ***");
+                process.exit(2);
+            }
+        }
+    });
+}
