@@ -61,19 +61,20 @@ exports.authenticate = function authenticate() {
                 if ( pw_hash.verify(password, stored_hash) ) {
                     next();
                 } else {
-                    logger.info("Invalid credentials, " + credential_pair + ", from " + request.client.remoteAddress);
+                    logger.info("Invalid credentials, " + credential_pair +
+                                ", from " + request.client.remoteAddress);
                     response.set('X-OSDF-Error', 'Invalid auth token');
-                    response.send(403, '');
+                    response.status(403).send('')
                 }
             } else {
                 logger.info("Invalid authentication attempt. No such user: " + username);
                 response.set('X-OSDF-Error', 'Invalid auth token');
-                response.send(403, '');
+                response.status(403).send('')
             }
         } else {
             logger.info("No authentication provided by user at " + request.client.remoteAddress);
             response.set('X-OSDF-Error', 'No credentials provided');
-            response.send(403, '');
+            response.status(403).send('')
         }
     };
 };

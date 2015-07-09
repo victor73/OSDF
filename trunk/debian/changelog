@@ -1,3 +1,12 @@
+osdf (0.9-1) unstable; urgency=low
+
+  * Upgraded to latest versions of async, express, request, tv4,
+    commander.
+  * Added support for a simplified query language, called OQL.
+  * Additional nodeunit test for OQL parser.
+
+ -- Victor <victor73@github.com>  Thu, 09 Jul 2015 00:00:00 -0400
+
 osdf (0.8-1) unstable; urgency=low
 
   * Added linkage.json file detection and usage for imposing controls

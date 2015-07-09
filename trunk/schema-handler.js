@@ -255,7 +255,7 @@ exports.insert_aux_schema = function (request, response) {
         var location = base_url + ':' + port + '/namespaces/' + ns +
                        '/schemas/aux/' + aux_schema_name;
         response.location(location);
-        response.send(201, '');
+        response.status(201).send('');
     } catch (e) {
         logger.error(e);
         osdf_error(response, 'Unable to insert auxiliary schema.', 500);
@@ -373,7 +373,7 @@ exports.insert_schema = function (request, response) {
 
         var location = base_url + ':' + port + '/namespaces/' + ns + '/schemas/' + schema_name;
         response.location(location);
-        response.send(201, '');
+        response.status(201).send('');
     } catch (e) {
         logger.error(e);
         osdf_error(response, 'Unable to insert schema.', 500);
@@ -420,7 +420,7 @@ exports.delete_schema = function (request, response) {
                            name: schema_name
                          });
 
-            response.send(204, '');
+            response.status(204).send('');
         } catch (err) {
             logger.error("Unable to delete schema.", err);
             osdf_error(response, 'Unable to delete schema.', 500);
@@ -481,7 +481,7 @@ exports.delete_aux_schema = function (request, response) {
                            name: aux_schema_name
                          });
 
-            response.send(204, '');
+            response.status(204).send('');
         } catch (err) {
             logger.error("Unable to delete auxiliary schema.", err);
             osdf_error(response, 'Unable to delete auxiliary schema.', 500);
@@ -645,7 +645,7 @@ exports.update_schema = function (request, response) {
                        json: schema_json
                      });
 
-        response.send(200, '');
+        response.send(200).send('');
     } catch (e) {
         logger.error(e);
         osdf_error(response, 'Unable to update schema.', 500);
@@ -744,7 +744,7 @@ exports.update_aux_schema = function (request, response) {
                        json: aux_schema_json
                      });
 
-        response.send(200, '');
+        response.status(200).send('');
     } catch (e) {
         logger.error(e);
         osdf_error(response, 'Unable to insert auxiliary schema.', 500);

@@ -453,7 +453,7 @@ exports.insert_node = function (request, response) {
                 } else {
                     logger.info("Successful insertion: " + node_url);
                     response.location(node_url);
-                    response.send(201, '');
+                    response.status(201).send('');
                 }
             }
         );
@@ -539,7 +539,7 @@ exports.update_node = function(request, response) {
                     }
                 } else {
                     logger.info("Successful update for node id: " + node_id);
-                    response.send(200, '');
+                    response.status(200).send('');
                 }
             });
     } else {
@@ -582,7 +582,7 @@ exports.validate_node = function(request, response) {
     if (successful_validation_report(report)) {
         // If here, then we're valid
         logger.debug("Valid node detected. Returning 200.");
-        response.send(200, '');
+        response.status(200).send('');
     } else {
         // If here, then it's because the node data didn't validate
         // or some other problem occurred.
@@ -607,7 +607,7 @@ exports.validate_node = function(request, response) {
             // user having to inspect HTTP headers. THe first error message
             // will still be in the headers though...
             response.set('X-OSDF-Error', first_err_msg);
-            response.send(422, error_text);
+            response.status(422).send(error_text);
 
             return;
         } else {
@@ -976,7 +976,7 @@ function delete_helper(user, node_id, response) {
                                 } else {
                                     logger.info("Successful deletion: " + node_id);
                                 }
-                                response.send(204, '');
+                                response.status(204).send('');
                             });
                         }
                     });
@@ -987,7 +987,7 @@ function delete_helper(user, node_id, response) {
             }
         } catch (e) {
             logger.warn("Failed deletion.", e);
-            response.send(500, '');
+            response.status(500).send('');
         }
     });
 }
