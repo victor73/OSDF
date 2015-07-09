@@ -1,12 +1,14 @@
 var _ = require('lodash');
-var path = require('path');
 var auth = require('auth_enforcer');
+var jison = require('jison');
 var elasticsearch = require('elasticsearch');
 var osdf_utils = require('osdf_utils');
+var path = require('path');
 var util = require('util');
-var logger = osdf_utils.get_logger();
-var es_river_name = "osdf";
 var sprintf = require('sprintf').sprintf;
+
+var es_river_name = "osdf";
+var logger = osdf_utils.get_logger();
 
 // Load configuration parameters
 var c = Config.get_instance(osdf_utils.get_config());
@@ -16,6 +18,7 @@ var page_size = c.value('global', 'pagesize');
 
 var osdf_error = osdf_utils.send_error;
 var elastic_client;
+var oql2es;
 
 // This initializes the handler. The things we need to do before the
 // handler is ready to begin its work are: establish a connection to the
@@ -25,6 +28,8 @@ exports.init = function (emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
     require('config');
+
+    oql2es = require('oql_compiler');
 
     var elasticsearch_address = c.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
@@ -55,7 +60,47 @@ exports.init = function (emitter) {
     });
 };
 
-// This is the method that handles querying elastic search
+// This method handles querying elasticsearch with a custom query
+// language that we call OQL (OSDF Query Language).
+exports.perform_oql = function (request, response) {
+    logger.debug("In perform_oql");
+
+    var perms_handler = require('perms-handler');
+    var user = auth.get_user(request);
+    var namespace = request.params.ns;
+
+    // Parse int for later calculations
+    var requested_page = request.params.page ?
+                             parseInt(request.params.page, 10) : undefined;
+
+    var user_acls = perms_handler.get_user_acls(namespace, user);
+    var oql_user_query = request.rawBody;
+
+    var elastic_query = null;
+
+    try {
+        logger.debug("Parsing user OQL.");
+        var tree = oql2es.parse(oql_user_query);
+
+        logger.debug("Compiling OQL to ElasticSearch QueryDSL.");
+        var translated_es_query = oql2es.compile(tree);
+
+        var elastic_query = build_empty_filtered_query(namespace, user_acls);
+
+        // Insert the translated client supplied query into the basic filtered query
+        elastic_query["query"]["filtered"]["query"] = translated_es_query["query"];
+    } catch (err) {
+        logger.error("Error encountered converting OQL to ES.", err);
+        osdf_error(response, 'Error converting OQL to ES.', 422);
+        return;
+    }
+
+    logger.debug("Conversion to ElasticSearch query complete.");
+    do_es_query(namespace, elastic_query, requested_page, request, response);
+};
+
+// This method handles querying elasticsearch with the elasticsearch
+// QueryDSL (JSON).
 exports.perform_query = function (request, response) {
     logger.debug("In perform_query");
 
@@ -66,6 +111,7 @@ exports.perform_query = function (request, response) {
     // Parse int for later calculations
     var requested_page = request.params.page ?
                              parseInt(request.params.page, 10) : undefined;
+
     var user_acls = perms_handler.get_user_acls(namespace, user);
     var content = request.rawBody;
 
@@ -121,13 +167,19 @@ exports.perform_query = function (request, response) {
         elastic_query["size"] = page_size;
     }
 
-    logger.debug("Submitting elastic_query:\n" + util.inspect(elastic_query, true, null));
+    do_es_query(namespace, elastic_query, requested_page, request, response);
+};
+
+function do_es_query(namespace, es_query, requested_page, request, response) {
+    logger.debug('In do_es_query.');
+
+    logger.debug("Submitting elastic_query:\n" + util.inspect(es_query, true, null));
 
     try {
         // `err` is an Error, or `null` on success.
         // `results` is an object containing the search results.
         elastic_client.search({ index: "osdf",
-                                body: elastic_query },
+                                body: es_query },
                                 function (err, results) {
             if (err) {
                 logger.error("Error running query. " + err);
@@ -137,11 +189,12 @@ exports.perform_query = function (request, response) {
                 var next_page_url;
 
                 // Determine if this is a partial result response
-                var first_result_number = elastic_query["from"] || 0;
+                var first_result_number = es_query["from"] || 0;
+
                 if (first_result_number + results.hits.hits.length < results.hits.total) {
                     // Only count this as a partial result if the user did
                     // not specify both from and size in the query
-                    if (! user_query["from"] && ! user_query["size"]) {
+                    if (! es_query["from"] && ! es_query["size"]) {
                         partial_result = true;
                         // If there was no page requested in this url
                         // then it would be page 1, so return 2
@@ -159,9 +212,9 @@ exports.perform_query = function (request, response) {
 
                 if (partial_result) {
                     response.set('X-OSDF-Query-ResultSet', next_page_url);
-                    response.jsonp(206, results);
+                    response.status(206).jsonp(results);
                 } else {
-                    response.jsonp(200, results);
+                    response.status(200).jsonp(results);
                 }
             }
         });
@@ -170,7 +223,7 @@ exports.perform_query = function (request, response) {
         osdf_error(response, 'Error running query: ' + e, 500);
         return;
     }
-};
+}
 
 function build_empty_filtered_query(namespace, user_acls) {
     // Return a skeletal query filtered on namespace and read acl

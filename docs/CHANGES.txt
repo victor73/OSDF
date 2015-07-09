@@ -1,3 +1,10 @@
+0.9
+
+  * Upgraded to latest versions of async, express, request, tv4,
+    commander.
+  * Added support for a simplified query language, called OQL.
+  * Additional nodeunit test for OQL parser.
+
 0.8
   * Added linkage.json file detection and usage for imposing controls
     on the linkages between nodes.

@@ -21,6 +21,8 @@ exports.set_routes = function (app) {
     // Query handler functions
     app.post('/nodes/query/:ns', query_handler.perform_query);
     app.post('/nodes/query/:ns/page/:page', query_handler.perform_query);
+    app.post('/nodes/oql/:ns', query_handler.perform_oql);
+    app.post('/nodes/oql/:ns/page/:page', query_handler.perform_oql);
 
     // Info handler functions
     app.get('/info', info_handler.info);
