@@ -95,6 +95,16 @@ exports.perform_oql = function (request, response) {
         return;
     }
 
+
+    if (requested_page) {
+        // Calculate the first result number to return for the top of this page
+        elastic_query["from"] = (requested_page - 1) * page_size;
+        logger.debug("User requested page " + requested_page +
+                     " so setting elastic_query['from'] to " + elastic_query["from"]);
+    }
+
+    elastic_query["size"] = page_size;
+
     logger.debug("Conversion to ElasticSearch query complete.");
     do_es_query(namespace, elastic_query, requested_page, request, response);
 };
