@@ -374,99 +374,91 @@ exports.get_in_linkage = function(request, response) {
 // This is the method that handles node creation.
 exports.insert_node = function (request, response) {
     logger.debug("In insert_node.");
+
     var content = request.rawBody;
-    var report = null;  // To hold the results of validation
 
-    try {
-        report = validate_incoming_node(content);
-    } catch (report_err) {
-        logger.error(report_err);
-        osdf_error(response, report_err, 422);
-        return;
-    }
-
-    if (successful_validation_report(report)) {
-        // Either we have a good report, or there is no schema for the node type.
-        // Either way, we're free to go ahead and insert the data.
-        var node_data = JSON.parse(content);
-
-        async.waterfall([
-            function(callback) {
-                logger.debug("Checking if there are linkage issues.");
-                linkage_controller.valid_linkage(node_data, function(err, valid) {
-                    if (err) {
-                        logger.error(err);
-                        callback({"err": err, "code": 422});
-                    } else {
-                        if (valid === true) {
-                            logger.debug("No linkage control issues stopping insertion...");
-                            callback(null);
-                        } else {
-                            var msg = "Node had invalid linkages.";
-                            logger.error(msg);
-                            callback({"err": msg, "code": 422});
-                        }
-                    }
-                });
-            },
-            function(callback) {
-                logger.debug("Saving node to CouchDB.");
-                db.save(node_data, function(err, couch_response) {
-                    if (err) {
-                        logger.error(err);
-                        callback(err);
-                    } else {
-                        logger.debug("Successfully saved node to CouchDB.");
-                        callback(null, couch_response);
-                    }
-                });
-            }, function(couch_response, callback) {
-                var node_id = couch_response.id;
-
-                if (couch_response.ok === true) {
-                    // Save the history
-                    node_data['id'] = node_id;
-                    node_data['ver'] = 1;
-                    save_history(node_id, node_data, function(err) {
-                        if (err) {
-                            logger.error(msg);
-                            callback(new Error(msg));
-                        } else {
-                            var node_url = base_url + ':' + port + '/nodes/' + node_id;
-                            callback(null, node_url);
-                        }
-                    });
-                } else {
-                    // This shouldn't happen, but...
-                    var msg = "No error, but CouchDB response was not 'ok'.";
-                    logger.error(msg);
-                    callback(new Error(msg));
-                }
-            }], function (err, node_url) {
+    async.waterfall([
+        function(callback) {
+            try {
+                var node_data = JSON.parse(content);
+                callback(null, node_data);
+            } catch (err) {
+                callback({err: "Invalid JSON data.", code: 422}, null);
+            }
+        },
+        function(node_data, callback) {
+            validate_incoming_node(content, function(err, report) {
                 if (err) {
-                    if (_.isPlainObject(err) && err.hasOwnProperty("code")) {
-                       osdf_error(response, err['err'], err['code']);
-                    } else {
-                        logger.error(err);
-                        osdf_error(response, "Unable to save node.", 500);
-                    }
+                    logger.error(err);
+                    callback({err: "Unable to validate data.", code: 500});
                 } else {
-                    logger.info("Successful insertion: " + node_url);
-                    response.location(node_url);
-                    response.status(201).send('');
+                    callback(null, report, node_data);
+                }
+            });
+        },
+        function(report, node_data, callback) {
+            if (successful_validation_report(report)) {
+                logger.info("Node validated properly.");
+                callback(null, node_data);
+            } else {
+                if (report !== null && report.errors !== null && report.errors.length > 0) {
+                    var first_err = report.errors[0];
+                    logger.info("Node does not validate. Error: " + first_err);
+                    callback({err: first_err, code: 422});
+                } else {
+                    callback({err: "Node does not validate.", code: 422});
                 }
             }
-        );
-    } else {
-        if (report !== null && report.errors !== null && report.errors.length > 0) {
-            var first_err = report.errors[0];
-            var err_msg = first_err.message + " on path " + first_err.dataPath;
-            logger.info("Invalid node. Error: ", err_msg);
-            osdf_error(response, err_msg, 422);
-        } else {
-            osdf_error(response, "Invalid node data.", 422);
+        },
+        function(node_data, callback) {
+            logger.debug("Saving node to CouchDB.");
+            db.save(node_data, function(err, couch_response) {
+                if (err) {
+                    logger.error(err);
+                    callback(err);
+                } else {
+                    logger.debug("Successfully saved node to CouchDB.");
+                    callback(null, couch_response, node_data);
+                }
+            });
+        }, function(couch_response, node_data, callback) {
+            var node_id = couch_response.id;
+
+            if (couch_response.ok === true) {
+                // Save the history
+                node_data['id'] = node_id;
+                node_data['ver'] = 1;
+                save_history(node_id, node_data, function(err) {
+                    if (err) {
+                        logger.error(err);
+                        callback({err: err, code: 500});
+                    } else {
+                        var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                        callback(null, node_url);
+                    }
+                });
+            } else {
+                // This shouldn't happen, but...
+                logger.error("No error, but CouchDB response was not 'ok'.");
+                callback({err: "Unable to save data.", code: 500});
+            }
+        }],
+        function (err, node_url) {
+            if (err) {
+                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                    err.hasOwnProperty('code')) {
+                   osdf_error(response, err['err'], err['code']);
+                } else {
+                    logger.error(err);
+                    osdf_error(response, "Unable to save node.", 500);
+                }
+            } else {
+                logger.info("Successful insertion: " + node_url);
+                response.location(node_url);
+                response.status(201).send('');
+            }
         }
-    }
+    );
 };
 
 // This is the function that handles edits/modifications to nodes.
@@ -476,83 +468,76 @@ exports.update_node = function(request, response) {
     var node_id = request.params.id;
     var content = request.rawBody;
 
-    var report; // To hold the results of validation
-
-    var node_data;
-
-    try {
-        node_data = JSON.parse(content);
-
-        // Check that the version has been supplied.
-        if (! (node_data !== null && node_data.hasOwnProperty("ver") )) {
-            throw "Incoming node data does not supply the node version.";
-        }
-
-        report = validate_incoming_node(content);
-    } catch (err) {
-        logger.info("Returning HTTP 422.", err);
-        osdf_error(response, err, 422);
-        return;
-    }
-
-    // Check if the JSON-Schema validation reported any errors
-    if (successful_validation_report(report)) {
-        async.waterfall([
-            function(callback) {
-                logger.debug("Checking if there are linkage issues.");
-                linkage_controller.valid_linkage(node_data, function(err, valid) {
-                    if (err) {
-                        logger.error(err);
-                        callback({"err": err, "code": 422});
-                    } else {
-                        if (valid === true) {
-                            logger.debug("No linkage control issues stopping insertion...");
-                            callback(null);
-                        } else {
-                            var msg = "Node had invalid linkages.";
-                            logger.error(msg);
-                            callback({"err": msg, "code": 422});
-                        }
-                    }
-                });
-            },
-            function(callback) {
-                // If here, then we're okay to attempt the update
-                update_node_helper(node_id, node_data, function(err, update_result) {
-                    if (err) {
-                        logger.error("Unable to update data in CouchDB.", err);
-                        var msg = update_result['msg'];
-                        var code = update_result['code'];
-                        callback({'err': msg, 'code': code});
-                    } else {
-                        callback(null);
-                    }
-                });
-            }],
-            function(err) {
+    async.waterfall([
+        function(callback) {
+            // Check that we have been provided valid JSON
+            try {
+                var node_data = JSON.parse(content);
+                callback(null, node_data);
+            } catch (err) {
+                callback({err: "Invalid JSON data.", code: 422}, null);
+            }
+        },
+        function(node_data, callback) {
+            // Check that the version has been supplied.
+            if (node_data !== null && node_data.hasOwnProperty("ver")) {
+                callback(null, node_data);
+            } else {
+                callback({err: "Incoming node data does not supply the node version.",
+                          code: 422 });
+            }
+        },
+        function(node_data, callback) {
+            validate_incoming_node(content, function(err, report) {
                 if (err) {
-                    if (_.isPlainObject(err) && err.hasOwnProperty("code")) {
-                       osdf_error(response, err['err'], err['code']);
-                    } else {
-                        logger.error(err);
-                        osdf_error(response, "Unable to update node.", 500);
-                    }
+                    callback({err: err, code: 422});
                 } else {
-                    logger.info("Successful update for node id: " + node_id);
-                    response.status(200).send('');
+                    callback(null, report, node_data);
                 }
             });
-    } else {
-        // If here, then it's because the node data didn't validate
-        // or some other problem occurred.
-        if (report !== null && report.hasOwnProperty('error')) {
-            var err_msg = report.error.message;
-            logger.info("Invalid node. Error: ", err_msg);
-            osdf_error(response, err_msg, 422);
-        } else {
-            osdf_error(response, "Node does not validate.", 422);
+        },
+        function(report, node_data, callback) {
+            if (successful_validation_report(report)) {
+                logger.info("Node validated properly.");
+                callback(null, node_data);
+            } else {
+                if (report !== null && report.errors !== null && report.errors.length > 0) {
+                    var first_err = report.errors[0];
+                    logger.info("Node does not validate. Error: " + first_err);
+                    callback({err: first_err, code: 422});
+                } else {
+                    callback({err: "Node does not validate.", code: 422});
+                }
+            }
+        },
+        function(node_data, callback) {
+            // If here, then we're okay to attempt the update
+            update_node_helper(node_id, node_data, function(err, update_result) {
+                if (err) {
+                    logger.error("Unable to update data in CouchDB.", err);
+                    var msg = update_result['msg'];
+                    var code = update_result['code'];
+                    callback({'err': msg, 'code': code});
+                } else {
+                    callback(null);
+                }
+            });
+        }],
+        function(err) {
+            if (err) {
+                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                    err.hasOwnProperty('code')) {
+                   osdf_error(response, err['err'], err['code']);
+                } else {
+                    logger.error(err);
+                    osdf_error(response, "Unable to update node.", 500);
+                }
+            } else {
+                logger.info("Successful update for node id: " + node_id);
+                response.status(200).send('');
+            }
         }
-    }
+    );
 };
 
 // Just validate a node against a schema if it has one
@@ -566,54 +551,76 @@ exports.validate_node = function(request, response) {
 
     var report; // To hold the results of validation
 
-    var node_data;
-
-    try {
-        node_data = JSON.parse(content);
-
-        report = validate_incoming_node(content);
-    } catch (err) {
-        logger.info("Returning HTTP 422.", err);
-        osdf_error(response, err, 422);
-        return;
-    }
-
-    // Check if the JSON-Schema validation reported any errors
-    if (successful_validation_report(report)) {
-        // If here, then we're valid
-        logger.debug("Valid node detected. Returning 200.");
-        response.status(200).send('');
-    } else {
-        // If here, then it's because the node data didn't validate
-        // or some other problem occurred.
-        if (report !== null && report.hasOwnProperty('errors') && report.errors.length > 0) {
-            var first_err = report.errors[0];
-            var first_err_msg = first_err.message + " on path " + first_err.dataPath;
-            logger.info("Invalid node. First error: ", first_err_msg);
-
-            var error_text = "";
-            for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
-                var err = report.errors[errIdx];
-                if ( err.hasOwnProperty('dataPath') && err.dataPath.length > 0) {
-                     error_text = error_text.concat( err.message + " on path " + err.dataPath + "\n" );
-                } else {
-                     error_text = error_text.concat( err.message + "\n" );
-                }
+    async.waterfall([
+        function(callback) {
+            try {
+                var node_data = JSON.parse(content);
+                callback(null, node_data);
+            } catch (err) {
+                callback({err: "Invalid JSON provided.", code: 422 });
             }
-            error_text = error_text.trim() + "\n";
+        },
+        function(node_data, callback) {
+            validate_incoming_node(content, function(err, report) {
+            //validate_incoming_node(node_data, function(err, report) {
+                if (err) {
+                    callback(err, null);
+                } else {
+                    callback(null, report);
+                }
+            });
+        },
+        function(report, callback) {
+            if (successful_validation_report(report)) {
+                // If here, then we're valid
+                logger.info("Detected a valid node.");
+                callback(null);
+            } else {
+                var first_err = report.errors[0];
 
-            // Here we do not simply use the osdf_error() function because
-            // we actually want to list all the error messages without the
-            // user having to inspect HTTP headers. THe first error message
-            // will still be in the headers though...
-            response.set('X-OSDF-Error', first_err_msg);
-            response.status(422).send(error_text);
+                logger.info("Invalid node. First error: ", first_err);
 
-            return;
-        } else {
-            osdf_error(response, "Node does not validate.", 422);
+                var error_text = "";
+                for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
+                    var err = report.errors[errIdx];
+                    error_text = error_text.concat( err + "\n" );
+                }
+                error_text = error_text.trim() + "\n";
+
+                var err_object = { err: first_err,
+                                   code: 422,
+                                   content: error_text
+                                 };
+                callback(err_object);
+            }
+        }],
+        function(err, result) {
+            if (err) {
+                // If here, then it's because the node data didn't validate
+                // or some other problem occurred.
+                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                    err.hasOwnProperty('code')) {
+                    // Here we do not simply use the osdf_error() function because
+                    // we actually want to list all the error messages without the
+                    // user having to inspect HTTP headers. The first error message
+                    // will still be in the headers though...
+                    response.set('X-OSDF-Error', err['err']);
+                    response.status(err['code']);
+
+                    if (err.hasOwnProperty('content')) {
+                        response.send(err['content']);
+                    } else {
+                        response.send('');
+                    }
+                } else {
+                    osdf_error(response, "Could not validate node.", 500);
+                }
+            } else {
+                logger.debug("Valid node detected.");
+                response.status(200).send('');
+            }
         }
-    }
+    );
 };
 
 // This message is used to process auxiliary schema deletion events
@@ -664,10 +671,11 @@ exports.process_schema_change = function (msg) {
 // Returns a report with validation results, or throws an exception if we
 // are unable to get that far, for instance, if the content can't be parsed
 // into a JSON data structure.
-function validate_incoming_node(node_string) {
+function validate_incoming_node(node_string, callback) {
     logger.debug("In validate_incoming_node.");
 
     var node;
+
     if (typeof node_string === 'string') {
         try {
             node = JSON.parse(node_string);
@@ -690,37 +698,83 @@ function validate_incoming_node(node_string) {
         throw "Node acl object doesn't have a correctly defined 'write' key.";
     }
 
-    if (! osdf_utils.contains(node.ns, namespaces)) {
-        var msg = "Node belongs to an unrecognized namespace.";
-        logger.error(msg);
-        throw msg;
-    }
+    async.waterfall([
+        function(callback) {
+            var errors = [];
+            if (! osdf_utils.contains(node.ns, namespaces)) {
+                var msg = "Node belongs to an unrecognized namespace.";
+                logger.error(msg);
+                errors.push(msg);
+            }
+            callback(null, errors);
+        },
+        function(errors, callback) {
+            // Check if the linkages look okay...
+            linkage_controller.valid_linkage(node, function(err, valid) {
+                if (err) {
+                    logger.error("Error when checking for linkage validity: " + err);
+                    callback("Unable to check linkage validity.");
+                } else {
+                    if (! valid) {
+                        errors.push("Invalid linkage detected for node.");
+                    }
 
-    var report = null;
-    if ( validators.hasOwnProperty(node.ns) &&
-             validators[node.ns].hasOwnProperty(node.node_type) ) {
-        // Look up the schema for this node type from our validators data structure.
-        var schema = validators[node.ns][node.node_type]['schema'];
+                    callback(null, errors, valid);
+                }
+            });
+        },
+        function(errors, linkage_validity, callback) {
+            logger.debug("Linkage validity: " + linkage_validity)
 
-        // So, we don't validate the whole node against the JSON schema,
-        // just the 'meta' portion.
-        var meta = node['meta'];
+            var report = null;
 
-        // And validate...
-        var tv4 = validators[node.ns]['val'];
-        //var valid = tv4.validate(meta, schema);
-        var result = tv4.validateMultiple(meta, schema);
+            if ( validators.hasOwnProperty(node.ns) &&
+                     validators[node.ns].hasOwnProperty(node.node_type) ) {
+                // Look up the schema for this node type from our validators
+                // data structure.
+                var schema = validators[node.ns][node.node_type]['schema'];
 
-        report = { valid: result.valid,
-                   errors: result.errors };
-    } else {
-        logger.debug("No validator found for namespace/node_type of " +
-                    node.ns + "/" + node.node_type + ".");
-        report = { valid: true,
-                   errors: null };
-    }
+                // So, we don't validate the whole node against the JSON schema,
+                // just the 'meta' portion.
+                var meta = node['meta'];
 
-    return report;
+                // And validate...
+                var tv4 = validators[node.ns]['val'];
+
+                var result = tv4.validateMultiple(meta, schema);
+
+                _.each(result.errors, function(validation_error) {
+                    var err_msg = validation_error.message + " on path " +
+                                  validation_error.dataPath;
+                    errors.push(err_msg);
+                });
+
+                // We have to consider BOTH linkage validity AND JSON-Schema
+                // validity
+                var combined_validity = linkage_validity && result.valid;
+
+                report = { valid: combined_validity,
+                           errors: errors };
+            } else {
+                logger.debug("No validator found for namespace/node_type of " +
+                            node.ns + "/" + node.node_type + ".");
+
+                // Since there is no JSON-Schema validation to check, the only
+                // validity to consider at this point is the linkage validity.
+                report = { valid: linkage_validity,
+                           errors: errors };
+            }
+
+            callback(null, report);
+        }], function (err, report) {
+            if (err) {
+                logger.error(err);
+                callback(err, null);
+            } else {
+                callback(null, report);
+            }
+        }
+    );
 }
 
 // A function to parse the version of a CouchDB document out
@@ -1504,8 +1558,10 @@ function successful_validation_report(report) {
     // Assume it's not valid until proven otherwise
     var valid = false;
 
-    if (report !== null && (report.valid && (report.errors === null || report.errors.length === 0))) {
+    if (report !== null && (report.valid &&
+            (report.errors === null || report.errors.length === 0))) {
         valid = true;
     }
+
     return valid;
 }
