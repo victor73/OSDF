@@ -1,5 +1,4 @@
 0.9
-
   * Upgraded to latest versions of async, express, request, tv4,
     commander.
   * Added support for a simplified query language, called OQL.
