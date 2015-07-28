@@ -149,8 +149,14 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
     async.eachLimit(node_ids, 1, function(node_id, cb) {
         db.get(node_id, function(err, target_node) {
             if (err) {
-                logger.error(err);
-                cb(err);
+                if (err.hasOwnProperty('error') && err['error'].search('not_found') !== -1) {
+                    logger.warn("Linkage points to non-existent node.");
+                    valid = false;
+                    cb();
+                } else {
+                    logger.error(err);
+                    cb(err);
+                }
             } else {
                 var target_type = target_node['node_type'];
                 logger.debug('Target node is of type "' + target_type + '". Checking.');
