@@ -43,8 +43,9 @@ exports['update_all_links_disallowed'] = function (test) {
                 callback(null, target, target_node_id, start_node_id);
             });
         }, function(target, target_node_id, start_node_id, callback) {
-            // Now we attempt to UPDDATE/EDIT the target node to ADD a linkage.
-            // This should FAIL, so we need to check for the failure
+            // Now we attempt to UPDATE/EDIT the target node to ADD a linkage
+            // to the starting node.  This should FAIL, so we need to check for
+            // the failure
             var modified_target = _.cloneDeep(target);
             var random_linkage_name = osdf_utils.random_string(6);
 
