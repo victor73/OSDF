@@ -32,7 +32,8 @@ var couchdb_db = cli.database;
 var couchdb_password = null;
 
 if (couchdb_admin === null || (typeof couchdb_admin === "undefined")) {
-    process.stderr.write("The username of the CouchDB admin must be specified with -u or --username.\n");
+    process.stderr.write("The username of the CouchDB admin must be " +
+                         "specified with -u or --username.\n");
     process.exit(2);
 }
 
@@ -42,7 +43,8 @@ if (couchdb_address === null || (typeof couchdb_address === "undefined")) {
 }
 
 if (couchdb_db === null || (typeof couchdb_db === "undefined")) {
-    process.stderr.write("The name of the CouchDB database must be specified with -d or --database.\n");
+    process.stderr.write("The name of the CouchDB database must be " +
+                         "specified with -d or --database.\n");
     process.exit(2);
 }
 
@@ -51,14 +53,19 @@ if (couchdb_port === null || (typeof couchdb_port === "undefined")) {
     couchdb_port = 5984;
 }
 
-// Request the CouchDB admin password, but do not echo the password
-// to the terminal.
-process.stdout.write('Please enter the CouchDB administrative password for ' +
-                     couchdb_admin + ' (will not be shown): ');
-pw(function (password) {
-    couchdb_password = password;
+if (process.env.hasOwnProperty('COUCHDB_PASSWD')) {
+    couchdb_password = process.env['COUCHDB_PASSWD'];
     main();
-})
+} else {
+    // Request the CouchDB admin password, but do not echo the password
+    // to the terminal.
+    process.stdout.write('Please enter the CouchDB administrative password for ' +
+                     couchdb_admin + ' (will not be shown): ');
+    pw(function (password) {
+        couchdb_password = password;
+        main();
+    });
+}
 
 function main() {
     var files = fs.readdirSync(__dirname);
@@ -108,14 +115,14 @@ function getDesignDocs(files, design_doc_names, callback) {
                     if (exists) {
                         var reduce_code = fs.readFileSync(reduce_file, "utf-8");
                         var map_reduce = create_map_reduce(view_name, map_code, reduce_code);
-                        if (doc_code == "") {
+                        if (doc_code === "") {
                             doc_code += map_reduce;
                         } else {
                             doc_code += ",\n" + map_reduce;
                         }
                     } else {
                         var map = create_map(view_name, map_code);
-                        if (doc_code == "") {
+                        if (doc_code === "") {
                             doc_code += map;
                         } else {
                             doc_code += ",\n" + map;
@@ -128,8 +135,8 @@ function getDesignDocs(files, design_doc_names, callback) {
                 cb();
             }
         }, function() {
-               design_docs[design_name] = '{' + doc_code + '}';
-               parent_cb();
+            design_docs[design_name] = '{' + doc_code + '}';
+            parent_cb();
         });
     }, function() {
         callback(design_docs);
@@ -146,7 +153,6 @@ function strEndsWith(str, suffix) {
     var lastIndex = str.lastIndexOf(suffix);
     return (lastIndex != -1) && (lastIndex + suffix.length == str.length);
 }
-
 
 // Create a Couchdb "map" key/value for a "view" design document.
 // The first argument is the name of the map, and the second
@@ -210,7 +216,7 @@ function post_all_design_docs(design_docs, callback) {
                 }
                 process.exit(1);
             } else {
-                cb;
+                cb();
             }
         });
     });
