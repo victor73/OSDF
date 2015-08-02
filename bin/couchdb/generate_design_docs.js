@@ -81,6 +81,7 @@ function main() {
         if ((path.extname(file) === ".js") && strEndsWith(file, '-map.js')) {
             var base = path.basename(file, '-map.js');
             var pieces = base.split('-');
+
             var name = pieces[0];
 
             design_doc_names.push(name);
@@ -108,10 +109,11 @@ function getDesignDocs(files, design_doc_names, callback) {
         var doc_code = "";
 
         async.forEachSeries(files, function(file, cb) {
+            var filename = path.basename(file);
 
-            if (strBeginsWith(file, design_name) && strEndsWith(file, '-map.js')) {
+            if (strBeginsWith(filename, design_name) && strEndsWith(filename, '-map.js')) {
 
-                var base = path.basename(file, '-map.js');
+                var base = path.basename(filename, '-map.js');
 
                 var pieces = base.split('-');
                 var view_name = pieces[1];
