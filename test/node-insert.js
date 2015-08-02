@@ -56,7 +56,7 @@ exports['basic_insertion_no_auth'] = function (test) {
     tutils.insert_node( test_node, null, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for unauthorized insertion.");
 
-        test.ok(data == '', "No content returned on a unauthorized node insertion.");
+        test.ok(data === '', "No content returned on a unauthorized node insertion.");
 
         test.done();
     });
@@ -70,7 +70,7 @@ exports['basic_insertion_bad_auth'] = function (test) {
     tutils.insert_node( test_node, bad_auth, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for unauthorized insertion.");
 
-        test.ok(data == '', "No content returned on a unauthorized node insertion.");
+        test.ok(data === '', "No content returned on a unauthorized node insertion.");
 
         test.done();
     });
@@ -99,15 +99,15 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
             test.fail("Unable to determine new node's id.");
         }
 
-        test.ok(data == "", "No content returned on a node insertion.");
+        test.ok(data === '', "No content returned on a node insertion.");
 
         if (inserted) {
             try {
                 tutils.delete_node(node_id, auth, function(body, response) {
                     // ignored
                 });
-            } catch (e) {
-                console.log("Problem deleting inserted node: ", e);
+            } catch (f) {
+                console.log("Problem deleting inserted node: ", f);
             }
         }
 
@@ -127,14 +127,13 @@ exports['invalid_insertion_with_schema_validation'] = function (test) {
     // property in that the validator mandates should be present.
     var bad_node = test_node_with_schema;
     delete bad_node.meta['color'];
-    //delete bad_node.meta['description'];
 
     // First we create a node
     tutils.insert_node( bad_node, auth, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for insertion of bad node.");
         test.ok(! ("location" in response.headers), "Response header does not contain 'location'." );
 
-        test.ok(data == "", "No content returned on a bad node insertion.");
+        test.ok(data === '', "No content returned on a bad node insertion.");
 
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
@@ -169,7 +168,7 @@ exports['insertion_into_unknown_namespace'] = function (test) {
     tutils.insert_node( bad_node, auth, function(data, response) {
         test.equal(response.statusCode, 422, "Correct status for node with bad namespace.");
 
-        test.ok(data == "", "No content returned on bad node insertion.");
+        test.ok(data === '', "No content returned on bad node insertion.");
 
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
@@ -205,7 +204,7 @@ exports['insertion_into_unknown_namespace_no_auth'] = function (test) {
     tutils.insert_node( bad_node, null, function(data, response) {
         test.equal(response.statusCode, 403, "Correct status for node with bad ns, no auth.");
 
-        test.ok(data == "", "No content returned on bad node insertion.");
+        test.ok(data === '', "No content returned on bad node insertion.");
 
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
