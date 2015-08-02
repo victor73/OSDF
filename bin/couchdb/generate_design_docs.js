@@ -68,13 +68,17 @@ if (process.env.hasOwnProperty('COUCHDB_PASSWD')) {
 }
 
 function main() {
-    var files = fs.readdirSync(__dirname);
+    var files = fs.readdirSync(path.dirname(__filename));
+
+    var abs_files = [];
+
     var design_doc_names = [];
 
     for (var fileIdx = 0; fileIdx < files.length; fileIdx++) {
-        var file = files[fileIdx];
+        var file = path.join(__dirname, files[fileIdx]);
+        abs_files.push(file);
 
-        if ((path.extname(file) == ".js") && strEndsWith(file, '-map.js')) {
+        if ((path.extname(file) === ".js") && strEndsWith(file, '-map.js')) {
             var base = path.basename(file, '-map.js');
             var pieces = base.split('-');
             var name = pieces[0];
@@ -86,8 +90,13 @@ function main() {
     // Okay, we have the design document names.
     design_doc_names = _.uniq(design_doc_names);
 
-    getDesignDocs(files, design_doc_names, function(designDocs) {
-        post_all_design_docs(designDocs);
+    getDesignDocs(abs_files, design_doc_names, function(designDocs) {
+        post_all_design_docs(designDocs, function(err) {
+            if (err) {
+                console.log("Failure: " + err);
+                process.exit(2);
+            }
+        });
     });
 }
 
