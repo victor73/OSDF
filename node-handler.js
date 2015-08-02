@@ -390,7 +390,7 @@ exports.insert_node = function (request, response) {
             validate_incoming_node(content, function(err, report) {
                 if (err) {
                     logger.error(err);
-                    callback({err: "Unable to validate data.", code: 500});
+                    callback({err: err, code: 422});
                 } else {
                     callback(null, report, node_data);
                 }
@@ -631,8 +631,8 @@ exports.process_aux_schema_change = function (msg) {
     var aux_schema_json;
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'aux_schema_change') {
-        var namespace = msg['ns']
-        var aux_schema_name = msg['name']
+        var namespace = msg['ns'];
+        var aux_schema_name = msg['name'];
 
         if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
             logger.debug("Got an auxiliary schema insertion.");
@@ -655,8 +655,8 @@ exports.process_schema_change = function (msg) {
     logger.debug("In process_schema_change.");
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
-        var namespace = msg['ns']
-        var schema_name = msg['name']
+        var namespace = msg['ns'];
+        var schema_name = msg['name'];
 
         if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
             var json = msg['json'];
@@ -680,22 +680,33 @@ function validate_incoming_node(node_string, callback) {
         try {
             node = JSON.parse(node_string);
         } catch (e) {
-            logger.debug('Unable to parse content into JSON.');
-            throw "Unable to parse content into JSON.";
+            var msg = 'Unable to parse content into JSON.';
+            logger.debug(msg);
+            callback(msg, null);
+            return;
         }
     }
 
-    // TODO: Use a JSON-Schema check right here instead of the rudimentary check.
+    // Do a rudimentary check for whether the JSON document has the required keys.
     if (! node.ns || ! node.acl || ! node.node_type || ! node.meta || ! node.linkage ) {
-        throw "Node JSON does not possess the correct structure.";
+        var msg = "Node JSON does not possess the correct structure.";
+        logger.debug(msg);
+        callback(msg, null);
+        return;
     }
 
     if (! (node.acl.hasOwnProperty('read') && node.acl['read'] instanceof Array)) {
-        throw "Node acl object doesn't have a correctly defined 'read' key.";
+        var msg = "Node acl object doesn't have a correctly defined 'read' key.";
+        logger.debug(msg);
+        callback(msg, null);
+        return;
     }
 
     if (! (node.acl.hasOwnProperty('write') && node.acl['write'] instanceof Array)) {
-        throw "Node acl object doesn't have a correctly defined 'write' key.";
+        var msg = "Node acl object doesn't have a correctly defined 'write' key.";
+        logger.debug(msg);
+        callback(msg, null);
+        return;
     }
 
     async.waterfall([
@@ -724,7 +735,7 @@ function validate_incoming_node(node_string, callback) {
             });
         },
         function(errors, linkage_validity, callback) {
-            logger.debug("Linkage validity: " + linkage_validity)
+            logger.debug("Linkage validity: " + linkage_validity);
 
             var report = null;
 
@@ -1078,7 +1089,7 @@ function delete_schema_helper(namespace, schema_name) {
                      namespace + " namespace.");
         delete validators[namespace][schema_name];
     } else {
-        logger.error("The specified namespace or schema is not known.")
+        logger.error("The specified namespace or schema is not known.");
     }
 }
 
@@ -1320,7 +1331,7 @@ function establish_linkage_controls(callback) {
 
                     logger.debug("Successfully parsed linkage control file for namespace " + ns + ".");
                     linkage_controller.set_namespace_linkages(ns, linkage_json);
-                    cb()
+                    cb();
                 });
             } else {
                 logger.info("No linkage control for namespace " + ns + ".");
