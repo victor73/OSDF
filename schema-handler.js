@@ -1,3 +1,5 @@
+/*jshint sub:true*/
+
 var fs = require('fs');
 var events = require('events');
 var async = require('async');
@@ -925,7 +927,7 @@ function get_ns_schemas(ns, callback) {
                         cb();
                     }
                 },
-                function() { callback(null, schemas) }
+                function() { callback(null, schemas); }
             );
         },
         function(schemas, callback) {

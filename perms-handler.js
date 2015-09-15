@@ -1,3 +1,5 @@
+/*jshint sub:true*/
+
 var _ = require('lodash');
 var fs = require('fs');
 var path = require('path');
@@ -67,15 +69,15 @@ exports.init = function(emitter) {
                         // Remove any duplicates...
                         members = _.uniq(members, true);
 
-                        //populate the acl object
+                        // Populate the acl object
                         acl[namespace][file] = members;
 
-                        //populate the namespace_user_acls object
+                        // Populate the namespace_user_acls object
                         _.each(members, function(member) {
-                        	if (!namespace_user_acls[namespace][member]) {
-                        		namespace_user_acls[namespace][member] = [];
-                        	}
-                        	namespace_user_acls[namespace][member].push(file);
+                            if (!namespace_user_acls[namespace][member]) {
+                                namespace_user_acls[namespace][member] = [];
+                            }
+                            namespace_user_acls[namespace][member].push(file);
                         });
 
                         file_cb();

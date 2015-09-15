@@ -1,3 +1,5 @@
+/*jshint sub:true*/
+
 // lodash - for generic utility functions
 // cradle - for interactions with CouchDB
 // tv4 - Used for JSON validation with JSON-Schema

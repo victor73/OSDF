@@ -1,3 +1,5 @@
+/*jshint sub:true*/
+
 var _ = require('lodash');
 var auth_enforcer = require('auth_enforcer');
 var fs = require('fs');
@@ -19,10 +21,17 @@ var query_handler = require('query-handler');
 var eventEmitter = new events.EventEmitter();
 eventEmitter.setMaxListeners(0);
 
-exports.start_worker = function(config, working_path) {
-    // Wait for everything to be ready before we get going.
-    listen_for_init_completion(config);
-    initialize(working_path);
+var allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    // intercept OPTIONS method
+    if (req.method === 'OPTIONS' ) {
+        res.send(200);
+    } else {
+        next();
+    }
 };
 
 // Calls the various handlers' initialization methods.
@@ -43,59 +52,6 @@ function initialize(working_path) {
         }
     });
 }
-
-// This function sets up the mechanism to wait for all the handlers
-// to be ready by acting upon events that are emitted by the handlers
-// when they are finished. When all the events are received, we're ready
-// to proceed, and launch() is called.
-function listen_for_init_completion(config) {
-    var handlers = [ "node", "info", "auth", "perms", "query", "schema" ];
-    var handler_count = 0;
-
-    var examine_handlers = function() {
-        if (++handler_count === handlers.length) {
-            console.log("Handlers initialized for worker with PID " +
-                        process.pid + ".");
-
-            // Send message to master process
-            process.send({ cmd: 'init_completed' });
-
-            // You may fire when ready, Gridley...
-            launch(config);
-        }
-    };
-
-    eventEmitter.on("auth_handler_initialized", function (message) {
-        var user_count = message;
-        process.send({ cmd: "user_count", users: user_count });
-    });
-
-    // Allow each handler to abort the launch if there is a configuration
-    // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
-    _.each(handlers, function (handler) {
-        eventEmitter.on(handler + "_handler_initialized", function (message) {
-            examine_handlers();
-        });
-
-        eventEmitter.on(handler + "_handler_aborted", function(message) {
-            console.error("Got an abort from " + handler + " handler. Reason: " + message);
-            process.send({ cmd: "abort", reason: message });
-        });
-    });
-}
-
-var allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    // intercept OPTIONS method
-    if (req.method == 'OPTIONS' ) {
-        res.send(200);
-    } else {
-        next();
-    }
-};
 
 // This is the function that launches the app when all
 // initialization is complete.
@@ -190,3 +146,49 @@ function launch(config) {
         process.setuid(user);
     }
 }
+
+// This function sets up the mechanism to wait for all the handlers
+// to be ready by acting upon events that are emitted by the handlers
+// when they are finished. When all the events are received, we're ready
+// to proceed, and launch() is called.
+function listen_for_init_completion(config) {
+    var handlers = [ "node", "info", "auth", "perms", "query", "schema" ];
+    var handler_count = 0;
+
+    var examine_handlers = function() {
+        if (++handler_count === handlers.length) {
+            console.log("Handlers initialized for worker with PID " +
+                        process.pid + ".");
+
+            // Send message to master process
+            process.send({ cmd: 'init_completed' });
+
+            // You may fire when ready, Gridley...
+            launch(config);
+        }
+    };
+
+    eventEmitter.on("auth_handler_initialized", function (message) {
+        var user_count = message;
+        process.send({ cmd: "user_count", users: user_count });
+    });
+
+    // Allow each handler to abort the launch if there is a configuration
+    // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
+    _.each(handlers, function (handler) {
+        eventEmitter.on(handler + "_handler_initialized", function (message) {
+            examine_handlers();
+        });
+
+        eventEmitter.on(handler + "_handler_aborted", function(message) {
+            console.error("Got an abort from " + handler + " handler. Reason: " + message);
+            process.send({ cmd: "abort", reason: message });
+        });
+    });
+}
+
+exports.start_worker = function(config, working_path) {
+    // Wait for everything to be ready before we get going.
+    listen_for_init_completion(config);
+    initialize(working_path);
+};

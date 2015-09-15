@@ -1,5 +1,7 @@
 #!/usr/bin/node
 
+/*jshint sub:true*/
+
 var _ = require('lodash');
 var cluster = require('cluster');
 var path = require('path');

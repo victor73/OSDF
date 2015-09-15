@@ -1,3 +1,5 @@
+/*jshint sub:true*/
+
 var _ = require('lodash');
 var auth = require('auth_enforcer');
 var jison = require('jison');
@@ -85,7 +87,7 @@ exports.perform_oql = function (request, response) {
         logger.debug("Compiling OQL to ElasticSearch QueryDSL.");
         var translated_es_query = oql2es.compile(tree);
 
-        var elastic_query = build_empty_filtered_query(namespace, user_acls);
+        elastic_query = build_empty_filtered_query(namespace, user_acls);
 
         // Insert the translated client supplied query into the basic filtered query
         elastic_query["query"]["filtered"]["query"] = translated_es_query["query"];

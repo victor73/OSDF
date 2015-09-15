@@ -505,6 +505,119 @@ exports['insert_multi_linkage_multi_target_invalid'] = function (test) {
     );
 };
 
+//    "example2": {
+//       "related_to": [ "target" ],
+//       "connected_to": [ "target", "target2" ]
+//    }
+//
+exports['insert_multi_linkage_multi_target_empty'] = function (test) {
+    test.expect(1);
+
+    async.waterfall([
+        function(callback) {
+            // Make a "target" node to start out with
+            var target = _.cloneDeep(test_node);
+            target['node_type'] = 'target';
+            target['linkage'] = {};
+            target['meta']['color'] = "red";
+
+            tutils.insert_node(target, auth, function(data, response) {
+                var target_id = get_node_id(response.headers);
+
+                callback(null, target_id);
+            });
+        },
+        function(target_id, callback) {
+            // Now make an example2 node
+            var example2 = _.cloneDeep(test_node);
+            example2['node_type'] = "example2";
+            example2['linkage'] = { "related_to": [ ] };
+
+            tutils.insert_node(example2, auth, function(data, response) {
+                test.equal(response.statusCode, 201,
+                           "Correct status for insertion with empty linkage.");
+
+                // If the node still got inserted somehow, we make sure we remove it
+                if (response.headers.hasOwnProperty('location')) {
+                    var node_id = get_node_id(response.headers);
+
+                    tutils.delete_node(node_id, auth, function(data, response) {
+                        callback(null, target_id);
+                    });
+                } else {
+                    callback(null, target_id);
+                }
+            });
+        },
+        // Clean up the inserted nodes
+        function(target_id, callback) {
+            tutils.delete_node(target_id, auth, function(data, response) {
+                callback(null);
+            });
+        }],
+        function(err, results) {
+            test.done();
+        }
+    );
+};
+
+//    "example2": {
+//       "related_to": [ "target" ],
+//       "connected_to": [ "target", "target2" ]
+//    }
+//
+exports['insert_multi_linkage_multi_target_with_null'] = function (test) {
+    test.expect(1);
+
+    async.waterfall([
+        function(callback) {
+            // Make a "target" node to start out with
+            var target = _.cloneDeep(test_node);
+            target['node_type'] = 'target';
+            target['linkage'] = {};
+            target['meta']['color'] = "red";
+
+            tutils.insert_node(target, auth, function(data, response) {
+                var target_id = get_node_id(response.headers);
+
+                callback(null, target_id);
+            });
+        },
+        function(target_id, callback) {
+            // Now make an example2 node
+            var example2 = _.cloneDeep(test_node);
+            example2['node_type'] = "example2";
+            example2['linkage'] = { "related_to": [ target_id, null ] };
+
+            tutils.insert_node(example2, auth, function(data, response) {
+                test.equal(response.statusCode, 422,
+                           "Correct status for insertion with a null linkage target.");
+
+                // If the node still got inserted somehow, we make sure we remove it
+                if (response.headers.hasOwnProperty('location')) {
+                    var bad_node_id = get_node_id(response.headers);
+
+                    tutils.delete_node(bad_node_id, auth, function(data, response) {
+                        callback(null, target_id);
+                    });
+                } else {
+                    callback(null, target_id);
+                }
+            });
+        },
+        // Clean up the inserted nodes
+        function(target_id, callback) {
+            tutils.delete_node(target_id, auth, function(data, response) {
+                callback(null);
+            });
+        }],
+        function(err, results) {
+            test.done();
+        }
+    );
+};
+
+
 function get_node_id(headers) {
     var location = headers.location;
     var node_id = location.split('/').pop();
