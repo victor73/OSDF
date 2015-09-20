@@ -2,7 +2,7 @@ osdf (0.10.2-1) unstable; urgency=low
 
   * Corrected packaging error with missing is-my-json-valid module.
 
-  -- Victor <victor73@github.com>  Sat, 19 Sep 2015 00:00:00 -0400
+ -- Victor <victor73@github.com>  Sat, 19 Sep 2015 00:00:00 -0400
 
 osdf (0.10.1-1) unstable; urgency=low
 
