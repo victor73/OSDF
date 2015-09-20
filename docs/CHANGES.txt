@@ -1,3 +1,8 @@
+0.10.2
+  * Corrected packaging error with missing is-my-json-valid module
+
+  -- Victor <victor73@github.com>  Sat, 19 Sep 2015 00:00:00 -0400
+
 0.10.1
   * Corrected problem with handling of null values in linkage target lists.
   * jshint hints in selected files.
