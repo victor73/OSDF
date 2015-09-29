@@ -1,3 +1,9 @@
+0.11
+  * Fixed issue with query results pagination.
+  * Improved OQL parser and compiler to suppport inverted searches.
+
+ -- Victor <victor73@github.com>  Tue, 29 Sep 2015 00:00:00 -0400
+
 0.10.2
   * Corrected packaging error with missing is-my-json-valid module
 
