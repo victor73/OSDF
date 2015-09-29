@@ -142,7 +142,13 @@ var generators = {
             term: {}
         };
 
-        _eq.term[ left ] = right;
+        if (typeof left === "boolean") {
+            // As in [ true, '==', field ]
+            _eq.term[ right ] = left;
+        } else {
+            // As in [ field, '==', true ]
+            _eq.term[ left ] = right;
+        }
 
         return _eq;
     },
@@ -155,7 +161,13 @@ var generators = {
             }
         };
 
-        _ne.bool.must_not.term[ left ] = right;
+        if (typeof left === "boolean") {
+            // As in [ true, '!=', field ]
+            _ne.bool.must_not.term[ right ] = left;
+        } else {
+            // As in [ field, '!=', true ]
+            _ne.bool.must_not.term[ left ] = right;
+        }
 
         return _ne;
     }

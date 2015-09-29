@@ -15,6 +15,22 @@ exports.BasicSearch = function(test) {
 };
 
 exports.BasicComparisonInteger = function(test) {
+    var query = '[type] == 3';
+
+    var expected = [ 'type', '==', 3 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonIntegerInverted = function(test) {
+    var query = '3 == [type]';
+
+    var expected = [ 'type', '==', 3 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonLTInteger = function(test) {
     var query = '[type] < 3';
 
     var expected = [ 'type', '<', 3 ];
@@ -22,7 +38,15 @@ exports.BasicComparisonInteger = function(test) {
     performTest(test, query, expected);
 };
 
-exports.BasicComparisonNegativeInteger = function(test) {
+exports.BasicComparisonLTIntegerInverted = function(test) {
+    var query = '3 < [type]';
+
+    var expected = [ 'type', '>', 3];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonGTNegativeInteger = function(test) {
     var query = '[type] > -3';
 
     var expected = [ 'type', '>', -3 ];
@@ -30,10 +54,26 @@ exports.BasicComparisonNegativeInteger = function(test) {
     performTest(test, query, expected);
 };
 
-exports.BasicComparisonFloat = function(test) {
+exports.BasicComparisonGTNegativeIntegerInverted = function(test) {
+    var query = '-3 > [type]';
+
+    var expected = [ 'type', '<', -3 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonGTEFloat = function(test) {
     var query = '[type] >= 3.14';
 
     var expected = [ 'type', '>=', 3.14 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonGTEFloatInverted = function(test) {
+    var query = '3.14 >= [type]';
+
+    var expected = [ 'type', '<=', 3.14 ];
 
     performTest(test, query, expected);
 };
@@ -46,8 +86,56 @@ exports.BasicComparisonNegativeFloat = function(test) {
     performTest(test, query, expected);
 };
 
+exports.BasicComparisonNegativeFloatInverted = function(test) {
+    var query = '-3.14 == [type]';
+
+    var expected = [ 'type', '==', -3.14 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonGTENegativeFloat = function(test) {
+    var query = '[type] >= -3.14';
+
+    var expected = [ 'type', '>=', -3.14 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonGTENegativeFloatInverted = function(test) {
+    var query = '-3.14 >= [type]';
+
+    var expected = [ 'type', '<=', -3.14 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonLTENegativeFloat = function(test) {
+    var query = '[type] <= -3.14';
+
+    var expected = [ 'type', '<=', -3.14 ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonLTENegativeFloatInverted = function(test) {
+    var query = '-3.14 <= [type]';
+
+    var expected = [ 'type', '>=', -3.14 ];
+
+    performTest(test, query, expected);
+};
+
 exports.BasicComparisonEQTrue = function(test) {
     var query = '[type] == true';
+
+    var expected = [ 'type', '==', true ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonEQTrueInverted = function(test) {
+    var query = 'true == [type]';
 
     var expected = [ 'type', '==', true ];
 
@@ -62,6 +150,14 @@ exports.BasicComparisonEQFalse = function(test) {
     performTest(test, query, expected);
 };
 
+exports.BasicComparisonEQFalseInverted = function(test) {
+    var query = 'false == [type]';
+
+    var expected = [ 'type', '==', false ];
+
+    performTest(test, query, expected);
+};
+
 exports.BasicComparisonNETrue = function(test) {
     var query = '[type] != true';
 
@@ -70,8 +166,24 @@ exports.BasicComparisonNETrue = function(test) {
     performTest(test, query, expected);
 };
 
+exports.BasicComparisonNETrueInverted = function(test) {
+    var query = 'true != [type]';
+
+    var expected = [ 'type', '!=', true ];
+
+    performTest(test, query, expected);
+};
+
 exports.BasicComparisonNEFalse = function(test) {
     var query = '[type] != false';
+
+    var expected = [ 'type', '!=', false ];
+
+    performTest(test, query, expected);
+};
+
+exports.BasicComparisonNEFalseInverted = function(test) {
+    var query = 'false != [type]';
 
     var expected = [ 'type', '!=', false ];
 
