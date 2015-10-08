@@ -171,11 +171,11 @@ exports.has_write_permission = function(user, node) {
 };
 
 exports.get_user_acls = function(namespace, user) {
-	var user_acls = ["all"];
-	//if namespace/user has valid acls, return them with prepended "all"
-	//otherwise, simply return "all"
-	if (namespace_user_acls[namespace] && namespace_user_acls[namespace][user]) {
-		user_acls.concat(namespace_user_acls[namespace][user]);
-	}
-	return user_acls;
+    var user_acls = ["all"];
+    // If namespace/user has valid acls, return them with prepended "all"
+    // otherwise, simply return "all"
+    if (namespace_user_acls[namespace] && namespace_user_acls[namespace][user]) {
+        user_acls.concat(namespace_user_acls[namespace][user]);
+    }
+    return user_acls;
 };
