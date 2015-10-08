@@ -93,11 +93,19 @@ allsearch
 
 comparison
     : field comparator number   {$$ = [$1, $2, $3];}
+    | number comparator field   {if ($2 === "<") { $$ = [$3, ">", $1]; }
+                                 else if ($2 === ">") { $$ = [$3, "<", $1]; }
+                                 else if ($2 === "<=") { $$ = [$3, ">=", $1]; }
+                                 else if ($2 === ">=") { $$ = [$3, "<=", $1]; }
+                                 else if ($2 === "==") { $$ = [$3, "==", $1]; }
+                                 else { $$ = [$3, $2, $1];}}
     ;
 
 bool_check
     : field EQ BOOL    {$$ = [$1, $2, ($3 === 'true')];}
     | field NE BOOL    {$$ = [$1, $2, ($3 === 'true')];}
+    | BOOL EQ field    {$$ = [$3, $2, ($1 === 'true')];}
+    | BOOL NE field    {$$ = [$3, $2, ($1 === 'true')];}
     ;
 
 number

@@ -197,16 +197,16 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
                 logger.error("Error running query. " + err);
                 osdf_error(response, err, 500);
             } else {
+                // Determine if this is a partial result response
                 var partial_result = false;
                 var next_page_url;
 
-                // Determine if this is a partial result response
                 var first_result_number = es_query["from"] || 0;
 
                 if (first_result_number + results.hits.hits.length < results.hits.total) {
                     // Only count this as a partial result if the user did
                     // not specify both from and size in the query
-                    if (! es_query["from"] && ! es_query["size"]) {
+                    if (! es_query["from"]) {
                         partial_result = true;
                         // If there was no page requested in this url
                         // then it would be page 1, so return 2
