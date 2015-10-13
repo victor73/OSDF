@@ -60,7 +60,7 @@ function launch(config) {
 
     // Check if CORS Support should be enabled or not.
     var cors = config.value("global", "cors_enabled");
-    if (typeof cors !== 'undefined' && cors !== null && (cors === "true" || cors === "yes")) {
+    if (cors !== undefined && cors !== null && (cors === "true" || cors === "yes")) {
         app.use(allowCrossDomain);
     }
 
@@ -75,7 +75,7 @@ function launch(config) {
     app.disable('x-powered-by');
 
     // This custom middleware is what sets the 'rawBody' property
-    app.use (function(req, res, next) {
+    app.use(function(req, res, next) {
         var data = '';
         req.setEncoding('utf8');
         req.on('data', function(chunk) {
@@ -95,12 +95,14 @@ function launch(config) {
     var port = config.value("global", "port");
 
     // Check that we have some valid settings.
-    if (typeof bind_address === 'undefined' || bind_address === null || bind_address.length === 0) {
+    if (bind_address === undefined ||
+            bind_address === null ||
+            bind_address.length === 0) {
         console.log("The 'bind_address' setting is not configured.");
         process.exit(1);
     }
 
-    if (typeof port === 'undefined' || port === null || port.length === 0) {
+    if (port === undefined || port === null || port.length === 0) {
         console.log("The 'port' setting is not configured.");
         process.exit(1);
     }
