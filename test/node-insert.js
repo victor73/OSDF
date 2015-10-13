@@ -36,15 +36,16 @@ exports['basic_insertion'] = function (test) {
         test.ok("location" in response.headers,
                 "Response header contains location of new node.");
 
-        var location = response.headers.location;
-        node_id = location.split('/').pop();
+        node_id = get_node_id(response);
 
         test.ok(data === '', "No content returned on a node insertion.");
 
         // Clean-up (delete the inserted node)
         try {
             tutils.delete_node(node_id, auth, function(){});
-        } catch (e) {}
+        } catch (e) {
+            //
+        }
         test.done();
     });
 };
@@ -95,8 +96,7 @@ exports['valid_insertion_with_schema_validation'] = function (test) {
                 "Response header contains location of new node.");
 
         try {
-            var location = response.headers.location;
-            node_id = location.split('/').pop();
+            node_id = get_node_id(response);
 
             test.ok(node_id.length > 0, "Got a node id from the insertion.");
             inserted = true;
@@ -145,8 +145,7 @@ exports['invalid_insertion_with_schema_validation'] = function (test) {
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
             try {
-                var location = response.headers.location;
-                node_id = location.split('/').pop();
+                node_id = get_node_id(response);
 
                 // We should NOT have inserted, because the node inserted is
                 // invalid, but if we DID insert anyway (perhaps due to a bug),
@@ -182,8 +181,7 @@ exports['insertion_into_unknown_namespace'] = function (test) {
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
             try {
-                var location = response.headers.location;
-                node_id = location.split('/').pop();
+                node_id = get_node_id(response);
 
                 // We should NOT have inserted, because the node inserted is
                 // invalid, but if we DID insert anyway (perhaps due to a bug),
@@ -220,8 +218,7 @@ exports['insertion_into_unknown_namespace_no_auth'] = function (test) {
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
             try {
-                var location = response.headers.location;
-                node_id = location.split('/').pop();
+                node_id = get_node_id(response);
 
                 // We should NOT have inserted, because the node inserted is
                 // invalid, but if we DID insert anyway (perhaps due to a bug),
@@ -250,8 +247,7 @@ exports['insertion_of_empty_string'] = function (test) {
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
             try {
-                var location = response.headers.location;
-                node_id = location.split('/').pop();
+                node_id = get_node_id(response);
 
                 // We should NOT have inserted, because the node inserted is
                 // invalid, but if we DID insert anyway (perhaps due to a bug),
@@ -280,8 +276,7 @@ exports['insertion_of_invalid_json'] = function (test) {
         // We shouldn't get in here, but you never know.
         if ("location" in response.headers) {
             try {
-                var location = response.headers.location;
-                node_id = location.split('/').pop();
+                node_id = get_node_id(response);
 
                 // We should NOT have inserted, because the node inserted is
                 // invalid, but if we DID insert anyway (perhaps due to a bug),
@@ -297,3 +292,9 @@ exports['insertion_of_invalid_json'] = function (test) {
         test.done();
     });
 };
+
+function get_node_id(response) {
+    var location = response.headers.location;
+    var node_id = location.split('/').pop();
+    return node_id;
+}
