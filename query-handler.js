@@ -12,11 +12,10 @@ var sprintf = require('sprintf').sprintf;
 var es_river_name = "osdf";
 var logger = osdf_utils.get_logger();
 
-// Load configuration parameters
-var c = Config.get_instance(osdf_utils.get_config());
-var base_url = c.value('global', 'base_url');
-var port = c.value('global', 'port');
-var page_size = c.value('global', 'pagesize');
+var config;
+var base_url;
+var port;
+var page_size;
 
 var osdf_error = osdf_utils.send_error;
 var elastic_client;
@@ -29,12 +28,17 @@ var oql2es;
 exports.init = function (emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
+    // Load configuration parameters
     require('config');
+    config = Config.get_instance(osdf_utils.get_config());
+    base_url = config.value('global', 'base_url');
+    port = config.value('global', 'port');
+    page_size = config.value('global', 'pagesize');
 
     oql2es = require('oql_compiler');
 
-    var elasticsearch_address = c.value('elasticsearch', 'elasticsearch_address');
-    var elasticsearch_port = c.value('elasticsearch', 'elasticsearch_port');
+    var elasticsearch_address = config.value('elasticsearch', 'elasticsearch_address');
+    var elasticsearch_port = config.value('elasticsearch', 'elasticsearch_port');
 
     elastic_client = new elasticsearch.Client({ host: elasticsearch_address + ":" + elasticsearch_port  });
 
@@ -129,11 +133,23 @@ exports.perform_query = function (request, response) {
 
     var user_query;
 
+    if (_.isNull(content) || content === "null") {
+        logger.error("Bad (null) query provided.");
+        osdf_error(response, 'Bad query json provided.', 422);
+        return;
+    }
+
     try {
         user_query = JSON.parse(content);
     } catch (err) {
-        logger.error("Bad query json provided.  " + err);
+        logger.error("Bad query json provided. " + err);
         osdf_error(response, 'Bad query json provided. ' + err, 422);
+        return;
+    }
+
+    if (! user_query.hasOwnProperty('query')) {
+        logger.error("Invalid query provided.");
+        osdf_error(response, 'Bad query json provided.', 422);
         return;
     }
 
@@ -202,18 +218,22 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
                 var next_page_url;
 
                 var first_result_number = es_query["from"] || 0;
+                logger.debug("First result number: " + first_result_number);
 
                 if (first_result_number + results.hits.hits.length < results.hits.total) {
+                    logger.debug("Detected a partial query result.");
+
                     // Only count this as a partial result if the user did
                     // not specify both from and size in the query
-                    if (! es_query["from"]) {
-                        partial_result = true;
-                        // If there was no page requested in this url
-                        // then it would be page 1, so return 2
-                        next_page_url = base_url + ':' + port +
-                            '/nodes/query/' + namespace + '/page/' +
-                            (requested_page ? requested_page + 1 : 2);
-                    }
+                    partial_result = true;
+
+                    // If there was no page requested in this url
+                    // then it would be page 1, so return 2
+                    next_page_url = base_url + ':' + port + '/nodes/query/' +
+                                    namespace + '/page/' +
+                                   (requested_page ? requested_page + 1 : 2);
+                } else {
+                    logger.debug("Not a partial query result.");
                 }
 
                 format_query_results(results, requested_page);

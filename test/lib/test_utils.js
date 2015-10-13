@@ -5,6 +5,7 @@
 // is needed and useful so that tests can be written to examine things such as
 // status codes and content type.
 
+var async = require('async');
 var http = require('http');
 var utils = require(__dirname + "/../../lib/osdf_utils");
 var host = 'localhost';
@@ -335,7 +336,6 @@ exports.delete_schema = function (namespace, schema_name, auth, callback) {
 };
 
 exports.retrieve_all_schemas = function (namespace, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -359,7 +359,6 @@ exports.retrieve_all_schemas = function (namespace, auth, callback ) {
 };
 
 exports.retrieve_all_aux_schemas = function (namespace, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -383,7 +382,6 @@ exports.retrieve_all_aux_schemas = function (namespace, auth, callback ) {
 };
 
 exports.retrieve_aux_schema = function (namespace, aux_schema_name, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -407,7 +405,6 @@ exports.retrieve_aux_schema = function (namespace, aux_schema_name, auth, callba
 };
 
 exports.retrieve_schema = function (namespace, schema_name, auth, callback ) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -509,7 +506,6 @@ exports.update_node = function (node_id, node_data, auth, callback) {
 };
 
 exports.validate_node = function (node_data, auth, callback) {
-    var request;
     var body = "";
 
     var cb = function (response) {
@@ -530,9 +526,110 @@ exports.validate_node = function (node_data, auth, callback) {
         options['auth'] = auth;
     }
 
-    request = http.request(options, cb);
+    var request = http.request(options, cb);
     request.write(JSON.stringify(node_data));
     request.end();
+};
+
+exports.query = function (es_query, namespace, auth, callback) {
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/nodes/query/' + namespace,
+                    method: 'POST' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+
+    if (typeof es_query === 'object') {
+        request.write(JSON.stringify(es_query));
+    } else {
+        request.write(es_query);
+    }
+    request.end();
+};
+
+exports.query_page = function (es_query, namespace, page, auth, callback) {
+    var body = "";
+
+    var cb = function (response) {
+        response.on('data', function (chunk) {
+            body = body + chunk;
+        });
+        response.on('end', function () {
+            callback(body, response);
+        });
+    };
+
+    var options = { host: host,
+                    port: port,
+                    path: '/nodes/query/' + namespace + '/page/' + page,
+                    method: 'POST' };
+
+    if (auth !== null) {
+        options['auth'] = auth;
+    }
+
+    var request = http.request(options, cb);
+
+    if (typeof es_query === 'object') {
+        request.write(JSON.stringify(es_query));
+    } else {
+        request.write(es_query);
+    }
+    request.end();
+};
+
+exports.query_all = function (es_query, namespace, auth, callback) {
+    var has_next_page = true;
+    var page = 1;
+    var all_results = [];
+
+    // TODO: Stream the results back, don't gather it all into a structure
+    // and write it back after complete...
+    async.doWhilst(
+        function(callback) {
+            exports.query_page(es_query, namespace, page, auth, function(data, response) {
+                has_next_page = response.headers.hasOwnProperty('x-osdf-query-resultset');
+                page++;
+
+                var json_data = JSON.parse(data);
+                all_results = all_results.concat(json_data['results']);
+
+                callback();
+            });
+        },
+        function() {
+            return has_next_page;
+        },
+        function(err) {
+            if (err) {
+                callback(err, null);
+            } else {
+                var final = { "search_result_total": all_results.length,
+                              "result_count": all_results.length,
+                              "results": all_results };
+                callback(null, JSON.stringify(final));
+            }
+        }
+    );
+};
+
+exports.oql_query = function(oql_query, namespace, auth, callback) {
+
 };
 
 // Taken from http://rosskendall.com/blog/web/javascript-function-to-check-an-email-address-conforms-to-rfc822
@@ -555,7 +652,7 @@ exports.isRFC822ValidEmail = function (sEmail) {
     var reValidEmail = new RegExp(sValidEmail);
 
     if (reValidEmail.test(sEmail)) {
-      return true;
+        return true;
     }
 
     return false;
