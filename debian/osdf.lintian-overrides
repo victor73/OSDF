@@ -6,7 +6,6 @@ package-contains-upstream-install-documentation
 script-not-executable
 unusual-interpreter
 wrong-path-for-interpreter
-license-problem-json-evil
 # We use a distribution of 'unstable', but ubuntu doesn't recognize it This
 # override actually isn't supported by lintian yet, so we have to use
 # '--lintian-opts --suppress-tags bad-distribution-in-changes-file' arguments
@@ -21,4 +20,5 @@ package-contains-vcs-control-file
 # The provided node/npm modules sometimes include 'config.log' files
 configure-generated-file-in-source node_modules/log4js/node_modules/compress-buffer/build/config.log
 configure-generated-file-in-source config.log
+jar-not-in-usr-share
 osdf: binary-without-manpage usr/bin/new_namespace
