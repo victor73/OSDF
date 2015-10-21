@@ -187,7 +187,7 @@ exports['test_paginated_query_results'] = function (test) {
             }, Error, "Data returned is valid JSON.");
 
             test.ok(response.statusCode === 206,
-                    "Correct status code of 26 for partial results returned.");
+                    "Correct status code of 206 for partial results returned.");
 
             test.ok(result.hasOwnProperty('results') &&
                     result.hasOwnProperty('search_result_total') &&
@@ -198,23 +198,21 @@ exports['test_paginated_query_results'] = function (test) {
             test.ok(response.headers.hasOwnProperty('x-osdf-query-resultset'),
                     'Contains the header to point to the next result set.');
 
-            callback(null, result, node_ids);
+            callback(null, node_ids);
         });
-    },
-    function(result, node_ids, callback) {
-        callback(null, node_ids);
-    },
-    function(node_ids, callback) {
+    }], function(error, node_ids) {
         // Delete them all again...
         delete_nodes(node_ids, function (err) {
-            callback(err);
-        });
-    }], function(error) {
-        if (error) {
-           console.log("Failure");
-        }
+            if (err) {
+                console.log("Problem deleting nodes.");
+            }
 
-        test.done();
+            if (error) {
+               console.log("Failure");
+            }
+
+            test.done();
+        });
     });
 };
 
@@ -282,19 +280,23 @@ exports['test_query_all_pages'] = function (test) {
                 test.equal(result['results'].length, total,
                            "Same count when traversing result pagination.");
 
-                test.done();
-
                 callback(null, node_ids);
             } else {
                 callback(err, node_ids);
             }
         });
     }], function(error, node_ids) {
-        if (error) {
-            console.log(error);
-        }
+        // Delete them all again...
         delete_nodes(node_ids, function (err) {
-            //
+            if (err) {
+                console.log("Problem deleting nodes.");
+            }
+
+            if (error) {
+               console.log("Failure");
+            }
+
+            test.done();
         });
     });
 };
