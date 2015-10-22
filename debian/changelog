@@ -1,3 +1,11 @@
+osdf (0.13-1) unstable; urgency=low
+
+  * Upgraded elasticsearch, deep-diff, and commander libraries. 
+  * Changes for compatibility with node 4.2.1.
+  * Improved query test script cleanup.
+
+ -- Victor <victor73@github.com>  Thu, 22 Oct 2015 00:00:00 -0400
+
 osdf (0.12-1) unstable; urgency=low
 
   * Upgraded tv4, request and log4js.
