@@ -1,3 +1,11 @@
+osdf (0.14-1) unstable; urgency=low
+
+  * Fixed bug with contains() under certain node deletion
+    situations. Replaced calls with lodash's includes().
+  * Updated request, async and elasticsearch libraries.
+ 
+ -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
+
 osdf (0.13-1) unstable; urgency=low
 
   * Upgraded elasticsearch, deep-diff, and commander libraries. 
