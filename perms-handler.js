@@ -108,7 +108,7 @@ exports.has_read_permission = function(user, node) {
 
     // Do the easiest/fastest thing first. Is 'all' in the read acl?
     // If so, our job is done.
-    if (osdf_utils.contains("all", read_acls)) {
+    if (_.includes(read_acls, "all")) {
         return true;
     }
 
@@ -121,7 +121,7 @@ exports.has_read_permission = function(user, node) {
         for (acl_idx = 0; acl_idx < read_acls.length; acl_idx++) {
             var read_acl = read_acls[acl_idx];
 
-            if (  osdf_utils.contains(user, acl[namespace][read_acl])) {
+            if (_.includes(acl[namespace][read_acl], user)) {
                 can_read = true;
                 break;
             }
@@ -144,7 +144,7 @@ exports.has_write_permission = function(user, node) {
 
     // Do the easiest/fastest thing first. Is 'all' in the write acl?
     // If so, our job is done.
-    if (osdf_utils.contains("all", write_acls)) {
+    if (_.includes(write_acls, "all")) {
         return true;
     }
 
@@ -159,7 +159,7 @@ exports.has_write_permission = function(user, node) {
         for (acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
             var write_acl = write_acls[acl_idx];
 
-            if (  osdf_utils.contains(user, acl[namespace][write_acl])) {
+            if (_.includes(acl[namespace][write_acl], user)) {
                 can_write = true;
                 break;
             }

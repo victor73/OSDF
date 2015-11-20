@@ -714,7 +714,7 @@ function validate_incoming_node(node_string, callback) {
     async.waterfall([
         function(callback) {
             var errors = [];
-            if (! osdf_utils.contains(node.ns, namespaces)) {
+            if (! _.includes(namespaces, node.ns)) {
                 var msg = "Node belongs to an unrecognized namespace.";
                 logger.error(msg);
                 errors.push(msg);
