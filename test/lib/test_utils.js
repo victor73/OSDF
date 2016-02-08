@@ -563,16 +563,19 @@ exports.query = function (es_query, namespace, auth, callback) {
 };
 
 exports.query_page = function (es_query, namespace, page, auth, callback) {
+console.log("H2");
     var body = "";
 
     var cb = function (response) {
-        response.on('data', function (chunk) {
+        response.on('data', function(chunk) {
             body = body + chunk;
         });
-        response.on('end', function () {
+        response.on('end', function() {
             callback(body, response);
         });
     };
+console.log(host);
+console.log(port);
 
     var options = { host: host,
                     port: port,
@@ -597,6 +600,7 @@ exports.query_all = function (es_query, namespace, auth, callback) {
     var has_next_page = true;
     var page = 1;
     var all_results = [];
+console.log("H1");
 
     // TODO: Stream the results back, don't gather it all into a structure
     // and write it back after complete...

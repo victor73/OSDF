@@ -26,7 +26,7 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
         return;
     }
 
-    if (_.contains(allowed_target_types, '*')) {
+    if (_.includes(allowed_target_types, '*')) {
         logger.info('Allowed targets contains a wildcard. Returning "true".');
         callback(null, valid);
         return;
@@ -49,7 +49,7 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
                 var target_type = target_node['node_type'];
                 logger.debug('Target node is of type "' + target_type + '". Checking.');
 
-                if (! _.contains(allowed_target_types, target_type)) {
+                if (! _.includes(allowed_target_types, target_type)) {
                     logger.info('Target type of "' + target_type + '" is not permisssible.');
                     valid = false;
                 }
@@ -76,7 +76,7 @@ function check(ns_control, node, edge, edgeKey, callback) {
     if (allowed_targets.length === 0) {
         logger.debug('No allowed targets for node type "' + node_type + '"');
         callback(null, valid);
-    } else if (_.contains(allowed_targets, edge)) {
+    } else if (_.includes(allowed_targets, edge)) {
         logger.debug('This node (' + node_type  + ') can link via "' + node_type +
                      '" to any other because of a wildcard.');
         valid = true;

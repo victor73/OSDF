@@ -754,7 +754,12 @@ function validate_incoming_node(node_string, callback) {
                 // And validate...
                 var tv4 = validators[node.ns]['val'];
 
-                var result = tv4.validateMultiple(meta, schema);
+                var result;
+                try {
+                    result = tv4.validateMultiple(meta, schema);
+                } catch (err) {
+                    callback("Error validating document: " + err);
+                }
 
                 _.each(result.errors, function(validation_error) {
                     var err_msg = validation_error.message + " on path " +

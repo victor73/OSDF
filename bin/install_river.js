@@ -51,7 +51,6 @@ if (es_port == null) {
     es_port = 9200;
 }
 
-
 var json = { "type" : "couchdb",
              "couchdb" : {
                  "user" : couchdb_user,
@@ -61,13 +60,13 @@ var json = { "type" : "couchdb",
                  "db" : "osdf",
                  "ignore_attachments": true,
                  "filter": null
-              },
-              "index" : {
+             },
+             "index" : {
                  "index" : "osdf",
-                  "type" : "osdf",
-                  "bulk_size" : "100",
-                  "bulk_timeout" : "10ms"
-              }
+                 "type" : "osdf",
+                 "bulk_size" : "100",
+                 "bulk_timeout" : "10ms"
+             }
           };
 
 var osdf_mapping = {
