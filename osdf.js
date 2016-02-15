@@ -175,10 +175,12 @@ function start_master(config) {
                     var bind_address = config.value('global', 'bind_address');
                     var port = config.value('global', 'port');
                     var cors_enabled = config.value('global', 'cors_enabled');
+                    var https_enabled = config.value('global', 'https_enabled');
 
                     ready_data['address'] = bind_address;
                     ready_data['port'] = port;
                     ready_data['cors_enabled'] = cors_enabled;
+                    ready_data['https_enabled'] = https_enabled;
 
                     show_ready(ready_data);
                 }
@@ -243,6 +245,7 @@ function show_ready(ready_data) {
     var address = ready_data['address'];
     var port = ready_data['port'];
     var cors_enabled = ready_data['cors_enabled'];
+    var https_enabled = ready_data['https_enabled'];
 
     if (custom_config) {
         console.log("Configured settings file: " + config_path);
@@ -256,12 +259,22 @@ function show_ready(ready_data) {
         console.log("Configured log file: " + log_file_path);
     }
 
+    // Configuration for CORS
     var cors = false;
     if (cors_enabled !== 'undefined' && cors_enabled !== null &&
            (cors_enabled === 'true' || cors_enabled === 'yes')) {
         cors = true;
     }
+
+    // Configuration for encrypted operation
+    var https = false;
+    if (https_enabled !== 'undefined' && https_enabled !== null &&
+           (https_enabled === 'true' || https_enabled === 'yes')) {
+        https = true;
+    }
+
     console.log("CORS enabled: " + cors);
+    console.log("HTTPS enabled: " + https);
     console.log("Total number of registered OSDF users: " + user_count);
     console.log("Running on node.js version: " + process.version);
     console.log('Listening on server:port : ' + address + ":" + port);
