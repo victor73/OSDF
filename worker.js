@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var auth_enforcer = require('auth_enforcer');
+var async = require('async');
 var fs = require('fs');
 var osdf_utils = require('osdf_utils');
 var logger = osdf_utils.get_logger();
@@ -60,8 +61,17 @@ function launch(config) {
 
     // Check if CORS Support should be enabled or not.
     var cors = config.value("global", "cors_enabled");
-    if (cors !== undefined && cors !== null && (cors === "true" || cors === "yes")) {
+    if (cors != undefined && cors != null && (cors === "true" || cors === "yes")) {
         app.use(allowCrossDomain);
+    }
+
+    // Check if CORS Support should be enabled or not.
+    var https_enabled = config.value("global", "https_enabled");
+    if (https_enabled !== undefined && https_enabled !== null &&
+            (https_enabled === "true" || https_enabled === "yes")) {
+        https_enabled = true;
+    } else {
+        https_enabled = false;
     }
 
     // Register various middleware functions
@@ -98,13 +108,15 @@ function launch(config) {
     if (bind_address === undefined ||
             bind_address === null ||
             bind_address.length === 0) {
-        console.log("The 'bind_address' setting is not configured.");
-        process.exit(1);
+        var bind_err = "The 'bind_address' setting is not configured.";
+        console.log(bind_err);
+        process.send({ cmd: "abort", reason: bind_err });
     }
 
     if (port === undefined || port === null || port.length === 0) {
-        console.log("The 'port' setting is not configured.");
-        process.exit(1);
+        var port_err = "The 'port' setting is not configured.";
+        console.log(port_err);
+        process.send({ cmd: "abort", reason: port_err });
     }
 
     process.on('uncaughtException', function(err) {
@@ -131,7 +143,27 @@ function launch(config) {
         }
     });
 
-    app.listen(port, bind_address);
+    if (https_enabled) {
+        logger.info("Using encrypted https.");
+
+        // Need the key and cert to establish the SSL enabled server
+        get_ssl_options(config, function(err, options) {
+            if (err) {
+                logger.error("Unable to configure SSL: " + err);
+                process.send({ cmd: "abort", reason: err });
+            } else {
+                var https = require('https');
+                var server  = https.createServer(options, app);
+                server.listen(port, bind_address);
+            }
+        });
+    } else {
+        logger.info("Using regular http (unencrypted).");
+        // Just use regular http
+        var http = require('http');
+        var server  = http.createServer(app);
+        server.listen(port, bind_address);
+    }
 
     // If we are being started via sys-v style init scripts we are probably being
     // invoked as root. If we need to listen on a well known port, we need to be
@@ -166,11 +198,15 @@ function listen_for_init_completion(config) {
             process.send({ cmd: 'init_completed' });
 
             // You may fire when ready, Gridley...
-            launch(config);
+//            try {
+                launch(config);
+//            } catch (err) {
+//                process.send({ cmd: "abort", reason: err });
+//            }
         }
     };
 
-    eventEmitter.on("auth_handler_initialized", function (message) {
+    eventEmitter.on("auth_handler_initialized", function(message) {
         var user_count = message;
         process.send({ cmd: "user_count", users: user_count });
     });
@@ -178,14 +214,70 @@ function listen_for_init_completion(config) {
     // Allow each handler to abort the launch if there is a configuration
     // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
     _.each(handlers, function (handler) {
-        eventEmitter.on(handler + "_handler_initialized", function (message) {
+        eventEmitter.on(handler + "_handler_initialized", function(message) {
             examine_handlers();
         });
 
         eventEmitter.on(handler + "_handler_aborted", function(message) {
-            console.error("Got an abort from " + handler + " handler. Reason: " + message);
+            console.error("Got an abort from " + handler +
+                          " handler. Reason: " + message);
             process.send({ cmd: "abort", reason: message });
         });
+    });
+}
+
+function get_ssl_options(config, callback) {
+
+    async.parallel([
+        function(callback) {
+            var key_file = config.value("global", "key_file");
+            if (key_file == undefined || key_file == null) {
+                callback("key_file not set in configuration file.", null);
+                return;
+            }
+
+            logger.debug("Reading key_file " + key_file);
+            fs.readFile(key_file, "utf8", function(err, data) {
+                 if (err) {
+                    callback(err, null);
+                 } else {
+                    callback(null, data);
+                 }
+            });
+        },
+        function(callback) {
+            var cert_file = config.value("global", "cert_file");
+            if (cert_file == undefined || cert_file == null) {
+                callback("cert_file not set in configuration file.", null);
+                return;
+            }
+
+            logger.debug("Reading cert_file " + key_file);
+
+            fs.readFile(cert_file, "utf8", function(err, data) {
+                 if (err) {
+                    callback(err, null);
+                 } else {
+                    callback(null, data);
+                 }
+            });
+        }
+    ],
+    function(err, results) {
+        if (err) {
+            logger.error(err);
+            callback(err, null);
+        } else {
+            var key = results[0];
+            var cert = results[1];
+
+            var options = {
+                key: key,
+                cert: cert
+            };
+
+            callback(null, options);
+        }
     });
 }
 
@@ -194,3 +286,5 @@ exports.start_worker = function(config, working_path) {
     listen_for_init_completion(config);
     initialize(working_path);
 };
+
+

@@ -1,3 +1,11 @@
+0.15
+  * Added support and configuration options to allow OSDF
+    to run with SSL encryption.
+  * Improved behavior of server startup when bind_address or
+    port are misconfigured.
+
+ -- Victor <victor73@github.com>  Fri, 15 Feb 2016 00:00:00 -0400
+
 0.14
   * Fixed bug with contains() under certain node deletion
     situations. Replaced calls with lodash's includes().
