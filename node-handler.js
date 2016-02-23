@@ -263,8 +263,8 @@ exports.get_out_linkage = function(request, response) {
             var seen_list = [];
 
             logger.debug("Filtering duplicates from the result list.");
-            var filtered = _.select(results, function(result) {
-                if ( _.include(seen_list, result['doc']['_id'])) {
+            var filtered = _.filter(results, function(result) {
+                if ( _.includes(seen_list, result['doc']['_id'])) {
                     return false;
                 } else {
                     seen_list.push( result['doc']['_id'] );
@@ -284,7 +284,7 @@ exports.get_out_linkage = function(request, response) {
 
             // Exclude nodes that we do not have read permission for
             var user = auth.get_user(request);
-            filtered = _.select(filtered, function(node) {
+            filtered = _.filter(filtered, function(node) {
                 return perms.has_read_permission(user, node);
             });
 
@@ -330,8 +330,8 @@ exports.get_in_linkage = function(request, response) {
             var seen_list = [];
 
             logger.debug("Filtering duplicates from the result list.");
-            var filtered = _.select(results, function(result) {
-                if ( _.include(seen_list, result['doc']['_id'])) {
+            var filtered = _.filter(results, function(result) {
+                if ( _.includes(seen_list, result['doc']['_id'])) {
                     return false;
                 } else {
                     seen_list.push( result['doc']['_id'] );
@@ -351,7 +351,7 @@ exports.get_in_linkage = function(request, response) {
 
             // Exclude nodes that we do not have read permission for
             var user = auth.get_user(request);
-            filtered = _.select(filtered, function(node) {
+            filtered = _.filter(filtered, function(node) {
                 return perms.has_read_permission(user, node);
             });
 
