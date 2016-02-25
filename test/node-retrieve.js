@@ -53,8 +53,7 @@ exports['basic_retrieve'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // then try to retrieve it
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -134,8 +133,7 @@ exports['basic_retrieve_no_auth'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // ...then try to retrieve it, this should fail.
             // Note the null where the auth credentials would normally go.
@@ -201,8 +199,7 @@ exports['basic_retrieve_bad_auth'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // then try to retrieve it, this should fail.
             tutils.retrieve_node(node_id, bad_auth, function(err, resp) {
@@ -267,8 +264,7 @@ exports['retrieve_by_version'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Then retrieve it and modify it.
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -414,8 +410,7 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Now, retrieve the node (by version) using an invalid (zero)
             // version number.
@@ -522,8 +517,7 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers.location;
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Then retrieve it and modify it.
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -671,8 +665,7 @@ exports['retrieve_by_version_no_auth'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers['location'];
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Then retrieve it and modify it.
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -791,8 +784,7 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers['location'];
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Then retrieve it and modify it.
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -914,8 +906,7 @@ function retrieve_by_version_test(test, auth) {
 
             test.ok(data === '', "No content returned on a node insertion.");
 
-            var location = response.headers['location'];
-            var node_id = location.split('/').pop();
+            var node_id = tutils.get_node_id(response);
 
             // Then retrieve it and modify it.
             tutils.retrieve_node(node_id, auth, function(err, resp) {

@@ -767,3 +767,9 @@ exports.get_invalid_auth = function() {
     var auth = username + ':' + password;
     return auth;
 };
+
+exports.get_node_id = function(response) {
+    var location = response.headers.location;
+    var node_id = location.split('/').pop();
+    return node_id;
+};
