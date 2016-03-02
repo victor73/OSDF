@@ -129,7 +129,9 @@ exports['valid_insertion_with_schema_validation'] = function(test) {
 
             if (inserted) {
                 tutils.delete_node(node_id, auth, function(err) {
-                    console.log("Problem deleting inserted node: ", err);
+                    if (err) {
+                        console.log("Problem deleting inserted node: ", err);
+                    }
                 });
             }
         }

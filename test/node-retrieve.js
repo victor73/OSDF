@@ -1,4 +1,4 @@
-#!/usr/bin/node
+#!/usr/bin/env nodeunit
 
 /*jshint sub:true*/
 
@@ -90,7 +90,8 @@ exports['basic_retrieve'] = function(test) {
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
                 if (err) {
-                    console.log("Problem deleting test node during cleanup.", err);
+                    console.log("Problem deleting test node during cleanup.",
+                                err);
                 }
             });
 
@@ -314,24 +315,28 @@ exports['retrieve_by_version'] = function(test) {
             var updated = JSON.parse(data);
 
             test.ok("id" in updated, "Updated node has an id.");
-            test.equal(updated.id, node_id, "Updated node has the same id as original.");
+            test.equal(updated.id, node_id,
+                       "Updated node has the same id as original.");
             test.ok("ver" in updated, "Updated node has a version.");
             var updated_version = updated['ver'];
 
             test.ok(updated_version !== version,
                     "Updated node and original have different versions.");
 
-            test.ok("modified" in updated['meta'] && updated['meta']['modified'] === true,
+            test.ok("modified" in updated['meta'] &&
+                        updated['meta']['modified'] === true,
                     "Updated node is modified as expected.");
 
             // Now, retrieve the older node by version
-            tutils.retrieve_node_by_version(node_id, version, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, version, node_id, resp);
+            tutils.retrieve_node_by_version(node_id, version, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, version, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(version, node_id, resp, callback) {
             var data = resp['body'];
@@ -361,7 +366,8 @@ exports['retrieve_by_version'] = function(test) {
             test.ok("node_type" in node_data, "Node data has node_type.");
 
             // Also test that the version we requested is the version we got
-            test.equal(version, node_data['ver'], "Version requested and retrieved match.");
+            test.equal(version, node_data['ver'],
+                       "Version requested and retrieved match.");
 
             test.ok(node_data !== null && (! ("modified" in node_data['meta'])),
                     "Older version of node does not have modification.");
@@ -414,13 +420,15 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
 
             // Now, retrieve the node (by version) using an invalid (zero)
             // version number.
-            tutils.retrieve_node_by_version(node_id, 0, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, resp);
+            tutils.retrieve_node_by_version(node_id, 0, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, resp, callback) {
             var data = resp['body'];
@@ -455,20 +463,23 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
                 random_string = "ABCDEFG";
             }
 
-            tutils.retrieve_node_by_version(node_id, random_string, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, resp);
+            tutils.retrieve_node_by_version(node_id, random_string, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for invalid (alphanumeric string) version.");
+                       "Correct status for invalid (alphanumeric string) " +
+                       "version.");
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -510,10 +521,11 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
             var response = resp['response'];
 
             // Check that the insertion happened properly
-            test.equal(response.statusCode, 201, "Correct status for insertion.");
+            test.equal(response.statusCode, 201,
+                       "Correct status for insertion.");
 
             test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+                    "Response header contains location of new node.");
 
             test.ok(data === '', "No content returned on a node insertion.");
 
@@ -542,13 +554,15 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
             modified_data['ver'] = version;
 
             // and save the modification
-            tutils.update_node(node_id, modified_data, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, version, resp);
+            tutils.update_node(node_id, modified_data, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, version, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, version, resp, callback) {
             // Retrieve the modified node
@@ -576,17 +590,20 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
             test.ok(updated_version !== version,
                     "Updated node and original have different versions.");
 
-            test.ok("modified" in updated['meta'] && updated['meta']['modified'] === true,
+            test.ok("modified" in updated['meta'] &&
+                        updated['meta']['modified'] === true,
                     "Updated node is modified as expected.");
 
             // Now, retrieve the LATEST version of the node by version
-            tutils.retrieve_node_by_version(node_id, updated_version, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, updated_version, resp);
+            tutils.retrieve_node_by_version(node_id, updated_version, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, updated_version, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, updated_version, resp, callback) {
             var data = resp['body'];
@@ -689,13 +706,15 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             modified_data['ver'] = version;
 
             // Perform the modification and double check it.
-            tutils.update_node(node_id, modified_data, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, version, resp);
+            tutils.update_node(node_id, modified_data, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, version, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, version, resp, callback) {
             // Check it by retrieving the updated node
@@ -715,21 +734,26 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             var updated = JSON.parse(data);
 
             test.ok("id" in updated, "Updated node has an id.");
-            test.equal(updated.id, node_id, "Updated node has the same id as original.");
+            test.equal(updated.id, node_id,
+                       "Updated node has the same id as original.");
             test.ok("ver" in updated, "Updated node has a version.");
-            test.ok(updated.ver != version, "Updated node and original have different versions.");
+            test.ok(updated.ver != version,
+                    "Updated node and original have different versions.");
 
             test.ok("modified" in updated.meta && updated.meta.modified === true,
                     "Updated node is modified as expected.");
 
-            // Now, retrieve the older node by version, but WITHOUT supplying credentials.
-            tutils.retrieve_node_by_version(node_id, version, null, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, resp);
+            // Now, retrieve the older node by version, but WITHOUT
+            // supplying credentials.
+            tutils.retrieve_node_by_version(node_id, version, null,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, resp, callback) {
             var data = resp['body'];
@@ -808,13 +832,15 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
             modified_data['ver'] = version;
 
             // Perform the modification and double check it.
-            tutils.update_node(node_id, modified_data, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, version, resp);
+            tutils.update_node(node_id, modified_data, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, version, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, version, resp, callback) {
             // Check it by retrieving the updated node
@@ -845,13 +871,15 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
 
             // Now, retrieve the older node by version, but with INVALID
             // credentials.
-            tutils.retrieve_node_by_version(node_id, version, bad_auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, resp);
+            tutils.retrieve_node_by_version(node_id, version, bad_auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, resp, callback) {
             var data = resp['body'];
@@ -899,7 +927,8 @@ function retrieve_by_version_test(test, auth) {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 201, "Correct status for insertion.");
+            test.equal(response.statusCode, 201,
+                       "Correct status for insertion.");
 
             test.ok("location" in response.headers,
                     "Response header contains location of new node." );
@@ -930,13 +959,15 @@ function retrieve_by_version_test(test, auth) {
             modified_data['ver'] = version;
 
             // Perform the modification and double check it.
-            tutils.update_node(node_id, modified_data, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, version, resp);
+            tutils.update_node(node_id, modified_data, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, version, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, version, resp, callback) {
             // Check it by retrieving the updated node
@@ -956,23 +987,27 @@ function retrieve_by_version_test(test, auth) {
             var updated = JSON.parse(data);
 
             test.ok("id" in updated, "Updated node has an id.");
-            test.equal(updated.id, node_id, "Updated node has the same id as original.");
+            test.equal(updated.id, node_id,
+                       "Updated node has the same id as original.");
             test.ok("ver" in updated, "Updated node has a version.");
             test.ok(updated.ver != version,
                     "Updated node and original have different versions.");
 
-            test.ok("modified" in updated.meta && updated.meta.modified === true,
+            test.ok("modified" in updated.meta &&
+                        updated.meta.modified === true,
                     "Updated node is modified as expected.");
 
             // Now, retrieve the older node by version using the supplied
             // credentials
-            tutils.retrieve_node_by_version(node_id, version, auth, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, node_id, resp);
+            tutils.retrieve_node_by_version(node_id, version, auth,
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    } else {
+                        callback(null, node_id, resp);
+                    }
                 }
-            });
+            );
         },
         function(node_id, resp, callback) {
             var data = resp['body'];
