@@ -1,5 +1,7 @@
 #!/usr/bin/node
 
+/*jshint sub:true*/
+
 var events = require('events');
 var sec = require('perms-handler');
 var osdf_utils = require('osdf_utils');
@@ -26,14 +28,15 @@ var restricted_node = {
             
 // Test the behavior of whether the system can decide if a user can read
 // a node given that node's ACL settings.
-exports['test_read_perms'] = function (test) {
+exports['test_read_perms'] = function(test) {
     logger.debug("In test_read_perms.");
 
     if (sec_initialized) {
         // Already initialized, so we can skip initialization.
         read_tests(test);
     } else {
-        // If we had a test.setup() function , we would do this there, but we don't.
+        // If we had a test.setup() function, we would do this there,
+        // but we don't.
         var eventEmitter = new events.EventEmitter();
 
         eventEmitter.on("perms_handler_initialized", function(message) {
@@ -47,14 +50,15 @@ exports['test_read_perms'] = function (test) {
 
 // Test the behavior of whether the system can decide if a user can write
 // (update/delete) a node given that node's ACL settings.
-exports['test_write_perms'] = function (test) {
+exports['test_write_perms'] = function(test) {
     logger.debug("In test_write_perms.");
 
     if (sec_initialized) {
         // Already initialized, so we can skip initialization.
         write_tests(test);
     } else {
-        // If we had a test.setup() function , we would do this there, but we don't.
+        // If we had a test.setup() function, we would do this there,
+        // but we don't.
         var eventEmitter = new events.EventEmitter();
 
         eventEmitter.on("perms_handler_initialized", function(message) {
@@ -70,13 +74,15 @@ function read_tests(test) {
     test.expect(3);
 
     var has_read = sec.has_read_permission(test_user, test_node);
-    test.ok(has_read == true, "User '" + test_user + "' can read test node.");
+    test.ok(has_read === true, "User '" + test_user + "' can read test node.");
     
     has_read = sec.has_read_permission(test_user, restricted_node);
-    test.ok(has_read == false, "User '" + test_user + "' cannot read restricted test node.");
+    test.ok(has_read === false, "User '" + test_user +
+            "' cannot read restricted test node.");
 
     has_read = sec.has_read_permission(privileged_user, restricted_node);
-    test.ok(has_read == true, "User '" + privileged_user + "' can read test node.");
+    test.ok(has_read === true, "User '" + privileged_user +
+            "' can read test node.");
 
     test.done();
 }
@@ -88,10 +94,12 @@ function write_tests(test) {
     test.ok(has_write, "User '" + test_user + "' can write test node");
 
     has_write = sec.has_write_permission(test_user, restricted_node);
-    test.ok(has_write == false, "User '" + test_user + "' cannot write restricted node.");
+    test.ok(has_write === false, "User '" + test_user +
+            "' cannot write restricted node.");
 
     has_write = sec.has_write_permission(privileged_user, restricted_node);
-    test.ok(has_write == true, "User '" + privileged_user + "' can write restricted node.");
+    test.ok(has_write === true, "User '" + privileged_user +
+            "' can write restricted node.");
 
     test.done();
 }
