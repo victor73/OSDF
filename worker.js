@@ -149,8 +149,8 @@ function launch(config) {
         // Need the key and cert to establish the SSL enabled server
         get_ssl_options(config, function(err, options) {
             if (err) {
-                logger.error("Unable to configure SSL: " + err);
-                process.send({ cmd: "abort", reason: err });
+                logger.error("Unable to configure SSL: " + err.message);
+                process.send({ cmd: "abort", reason: err.message });
             } else {
                 var https = require('https');
                 var server  = https.createServer(options, app);
@@ -198,11 +198,11 @@ function listen_for_init_completion(config) {
             process.send({ cmd: 'init_completed' });
 
             // You may fire when ready, Gridley...
-//            try {
+            try {
                 launch(config);
-//            } catch (err) {
-//                process.send({ cmd: "abort", reason: err });
-//            }
+            } catch (err) {
+                process.send({ cmd: "abort", reason: err.message });
+            }
         }
     };
 
@@ -227,8 +227,50 @@ function listen_for_init_completion(config) {
 }
 
 function get_ssl_options(config, callback) {
+    logger.debug("In get_ssl_options.");
 
     async.parallel([
+        function(callback) {
+            var ca_file = config.value("global", "ca_file");
+            var ca = [];
+            if (ca_file == undefined || ca_file == null) {
+                logger.debug("Certificate Authority (CA) listing not set.");
+                // This will return an empty array
+                callback(null, ca);
+            } else {
+                logger.debug("Certificate Authority (CA) file listing found.");
+
+                fs.readFile(ca_file, "utf8", function(err, chain) {
+                    var chain_files = chain.split("\n");
+                    chain_files = _.without(chain_files, '');
+                    logger.debug("Number of CA chain files to read: " +
+                                 chain_files.length);
+
+                    async.each(chain_files, function(file, cb) {
+                            logger.debug("Reading file " + file);
+                            fs.readFile(file, "utf8", function(err, data) {
+                                if (err) {
+                                    cb(err);
+                                } else {
+                                    ca.push(data);
+                                    cb();
+                                }
+                            })
+                        },
+                        function(err) {
+                            if (err) {
+                                logger.error(err);
+                                callback(err, null);
+                            } else {
+                                // Return the array of CA data...
+                                logger.debug("Completed reading SSL CA files.");
+                                callback(null, ca);
+                            }
+                        }
+                    );
+                });
+            }
+        },
         function(callback) {
             var key_file = config.value("global", "key_file");
             if (key_file == undefined || key_file == null) {
@@ -239,6 +281,7 @@ function get_ssl_options(config, callback) {
             logger.debug("Reading key_file " + key_file);
             fs.readFile(key_file, "utf8", function(err, data) {
                  if (err) {
+                    logger.error("Error reading SSL key file.", err);
                     callback(err, null);
                  } else {
                     callback(null, data);
@@ -252,10 +295,11 @@ function get_ssl_options(config, callback) {
                 return;
             }
 
-            logger.debug("Reading cert_file " + key_file);
+            logger.debug("Reading cert_file " + cert_file);
 
             fs.readFile(cert_file, "utf8", function(err, data) {
                  if (err) {
+                    logger.error("Error reading SSL cert file.", err);
                     callback(err, null);
                  } else {
                     callback(null, data);
@@ -268,10 +312,12 @@ function get_ssl_options(config, callback) {
             logger.error(err);
             callback(err, null);
         } else {
-            var key = results[0];
-            var cert = results[1];
+            var ca = results[0];
+            var key = results[1];
+            var cert = results[2];
 
             var options = {
+                ca: ca,
                 key: key,
                 cert: cert
             };

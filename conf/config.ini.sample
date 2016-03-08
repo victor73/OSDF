@@ -17,6 +17,12 @@ https_enabled=false
 key_file=/path/to/key.pem
 cert_file=/path/to/cert.pem
 
+# Path to a file containing the list of files to comprise the CA
+# chain of trust for https support. This setting is optional, but
+# if specified, should contain 1 line per file. The ordering of
+# the entries is this file is significant...
+ca_file=/path/to/ca_file.txt
+
 # Enable Support for CORS (Cross-origin Resource Sharing)
 cors_enabled=false
 
