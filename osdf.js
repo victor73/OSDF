@@ -273,8 +273,8 @@ function show_ready(ready_data) {
         https = true;
     }
 
-    console.log("CORS enabled: " + cors);
     console.log("HTTPS enabled: " + https);
+    console.log("CORS enabled: " + cors);
     console.log("Total number of registered OSDF users: " + user_count);
     console.log("Running on node.js version: " + process.version);
     console.log('Listening on server:port : ' + address + ":" + port);
