@@ -87,10 +87,20 @@ exports['retrieve_all_namespaces_no_auth'] = function(test) {
     logger.debug('In retrieve_all_namespaces_no_auth');
     test.expect(2);
 
-    tutils.retrieve_all_namespaces(null, function(data, response) {
-        test.equal(response.statusCode, 403,
-                   "Correct status for namespace listing without auth token.");
-        test.ok(data === '', "No content returned for namespace listing without auth token.");
+    tutils.retrieve_all_namespaces(null, function(err, resp) {
+        if (err) {
+            console.log(err);
+        } else {
+            var data = resp['body'];
+            var response = resp['response'];
+
+            test.equal(response.statusCode, 403,
+                       "Correct status for namespace listing without " +
+                       "auth token.");
+            test.ok(data === '',
+                    "No content returned for namespace listing without " +
+                    "auth token.");
+        }
         test.done();
     });
 };
@@ -105,6 +115,9 @@ exports['retrieve_all_namespaces_bad_auth'] = function(test) {
         if (err) {
             console.log(err);
         } else {
+            var data = resp['body'];
+            var response = resp['response'];
+
             test.equal(response.statusCode, 403,
                        "Correct status for namespace listing without " +
                        "auth token.");
@@ -116,10 +129,10 @@ exports['retrieve_all_namespaces_bad_auth'] = function(test) {
 };
 
 // Test the behavior of the system for when a user requests a valid namespace.
-// The approach here is to retrieve all the namespaces, pick one of them, and then
-// make that request to test the behavior. Of course, for this test to work
-// we assume that the retrieval of "all" namespaces works properly. If it doesn't,
-// then this test will probably fail too.
+// The approach here is to retrieve all the namespaces, pick one of them, and
+// then make that request to test the behavior. Of course, for this test to
+// work we assume that the retrieval of "all" namespaces works properly. If it
+// doesn't, then this test will probably fail too.
 exports['retrieve_valid_namespace'] = function(test) {
     test.expect(9);
 
@@ -159,12 +172,12 @@ exports['retrieve_valid_namespace'] = function(test) {
                     if (err) {
                         callback(err, null);
                     } else {
-                        callback(null, resp);
+                        callback(null, retrieved_ns_name, resp);
                     }
                 }
             );
         },
-        function(resp, callback) {
+        function(retrieved_ns_name, resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -187,10 +200,10 @@ exports['retrieve_valid_namespace'] = function(test) {
             test.equal(_.keys(ns).length, 1,
                        "Number of namespace objects returned is 1.");
 
-            test.ok( "title" in  ns[retrieved_ns_name]);
-            test.ok( "description" in  ns[retrieved_ns_name]);
-            test.ok( "acl" in  ns[retrieved_ns_name]);
-            test.ok( "url" in  ns[retrieved_ns_name]);
+            test.ok("title" in ns[retrieved_ns_name]);
+            test.ok("description" in ns[retrieved_ns_name]);
+            test.ok("acl" in ns[retrieved_ns_name]);
+            test.ok("url" in ns[retrieved_ns_name]);
 
             callback(null);
         }],
@@ -236,7 +249,7 @@ exports['retrieve_valid_namespace_no_auth'] = function(test) {
             // So we have our namespace names now after we have extracted
             // the keys. There should actually be only 1, so use the first
             // element
-            if (ns_names.length != 1) {
+            if (ns_names.length !== 1) {
                 throw "Invalid number of namespace names.";
             }
             var retrieved_ns_name = ns_names[0];
@@ -254,7 +267,7 @@ exports['retrieve_valid_namespace_no_auth'] = function(test) {
         function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
-            
+
             test.equal(response.statusCode, 403,
                        "Correct status for namespace retrieval with no auth.");
 
@@ -289,7 +302,7 @@ exports['retrieve_valid_namespace_bad_auth'] = function(test) {
                 }
             });
         },
-        function(callback) {
+        function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -298,13 +311,13 @@ exports['retrieve_valid_namespace_bad_auth'] = function(test) {
 
             var random_ns_struct = results[
                 Math.floor(Math.random() * results.length)
-             ];
+            ];
             var ns_names = _.keys(random_ns_struct);
 
             // So we have our namespace names now after we have extracted the
             // keys. There should actually be only 1, so use the first element
             if (ns_names.length !== 1) {
-                throw "Invalid number of namespace names.";
+                callback("Invalid number of namespace names.", null);
             }
             var retrieved_ns_name = ns_names[0];
 
@@ -318,7 +331,7 @@ exports['retrieve_valid_namespace_bad_auth'] = function(test) {
                 }
             );
         },
-        function(resp) {
+        function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -352,6 +365,9 @@ exports['retrieve_invalid_namespace'] = function(test) {
         if (err) {
             console.log(err);
         } else {
+            var data = resp['body'];
+            var response = resp['response'];
+
             test.equal(response.statusCode, 404,
                        "Correct status for invalid namespace retrieval.");
 
