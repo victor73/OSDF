@@ -25,7 +25,7 @@ var oql2es;
 // handler is ready to begin its work are: establish a connection to the
 // ElasticSearch server and determine if the OSDF river (listening for
 // changes from CouchDB changes feed) is available.
-exports.init = function (emitter) {
+exports.init = function(emitter) {
     logger.debug("In " + path.basename(__filename) + " init().");
 
     // Load configuration parameters
@@ -68,7 +68,7 @@ exports.init = function (emitter) {
 
 // This method handles querying elasticsearch with a custom query
 // language that we call OQL (OSDF Query Language).
-exports.perform_oql = function (request, response) {
+exports.perform_oql = function(request, response) {
     logger.debug("In perform_oql");
 
     var perms_handler = require('perms-handler');
