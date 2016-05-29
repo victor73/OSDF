@@ -2,7 +2,7 @@
 #
 # /etc/init.d/osdf -- startup script for OSDF
 #
-# Written by Victor Felix for OSDF <victor73@gmail.com>.
+# Written by Victor <victor73@github.com>.
 #
 ### BEGIN INIT INFO
 # Provides:          osdf
@@ -16,15 +16,10 @@
 
 set -e
 
-if [ -f /sbin/initctl -a -f /etc/init/osdf.conf ]; then
-    echo "Presence of upstart detected. Use 'service osdf start/stop'." >&2
-    exit 0
-fi
-
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 NAME=OSDF
 LCNAME=osdf
-DESC="OSDF Server"
+DESC="$NAME Server"
 DEFAULT=/etc/default/$LCNAME
 
 if [ `id -u` -ne 0 ]; then
@@ -125,6 +120,7 @@ case "$1" in
     log_daemon_msg "Stopping $DESC"
 
     set +e
+
     if [ -f "$PID_FILE" ]; then 
         start-stop-daemon --stop --pidfile "$PID_FILE" \
             --user "$OSDF_USER" --signal TERM --retry=5 >/dev/null
