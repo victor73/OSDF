@@ -36,7 +36,7 @@ fi
 # The following variables can be overwritten in $DEFAULT
 
 # For node.js version >= 0.6
-ENVIRONMENT=production
+NODE_ENV=production
 
 # Run OSDF as this user ID and group ID
 OSDF_USER=osdf
@@ -80,7 +80,7 @@ case "$1" in
     log_daemon_msg "Starting $DESC"
 
     # Define required variables
-    export NODE_ENV=$ENVIRONMENT
+    export NODE_ENV=$NODE_ENV
     export NODE_PATH=$OSDF_HOME:$OSDF_HOME/lib
 
     if start-stop-daemon --test --start --pidfile "$PID_FILE" \

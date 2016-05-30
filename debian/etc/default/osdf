@@ -1,4 +1,4 @@
-#ENVIRONMENT=production
+#NODE_ENV=production
 
 # Run OSDF as this user ID and group ID
 #OSDF_USER=osdf
@@ -6,9 +6,6 @@
 
 # OSDF log directory and log file
 #LOG=/var/log/osdf.log
-
-# OSDF data directory
-#DATA_DIR=/var/lib/osdf
 
 # Configure the OSDF working directory by setting
 # the WORKING_DIR variable.
