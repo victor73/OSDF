@@ -3,7 +3,7 @@ osdf (0.20.1-1) unstable; urgency=low
   * Improved init script to better deal with upstart and systemd.
   * Fixed series() to waterfall() call in authorization handler.
 
- -- Victor <victor73@github.com>  Sun, 29 May 2016 00:00:00 -0400
+ -- Victor <victor73@github.com>  Sun, 29 May 2016 12:00:00 -0400
 
 osdf (0.20-2) unstable; urgency=low
 

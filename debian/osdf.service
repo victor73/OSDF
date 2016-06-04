@@ -1,0 +1,38 @@
+[Unit]
+Description=Open Science Data Framework
+Documentation=http://osdf.igs.umaryland.edu
+After=network.target
+Before=multi-user.target
+Before=graphical.target
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+EnvironmentFile=/etc/default/osdf
+Environment=LOG_DIR=/var/log/osdf
+Environment=LOG=/var/log/osdf/osdf.log
+Environment=WORKING_DIR=/var/lib/osdf/working
+Environment=CONF_FILE=/etc/osdf/config.ini
+Environment=OSDF_USER=osdf
+Environment=OSDF_GROUP=osdf
+Environment=NODE_PATH=/usr/lib/osdf:/usr/lib/osdf/lib
+Environment=NODE_ENV=production
+Environment=LC_ALL=en_US.UTF-8
+Environment=LANG=en_US.UTF-8
+ExecStartPre=/bin/sh -c '/bin/mkdir -p ${LOG_DIR} ${WORKING_DIR}'
+ExecStartPre=/bin/sh -c 'chown ${OSDF_USER}:${OSDF_GROUP} ${LOG_DIR} ${WORKING_DIR}'
+ExecStart=/bin/sh -c '/usr/bin/node /usr/lib/osdf/osdf.js --config ${CONF_FILE} --working ${WORKING_DIR} --log ${LOG} 1>/var/log/osdf/osdf.stdout 2>/var/log/osdf/osdf.stderr'
+KillMode=control-group
+User=osdf
+Group=osdf
+SyslogIdentifier=osdf
+OOMScoreAdjust=-1000
+WorkingDirectory=/usr/lib/osdf
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60s
+StartLimitBurst=3
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
