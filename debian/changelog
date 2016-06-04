@@ -1,3 +1,9 @@
+osdf (0.20.1-2) unstable; urgency=low
+
+  * Adjusted settings in the control file.
+
+ -- Victor <victor73@github.com>  Fri, 03 Jun 2016 12:00:00 -0400
+
 osdf (0.20.1-1) unstable; urgency=low
 
   * Improved init script to better deal with upstart and systemd.
