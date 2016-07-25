@@ -195,19 +195,29 @@ exports['test_paginated_query_results'] = function(test) {
     test.expect(5);
 
     async.waterfall([function(callback) {
-        // First, create 3100 documents...
+        // First, ensure we're starting with a blank slate. Delete any test
+        // documents...
+        wipe_test_docs(function(err) {
+            if (err) {
+                console.log("Error querying for test documents.");
+            }
+            callback(err);
+        });
+    },
+    function(callback) {
+        // Now, create 3100 new documents...
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
-           var test_doc = { "ns": "test",
+            var test_doc = { "ns": "test",
                             "node_type": "random_string",
                             "acl": { "read": ["all"], "write": ["all"] },
                             "linkage": {},
                             "meta": {},
                           };
-           test_doc['meta']['random_string'] = osdf_utils.random_string(8);
+            test_doc['meta']['random_string'] = osdf_utils.random_string(8);
 
-           test_docs.push(test_doc);
+            test_docs.push(test_doc);
         }
 
         callback(null, test_docs);
@@ -234,7 +244,7 @@ exports['test_paginated_query_results'] = function(test) {
             if (err) {
                 callback(err, null);
             } else {
-                callback(null, node_ids);
+                callback(null, node_ids, resp);
             }
         });
     },
@@ -439,4 +449,34 @@ function validate_nodes(test_docs, callback) {
             }
         }
     );
+}
+
+function wipe_test_docs(callback) {
+    var es_query = {"query":{"filtered":{"filter":[
+                      {"term":{"node_type":"random_string"}}
+                   ]}}};
+
+    tutils.query_all(es_query, test_ns, auth, function(err, resp) {
+        if (err) {
+            callback(err);
+        } else {
+            var data = resp['body'];
+
+            var result = JSON.parse(data);
+
+            var ids = [];
+
+            for (var i = 0; i < result['results'].length; i++) {
+                ids.push(result['results'][i]['id']);
+            }
+
+            delete_nodes(ids, function(err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null);
+                }
+            });
+        };
+    });
 }
