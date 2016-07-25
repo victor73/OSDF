@@ -66,8 +66,10 @@ exports['insert_all_links_disallowed'] = function(test) {
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
                     'OSDF reports an error message in the right header.');
 
-            test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                          -1, "Error message makes mention of 'linkage'");
+
+            test.ok(response.headers.hasOwnProperty('x-osdf-error') &&
+                    response.headers['x-osdf-error'].search(/linkage/),
+                    -1, "Error message makes mention of 'linkage'");
 
             // If the node still got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -249,7 +251,7 @@ exports['insert_wildcard_linkage_valid_target'] = function(test) {
                     callback(err, null);
                 } else {
                     callback(null, target_id);
-                } 
+                }
             });
         },
         function(target_id, callback) {
