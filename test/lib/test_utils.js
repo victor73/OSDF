@@ -9,11 +9,58 @@
 
 var async = require('async');
 var http = require('http');
-var utils = require(__dirname + "/../../lib/osdf_utils");
-var host = 'localhost';
-var port = 8123;
-var username = "test";
-var password = 'test';
+var utils = require('osdf_utils');
+
+var server_info = get_server_info();
+
+var host = server_info['host'];
+var port = server_info['port'];
+var username = server_info['username'];
+var password = server_info['password'];
+
+function get_server_info() {
+    var config_path;
+    try {
+       config_path = require.resolve("test_config.ini")
+    } catch (e) {
+        console.log("Unable to find a test_config.ini in the search path.");
+        console.log("Please place an INI file with server settings where " +
+                    "require() will find it.");
+        console.log("Section heading should be 'osdf', and have settings " +
+                    "for: host, port, username and password.");
+        process.exit(1);
+    }
+
+    var iniReader = require('inireader');
+    var parser = new iniReader.IniReader();
+    parser.load(config_path);
+
+    var section = 'osdf';
+    var host = parser.param(section + '.' + 'host');
+    var port = parser.param(section + '.' + 'port');
+    var username = parser.param(section + '.' + 'username');
+    var password = parser.param(section + '.' + 'password');
+
+    if ((host === undefined || host === null) ||
+        (port === undefined || port === null) ||
+        (username === undefined || username === null) ||
+        (password === undefined || password === null)) {
+
+        console.log("One or more configuration parameters missing from " +
+                    "test_config.ini");
+        console.log("Must have host, port, username and password " +
+                    "configured under an 'osdf' section.");
+
+        process.exit(1);
+    }
+
+    var server_info = { 'host': host,
+                        'port': port,
+                        'username': username,
+                        'password': password };
+
+    return server_info;
+}
 
 // Auxiliary function to retrieve a single individual namespace.
 exports.retrieve_namespace = function(namespace, auth, callback) {
@@ -696,17 +743,25 @@ exports.query_all = function(es_query, namespace, auth, callback) {
     async.doWhilst(
         function(callback) {
             exports.query_page(es_query, namespace, page, auth,
-                function(data, response) {
-                has_next_page = response
-                                .headers
-                                .hasOwnProperty('x-osdf-query-resultset');
-                page++;
+                function(err, resp) {
+                    if (err) {
+                        callback(err, null);
+                    }
 
-                var json_data = JSON.parse(data);
-                all_results = all_results.concat(json_data['results']);
+                    var data = resp['body'];
+                    var response = resp['response'];
 
-                callback();
-            });
+                    has_next_page = response
+                                      .headers
+                                      .hasOwnProperty('x-osdf-query-resultset');
+                    page++;
+
+                    var json_data = JSON.parse(data);
+                    all_results = all_results.concat(json_data['results']);
+
+                    callback();
+                }
+            );
         },
         function() {
             return has_next_page;
@@ -718,7 +773,7 @@ exports.query_all = function(es_query, namespace, auth, callback) {
                 var final = { "search_result_total": all_results.length,
                               "result_count": all_results.length,
                               "results": all_results };
-                callback(null, JSON.stringify(final));
+                callback(null, { 'body': JSON.stringify(final), 'response': 200 } );
             }
         }
     );
