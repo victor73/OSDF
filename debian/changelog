@@ -1,3 +1,12 @@
+osdf (0.21-1) unstable; urgency=low
+
+  * Improved reliability of some nodeunit test scripts
+  * Improved configurability of the test scripts with use
+    of configuration file in the search path
+  * Upgraded various modules such as lodash, express and log4js.
+
+ -- Victor <victor73@github.com>  Tue, 26 Jul 2016 12:00:00 -0400
+
 osdf (0.20.1-2) unstable; urgency=low
 
   * Adjusted settings in the control file.

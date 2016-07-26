@@ -1,20 +1,47 @@
+0.21
+  * Improved reliability of some nodeunit test scripts
+  * Improved configurability of the test scripts with use
+    of configuration file in the search path
+  * Upgraded various modules such as lodash, express and log4js.
+
+  -- Victor <victor73@github.com>  Tue, 26 Jul 2016 00:00:00 -0400
+
+0.20.1
+  * Improved init script to better deal with upstart and systemd.
+  * Fixed series() to waterfall() call in authorization handler.
+
+  -- Victor <victor73@github.com>  Fri, 03 Jun 2016 00:00:00 -0400
+
+0.20
+  * Removal of the elasticsearch plugin in the postinst. 
+  * Aborting server startup if the user db file is missing or unreadable.
+
+  -- Victor <victor73@github.com>  Sun, 29 May 2016 00:00:00 -0400
+
+0.19
+  * Upgraded river plugin.
+  * Upgraded modules. Resolved conflicts.
+  * Replaced FileLineReader with line-reader.
+
+  -- Victor <victor73@github.com>  Sat, 07 May 2016 00:00:00 -0400
+
 0.18
   * Added support for CA chain of trust handling when using htttps.
   * Improved error handling and logging when starting up. 
 
- -- Victor <victor73@github.com>  Tue, 08 Mar 2016 00:00:00 -0400
+  -- Victor <victor73@github.com>  Tue, 08 Mar 2016 00:00:00 -0400
 
 0.17
   * Upgraded lodash, log4js, is-my-json-valid, and morgan.
   * Refactoring of test_utils code and the test scripts for
     better error handling.
 
- -- Victor <victor73@github.com>  Thu, 03 Mar 2016 00:00:00 -0400
+  -- Victor <victor73@github.com>  Thu, 03 Mar 2016 00:00:00 -0400
 
 0.16
   * Fixed deprecated lodash calls in node_handler.js.
 
- -- Victor <victor73@github.com>  Tue, 23 Feb 2016 00:00:00 -0400
+  -- Victor <victor73@github.com>  Tue, 23 Feb 2016 00:00:00 -0400
 
 0.15
   * Added support and configuration options to allow OSDF
@@ -22,34 +49,34 @@
   * Improved behavior of server startup when bind_address or
     port are misconfigured.
 
- -- Victor <victor73@github.com>  Mon, 15 Feb 2016 00:00:00 -0400
+  -- Victor <victor73@github.com>  Mon, 15 Feb 2016 00:00:00 -0400
 
 0.14
   * Fixed bug with contains() under certain node deletion
     situations. Replaced calls with lodash's includes().
   * Updated request, async and elasticsearch libraries.
 
- -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
+  -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
 
 0.13
   * Upgraded elasticsearch, deep-diff, and commander libraries.
   * Changes for compatibility with node 4.2.1.
   * Improved query test script cleanup.
 
- -- Victor <victor73@github.com>  Thu, 22 Oct 2015 00:00:00 -0400
+  -- Victor <victor73@github.com>  Thu, 22 Oct 2015 00:00:00 -0400
 
 0.12
   * Upgraded tv4, request and log4js.
   * Fixed bug with pagination of query results past page 2.
   * New test script for the query functionality.
 
- -- Victor <victor73@github.com>  Thu, 08 Oct 2015 00:00:00 -0400
+  -- Victor <victor73@github.com>  Thu, 08 Oct 2015 00:00:00 -0400
 
 0.11
   * Fixed issue with query results pagination.
   * Improved OQL parser and compiler to suppport inverted searches.
 
- -- Victor <victor73@github.com>  Tue, 29 Sep 2015 00:00:00 -0400
+  -- Victor <victor73@github.com>  Tue, 29 Sep 2015 00:00:00 -0400
 
 0.10.2
   * Corrected packaging error with missing is-my-json-valid module
