@@ -1,27 +1,76 @@
-INSTALLATION
+===============================================================================
+Open Science Data Framework (OSDF) Installation Overview
+===============================================================================
+
 
 Requirements
 ===============================================================================
-  - Node.js 0.10.x or better
-  - CouchDB 1.0.x or better
-  - ElasticSearch 1.2 or better
-  - ElasticSearch CouchDB river plugin (bundled in the Debian/Ubuntu
-    ElasticSearch package, or and available via a separate RPM for
-    RedHat/CentOS systems). The OSDF package attempts to install the
-    CouchDB River plugin automatically...
+  - Node.js 4.x or better
+  - CouchDB 1.6.x running on the same machine, or available on a separate
+    host
+  - ElasticSearch 1.6 (or better) running on the same machine, or available
+    on a separate host.
+  - curl. The curl utility is a general purpose tool for http communications
+    and is used for many tests and examples.
 
-Procedure
+Package Installation
 ===============================================================================
 
-1. Ensure that CouchDB has an administrative account and that the
-server is secured. When you browse to CouchDB's web interface, called "Futon",
-you should NOT see "Admin Party" at the lower right corner of the interface.
-You will need to know the CouchDB admin credentials to proceed with completing
-the OSDF installation.
+OSDF can be installed from source with the tarball available from the OSDF
+website downloads page accessible from http://osdf.igs.umaryland.edu.
+However, it is recommended that users install OSDF using the pre-built .deb
+package file. Packages for Ubuntu/Debian based systems are also provided from
+the project's downloads page.
+
+For package installation:
+
+1. Download the package. If you have the wget tool available on your target
+system, you can download the package like so:
+
+  $ wget http://osdf.igs.umaryland.edu/dl/deb/osdf_0.20-1_amd64.deb
+
+You may have to alter the version number in the above URL to match the latest
+stable version that is available.
+
+If you do NOT have wget, but have curl (most modern systems should have it
+available), then try:
+
+  $ curl -O http://osdf.igs.umaryland.edu/dl/deb/osdf_0.20-1_amd64.deb
+
+Either way, by using wget or curl, you should end up with the OSDF .deb
+file in your current working directory.
+
+2. Install the OSDF package
+
+As root:
+
+  # dpkg -i osdf_0.20-1_amd64.deb
+
+or using sudo:
+
+  $ sudo dpkg -i osdf_0.20-1_amd64.deb
+
+3. Verify the installation succeeded
+
+   $ dpkg -l osdf
+
+You should see output confirming that OSDF was installed properly:
+
+   ii  osdf                                     0.20-1...................
+
+Configuration
+=============
+
+1. Ensure that CouchDB has an administrative account and that the server is
+secured. First, browse to CouchDB's web interface, called "Futon", at
+http://localhost:5984/_utils/ (if CouchDB is running on your localhost).  You
+should NOT see "Admin Party" at the lower right corner of the interface.  If
+you DO see "Admin Party", you must establish an administrative account as
+these credentials will be required to proceed with completing the
+installation.
 
 2. Create a CouchDB database called "osdf". This is easily accomplished via
-the "Futon" web interface. Browse to your Futon's address. For example, if on
-localhost, you would browse to http://localhost:5984/_utils/. There should be
+the "Futon" web interface. Browse to your Futon's address. There should be
 a "Create Database..." button near the top of the browser screen. Create a
 database called "osdf".
 
@@ -32,7 +81,7 @@ may differ between systems if OSDF was installed via a package manager like
 apt/dpkg or rpm). Make a note of the username and password chosen. For the
 account 'role', we recommend that "osdf" be entered.
 
-  $ bin/couchdb/new_couch_user.sh
+  $ bin/couchdb/new_couch_user.js
 
 4. Create the CouchDB design documents needed by OSDF. OSDF comes bundled with
 the generate_design_docs.js script in the bin/couchdb directory. Run the
