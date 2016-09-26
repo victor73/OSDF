@@ -33,7 +33,7 @@ function engine_start() {
     if (cluster.isMaster) {
         start_master(config);
     } else {
-        var forked_worker = require("./worker");
+        var forked_worker = require('./worker');
         forked_worker.start_worker(config, working_path);
     }
 }
@@ -42,9 +42,11 @@ function configure() {
     var commander = require('commander');
 
     commander.option('-c, --config <path>',
-                     'Specify a configuration file. Default is <OSDF_HOME>/conf/config.ini.')
+                     'Specify a configuration file. Default is ' +
+                     '<OSDF_HOME>/conf/config.ini.')
              .option('-w, --working <path>',
-                     'Specify a path to the working directory where namespaces data is stored.')
+                     'Specify a path to the working directory where ' +
+                     'namespace data is stored.')
              .option('-l, --log <path>',
                      'Specify the path to the log file.')
              .parse(process.argv);
@@ -93,7 +95,7 @@ function determine_worker_count(config) {
     if (_.isUndefined(workers)) {
         workers = cpu_count;
     } else if (_.isString(workers)) {
-        if (workers === "auto") {
+        if (workers === 'auto') {
             workers = cpu_count;
         } else {
             workers = parseInt(workers, 10);
@@ -101,14 +103,14 @@ function determine_worker_count(config) {
     }
 
     if (workers <= 0) {
-       workers = cpu_count;
+        workers = cpu_count;
     }
 
     return workers;
 }
 
 function start_master(config) {
-    console.log("OSDF_ROOT: " + osdf_utils.get_osdf_root());
+    console.log('OSDF_ROOT: ' + osdf_utils.get_osdf_root());
 
     var workers_ready = 0;
     var worker_idx;
@@ -120,9 +122,9 @@ function start_master(config) {
     var workers = determine_worker_count(config);
 
     if (workers === 1) {
-        console.log("Running on a single CPU.");
+        console.log('Running on a single CPU.');
     } else {
-        console.log("Running on " + workers + " CPUs.");
+        console.log('Running on ' + workers + ' CPUs.');
     }
 
     // Fork a worker for each CPU
@@ -136,33 +138,36 @@ function start_master(config) {
                 ready_data['user_count'] = msg['users'];
             }
 
-            if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
-                // Send messages to all the workers so that they can adjust their
-                // lists of primary schemas.
-                var type = msg['type'];
-                logger.info("Master got a schema change event of type: " + type + ". " +
-                            "Relay this to the workers.");
+            var type;
 
-                _.each(workers_array, function (clustered_worker) {
+            if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
+                // Send messages to all the workers so that they can adjust
+                // their lists of primary schemas.
+                type = msg['type'];
+                logger.info('Master got a schema change event of type: ' +
+                            type + '. ' + 'Relay this to the workers.');
+
+                _.each(workers_array, function(clustered_worker) {
                     clustered_worker.send(msg);
                 });
             }
 
-            if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'aux_schema_change') {
-                // Send messages to all the workers so that they can adjust their
-                // lists of auxiliary schemas.
-                var type = msg['type'];
-                logger.info("Master got an auxiliary schema change event of type: " + type + ". " +
-                            "Relay this to the workers.");
+            if (msg.hasOwnProperty('cmd') &&
+                msg['cmd'] === 'aux_schema_change') {
+                // Send messages to all the workers so that they can adjust
+                // their lists of auxiliary schemas.
+                type = msg['type'];
+                logger.info('Master got an auxiliary schema change event of ' +
+                            'type: ' + type + '. Relay this to the workers.');
 
-                _.each(workers_array, function (clustered_worker) {
+                _.each(workers_array, function(clustered_worker) {
                     clustered_worker.send(msg);
                 });
             }
 
             if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'abort') {
                 var reason = msg['reason'];
-                console.error("Aborting execution. Reason: " + reason);
+                console.error('Aborting execution. Reason: ' + reason);
                 letWorkersDie = true;
                 process.exit(1);
             }
@@ -171,7 +176,8 @@ function start_master(config) {
                 workers_ready++;
 
                 if (workers_ready === workers) {
-                    // Show some details about the server after it's up and running.
+                    // Show some details about the server after it's up and
+                    // running.
                     var bind_address = config.value('global', 'bind_address');
                     var port = config.value('global', 'port');
                     var cors_enabled = config.value('global', 'cors_enabled');
@@ -191,22 +197,25 @@ function start_master(config) {
     // This is for node.js .6.x, in wich the event is called 'death'.
     cluster.on('death', function(worker) {
         if (! letWorkersDie) {
-            console.error('Worker ' + process.pid + ' died. Starting a replacement...');
+            console.error('Worker ' + process.pid +
+                          ' died. Starting a replacement...');
             cluster.fork();
         }
     });
 
-    // For node 0.8.x, the 'death' event was renamed to 'exit' on the cluster object.
-    // See here: https://github.com/joyent/node/wiki/API-changes-between-v0.6-and-v0.8
+    // For node 0.8.x, the 'death' event was renamed to 'exit' on the cluster
+    // object. See here:
+    // https://github.com/joyent/node/wiki/API-changes-between-v0.6-and-v0.8
     cluster.on('exit', function(worker) {
         if (! letWorkersDie) {
-            console.error('Worker ' + process.pid + ' died. Starting a replacement...');
+            console.error('Worker ' + process.pid +
+                          ' died. Starting a replacement...');
             cluster.fork();
         }
     });
 
     process.on('SIGTERM', function() {
-        console.error("Caught SIGTERM. Destroying workers.");
+        console.error('Caught SIGTERM. Destroying workers.');
 
         // Modify the flag so that the 'death' handler does not attempt
         // to replace the workers we are about to destroy off.
@@ -216,7 +225,7 @@ function start_master(config) {
     });
 
     process.on('exit', function() {
-        console.error("Exiting. Destroying workers.");
+        console.error('Exiting. Destroying workers.');
 
         // Modify the flag so that the 'death' handler does not attempt
         // to replace the workers we are about to destroy off.
@@ -248,15 +257,15 @@ function show_ready(ready_data) {
     var https_enabled = ready_data['https_enabled'];
 
     if (custom_config) {
-        console.log("Configured settings file: " + config_path);
+        console.log('Configured settings file: ' + config_path);
     }
 
     if (custom_working) {
-        console.log("Configured working area: " + working_path);
+        console.log('Configured working area: ' + working_path);
     }
 
     if (custom_log_file) {
-        console.log("Configured log file: " + log_file_path);
+        console.log('Configured log file: ' + log_file_path);
     }
 
     // Configuration for CORS
@@ -273,16 +282,18 @@ function show_ready(ready_data) {
         https = true;
     }
 
-    console.log("HTTPS enabled: " + https);
-    console.log("CORS enabled: " + cors);
-    console.log("Total number of registered OSDF users: " + user_count);
-    console.log("Running on node.js version: " + process.version);
-    console.log('Listening on server:port : ' + address + ":" + port);
-    console.log("===============================================");
-    console.log("Welcome to");
-    console.log(new Buffer("ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFw" +
-                           "vIF9fLwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=",
-                           'base64').toString('utf8'));
+    console.log('HTTPS enabled: ' + https);
+    console.log('CORS enabled: ' + cors);
+    console.log('Total number of registered OSDF users: ' + user_count);
+    console.log('Running on node.js version: ' + process.version);
+    console.log('Listening on server:port : ' + address + ':' + port);
+    console.log('===============================================');
+    console.log('Welcome to');
+    console.log(
+        new Buffer('ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFwvIF9f' +
+                   'LwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=',
+                   'base64').toString('utf8')
+    );
     console.log("Open Science Data Framework\n");
-    console.log("===============================================");
+    console.log('===============================================');
 }
