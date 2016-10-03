@@ -199,7 +199,7 @@ exports['test_paginated_query_results'] = function(test) {
         // documents...
         wipe_test_docs(function(err) {
             if (err) {
-                console.log("Error querying for test documents.");
+                console.log("Error wiping test documents.");
             }
             callback(err);
         });
@@ -297,7 +297,17 @@ exports['test_query_all_pages'] = function (test) {
                    ]}}};
 
     async.waterfall([function(callback) {
-        // First, create 3100 documents...
+        // First, ensure we're starting with a blank slate. Delete any test
+        // documents...
+        wipe_test_docs(function(err) {
+            if (err) {
+                console.log("Error wiping test documents.");
+            }
+            callback(err);
+        });
+    },
+    function(callback) {
+        // Now, create 3100 documents...
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
@@ -327,43 +337,66 @@ exports['test_query_all_pages'] = function (test) {
         });
     },
     function(node_ids, callback) {
-         tutils.query(es_query, test_ns, auth, function(data, response) {
-            var initial_result = JSON.parse(data);
-            var total_available = initial_result['search_result_total'];
-            callback(null, node_ids, total_available);
+        async.retry({ times: 5, interval: 2000 }, function (cb, results) {
+            tutils.query(es_query, test_ns, auth, function(err, resp) {
+                if (err) {
+                    cb(err);
+                } else {
+                    var body = resp['body'];
+                    var initial_result = JSON.parse(body);
+                    var total = initial_result['search_result_total'];
+
+                    if (node_ids.length === total) {
+                        // Okay, everything has been inserted and the ES data
+                        // has gotten all the data an indexed it...
+                        cb(null, { total: total });
+                    } else {
+                        cb("Counts don't yet match...", null);
+                    }
+                }
+            });
+        },
+        function (err, results) {
+            if (err) {
+                callback(err);
+            } else {
+                var total = results['total'];
+                console.log("length" + node_ids.length);
+                console.log("total" + total);
+                test.equal(node_ids.length, total,
+                    "Query result total equals number of nodes inserted.");
+
+                callback(null, node_ids, total);
+            }
         });
     },
     function(node_ids, total, callback) {
-        test.equal(node_ids.length, total,
-            "Query search result total equals number of nodes inserted.");
-        callback(null, node_ids, total);
-    },
-    function(node_ids, total, callback) {
-        tutils.query_all(es_query, test_ns, auth, function(err, data) {
-            if (! err) {
-                test.ok(data !== undefined && data.length > 0,
+        tutils.query_all(es_query, test_ns, auth, function(err, resp) {
+            if (err) {
+                callback(err);
+            } else {
+                var body = resp['body'];
+                test.ok(body !== undefined && body.length > 0,
                         "Query all returned data.");
 
                 var result;
 
                 test.doesNotThrow( function() {
-                    result = JSON.parse(data);
+                    result = JSON.parse(body);
                 }, Error, "Data returned is valid JSON.");
 
                 test.equal(result['results'].length, total,
                            "Same count when traversing result pagination.");
 
-                callback(null, node_ids);
-            } else {
-                callback(err, node_ids);
+                callback(null);
             }
         });
     }],
-    function(error, node_ids) {
-        // Delete them all again...
-        delete_nodes(node_ids, function (err) {
+    function(error) {
+        // Delete all test nodes again to leave a pristine server...
+        wipe_test_docs(function(err) {
             if (err) {
-                console.log("Problem deleting nodes.");
+                console.log("Problem deleting test nodes.");
             }
 
             if (error) {
