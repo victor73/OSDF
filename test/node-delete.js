@@ -7,8 +7,6 @@ var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils');
 
 var host = 'localhost';
-var username = 'test';
-var password = 'test';
 var executive_user = 'test_executive';
 var executive_password = 'test';
 
@@ -270,7 +268,7 @@ exports['deletion_of_nonexistent_node'] = function(test) {
                        "Correct status for deletion of non-existent node.");
 
             test.ok(data === '',
-                    "No content returned on node deletion of " + 
+                    "No content returned on node deletion of " +
                     "non-existent node.");
         }
 

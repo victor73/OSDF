@@ -8,10 +8,6 @@ var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
 var logger = osdf_utils.get_logger();
 
-var host = 'localhost';
-var username = 'test';
-var password = 'test';
-
 // Get a set of valid and invalid credentials for our tests
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
