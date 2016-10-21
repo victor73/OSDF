@@ -337,7 +337,7 @@ exports['test_query_all_pages'] = function (test) {
         });
     },
     function(node_ids, callback) {
-        async.retry({ times: 5, interval: 2000 }, function (cb, results) {
+        async.retry({ times: 10, interval: 3000 }, function (cb, results) {
             tutils.query(es_query, test_ns, auth, function(err, resp) {
                 if (err) {
                     cb(err);
@@ -351,6 +351,7 @@ exports['test_query_all_pages'] = function (test) {
                         // has gotten all the data an indexed it...
                         cb(null, { total: total });
                     } else {
+                        console.log("Counts don't match yet... Pausing a bit.");
                         cb("Counts don't yet match...", null);
                     }
                 }
@@ -361,8 +362,6 @@ exports['test_query_all_pages'] = function (test) {
                 callback(err);
             } else {
                 var total = results['total'];
-                console.log("length" + node_ids.length);
-                console.log("total" + total);
                 test.equal(node_ids.length, total,
                     "Query result total equals number of nodes inserted.");
 
