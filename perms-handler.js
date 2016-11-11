@@ -1,9 +1,16 @@
+// async - For handling complicated async workflows
+// lodash - for generic utility functions
+// string-format - For easier assembly of more complicated strings
+
 var _ = require('lodash');
 var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
+var format = require('string-format');
 var logger = osdf_utils.get_logger();
+
+format.extend(String.prototype);
 
 // The main data structure to hold our ACL information.
 var acl = {};
@@ -11,7 +18,7 @@ var namespace_user_acls = {};
 
 function process_namespace(namespace, cb) {
     var acl_dir = path.join(osdf_utils.get_working_dir(), 'namespaces',
-                            namespace, 'acls');
+        namespace, 'acls');
 
     fs.readdir(acl_dir, function(err, files) {
         if (err) {
@@ -25,8 +32,8 @@ function process_namespace(namespace, cb) {
 
         // So, if we're here, the scan has been completed and the 'files'
         // array is populated without incident.
-        logger.debug("Found " + files.length +
-                     " ACL files for namespace " + namespace);
+        logger.debug('Found {} ACL files for namespace {}.'
+            .format(files.length, namespace));
 
         async.each(files, function(file, callback) {
             var acl_file = path.join(acl_dir, file);
@@ -42,7 +49,7 @@ function process_namespace(namespace, cb) {
                 members = _.reject(members, function(member) {
                     return member === null ||
                         member.length === 0 ||
-                        member === "all";
+                        member === 'all';
                 });
 
                 // Remove any that have spaces in them.
@@ -73,11 +80,11 @@ function process_namespace(namespace, cb) {
             });
         }, function(err) {
             if (err) {
-                logger.error("Namespace " + namespace +
-                             " had an ACL error: " + err);
+                logger.error('Namespace {} had an ACL error: {}'
+                    .format(namespace, err));
                 cb(err);
             } else {
-                logger.info("Processed namespace " + namespace + " ACLs fine.");
+                logger.info('Processed namespace {} ACLs fine.'.format(namespace));
                 cb();
             }
         });
@@ -88,7 +95,7 @@ function process_namespace(namespace, cb) {
 // directory, reading the files therein, and adding the contents to a
 // datastructure in memory for faster lookups during runtime.
 exports.init = function(emitter) {
-    logger.info("In " + path.basename(__filename) + " init().");
+    logger.info('In {} init().'.format(path.basename(__filename)));
 
     var acl_reader = function(namespaces) {
         // Initialize the master ACL hash with a key for each namespace
@@ -117,10 +124,10 @@ exports.init = function(emitter) {
 
     osdf_utils.get_namespace_names(function(err, namespaces) {
         if (err) {
-            logger.error("Error retrieving namespace names: " + err);
+            logger.error('Error retrieving namespace names: ' + err);
             emitter.emit('perms_handler_aborted', err);
         } else {
-            logger.debug("Got namespace names.");
+            logger.debug('Got namespace names.');
             acl_reader(namespaces);
         }
     });
@@ -131,7 +138,7 @@ exports.init = function(emitter) {
 exports.has_read_permission = function(user, node) {
     if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
            node.hasOwnProperty('acl') && node.hasOwnProperty('linkage'))) {
-        throw "Invalid node.";
+        throw 'Invalid node.';
     }
 
     var can_read = false;
@@ -139,7 +146,7 @@ exports.has_read_permission = function(user, node) {
 
     // Do the easiest/fastest thing first. Is 'all' in the read acl?
     // If so, our job is done.
-    if (_.includes(read_acls, "all")) {
+    if (_.includes(read_acls, 'all')) {
         return true;
     }
 
@@ -158,7 +165,7 @@ exports.has_read_permission = function(user, node) {
             }
         }
     } else {
-        logger.warn("Unknown namespace: " + namespace);
+        logger.warn('Unknown namespace: ' + namespace);
     }
     return can_read;
 };
@@ -168,14 +175,14 @@ exports.has_read_permission = function(user, node) {
 exports.has_write_permission = function(user, node) {
     if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
            node.hasOwnProperty('acl') && node.hasOwnProperty('linkage') )) {
-        throw "Invalid node.";
+        throw 'Invalid node.';
     }
 
     var write_acls = node['acl']['write'];
 
     // Do the easiest/fastest thing first. Is 'all' in the write acl?
     // If so, our job is done.
-    if (_.includes(write_acls, "all")) {
+    if (_.includes(write_acls, 'all')) {
         return true;
     }
 
@@ -196,13 +203,13 @@ exports.has_write_permission = function(user, node) {
             }
         }
     } else {
-        logger.warn("Unknown namespace: " + namespace);
+        logger.warn('Unknown namespace: ' + namespace);
     }
     return can_write;
 };
 
 exports.get_user_acls = function(namespace, user) {
-    var user_acls = ["all"];
+    var user_acls = ['all'];
     // If namespace/user has valid acls, return them with prepended "all"
     // otherwise, simply return "all"
     if (namespace_user_acls[namespace] && namespace_user_acls[namespace][user]) {
