@@ -1,5 +1,3 @@
-/*jshint sub:true*/
-
 var fs = require('fs');
 var events = require('events');
 var async = require('async');
