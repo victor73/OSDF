@@ -75,19 +75,25 @@ exports.init = function(emitter, working_dir_custom) {
         }
 
         if (! exists) {
-            emitter.emit('node_handler_aborted', "CouchDB database '" + dbname + "' doesn't exist.");
+            emitter.emit('node_handler_aborted', "CouchDB database '" + dbname +
+                         "' doesn't exist.");
         }
     });
 
     async.waterfall([
         function(callback) {
-            // The linkage controller needs its own ability to interact with CouchDB,
-            // to validate nodes, so we give it the connection we established.
+            // The linkage controller needs its own ability to interact with
+            // CouchDB, to validate nodes, so we give it the connection we
+            // established.
             linkage_controller.set_db_connection(db);
 
-            osdf_utils.get_namespace_names(function(names) {
-                logger.info("Namespaces: ", names);
-                callback(null, names);
+            osdf_utils.get_namespace_names(function(err, names) {
+                if (err) {
+                    callback(err, null);
+                } else {
+                    logger.info("Namespaces: ", names);
+                    callback(null, names);
+                }
             });
         }, function(names, callback) {
             namespaces = names;
