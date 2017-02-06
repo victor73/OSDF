@@ -1,7 +1,5 @@
 #!/usr/bin/node
 
-/*jshint sub:true*/
-
 var _ = require('lodash');
 var cluster = require('cluster');
 var path = require('path');
@@ -133,7 +131,7 @@ function start_master(config) {
 
         workers_array.push(worker);
 
-        worker.on('message', function(msg) {
+        worker.on('message', function(msg) { // jshint ignore:line
             if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'user_count') {
                 ready_data['user_count'] = msg['users'];
             }
