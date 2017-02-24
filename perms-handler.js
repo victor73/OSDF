@@ -98,7 +98,7 @@ exports.init = function(emitter) {
         });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
-        async.each(namespaces, function(namesspace, callback) {
+        async.each(namespaces, function(namespace, callback) {
             process_namespace(namespace, function(err) {
                 if (err) {
                     callback(err);
@@ -117,9 +117,10 @@ exports.init = function(emitter) {
 
     osdf_utils.get_namespace_names(function(err, namespaces) {
         if (err) {
-            logger.error('Error getting namespace names.');
+            logger.error("Error retrieving namespace names: " + err);
             emitter.emit('perms_handler_aborted', err);
         } else {
+            logger.debug("Got namespace names.");
             acl_reader(namespaces);
         }
     });

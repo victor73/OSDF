@@ -63,7 +63,8 @@ exports.init = function(emitter, working_dir_custom) {
 
     // Create the CouchDB connection using the configured database name.
     db = couch_conn.database(dbname);
-    db.exists( function(err, exists) {
+
+    db.exists(function(err, exists) {
         // Here we emit the error to abort the server startup process.
         if (err) {
             msg = sprintf("Error connecting to CouchDB database at %s:%s. " +
@@ -89,27 +90,36 @@ exports.init = function(emitter, working_dir_custom) {
 
             osdf_utils.get_namespace_names(function(err, names) {
                 if (err) {
+                    logger.error("Error retrieving namespace names: " + err);
                     callback(err, null);
                 } else {
                     logger.info("Namespaces: ", names);
                     callback(null, names);
                 }
             });
-        }, function(names, callback) {
+        },
+        function(names, callback) {
             namespaces = names;
-            populate_validators( function() {
-                callback(null);
-            });
-        }, function(callback) {
-            establish_linkage_controls( function(err) {
+            populate_validators(function(err) {
                 if (err) {
-                    logger.error(err);
+                    logger.error("Error populating validators: " + err);
                     callback(err);
                 } else {
                     callback(null);
                 }
             });
-        }], function (err) {
+        },
+        function(callback) {
+            establish_linkage_controls(function(err) {
+                if (err) {
+                    logger.error("Error establishing linkage controls: " + err);
+                    callback(err);
+                } else {
+                    callback(null);
+                }
+            });
+        }],
+        function(err) {
             if (err) {
                 emitter.emit('node_handler_aborted', err);
             } else {
@@ -998,24 +1008,27 @@ function define_namespace_validators(namespace, define_cb) {
         });
     };
 
-    var aux_schema_registrar = function(callback) {
-        register_aux_schemas(namespace, function(err) {
-            logger.info("Finished registering auxiliary schemas for: " + namespace);
-            callback();
-        });
-    };
-
     async.series([
         function(callback) {
             schema_registrar(function() {
                 callback(null);
             });
-        }, function(callback) {
-            aux_schema_registrar(function() {
-                callback(null);
+        },
+        function(callback) {
+            register_aux_schemas(namespace, function(err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    logger.info("Finished registering auxiliary schemas for: " + namespace);
+                    callback(null);
+                }
             });
-        }], function(err, callback) {
-            define_cb();
+        }],
+        function(err) {
+            if (err) {
+                logger.error(err);
+            }
+            define_cb(err);
         }
     );
 }
@@ -1222,7 +1235,7 @@ function insert_aux_schema_helper(namespace, name, aux_schema_json) {
 }
 
 function insert_schema_helper(namespace, name, schema_json) {
-    logger.debug("In node-handler:insert_schema_helper.");
+    logger.debug("In insert_schema_helper.");
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
@@ -1304,20 +1317,27 @@ function ns2working(namespace) {
 function populate_validators(populate_callback) {
     logger.debug("In populate_validators.");
 
-    osdf_utils.async_for_each(namespaces, function(ns, cb) {
+    async.each(namespaces, function(ns, cb) {
         logger.info("Creating validators for namespace: " + ns);
-        define_namespace_validators(ns, function() {
-            cb();
+        define_namespace_validators(ns, function(err) {
+            if (err) {
+                logger.error("Error creating validators for namespace: " + ns);
+            }
+            cb(err);
         });
-    }, function() {
-        populate_callback();
+    },
+    function(err) {
+        if (err) {
+            logger.error(err);
+        }
+        populate_callback(err);
     });
 }
 
 function establish_linkage_controls(callback) {
     logger.debug("In establish_linkage_controls.");
 
-    osdf_utils.async_for_each(namespaces, function(ns, cb) {
+    async.each(namespaces, function(ns, cb) {
         logger.info("Checking namespace " + ns + " for linkage.json file.");
         var linkage_path = path.join(ns2working(ns), "linkage.json");
         logger.debug("Path to linkage.json: " + linkage_path);
@@ -1329,7 +1349,7 @@ function establish_linkage_controls(callback) {
                 fs.readFile(linkage_path, 'utf8', function(err, file_text) {
                     if (err) {
                         logger.error(err);
-                        callback(err);
+                        cb(err);
                     }
 
                     var linkage_json;
@@ -1339,40 +1359,43 @@ function establish_linkage_controls(callback) {
                     } catch (parse_err) {
                         var msg = "Unable to parse linkage control file for namespace " + ns + "!";
                         logger.error(msg);
-                        callback(msg);
+                        cb(msg);
                     }
 
                     logger.debug("Successfully parsed linkage control file for namespace " + ns + ".");
                     linkage_controller.set_namespace_linkages(ns, linkage_json);
-                    cb();
+                    cb(null);
                 });
             } else {
                 logger.info("No linkage control for namespace " + ns + ".");
-                cb();
+                cb(null);
             }
         });
-    }, function() {
-        callback();
+    },
+    function(err) {
+        logger.error("Error in establish_linkage_controls: " + err);
+        callback(err);
     });
 }
 
 // Recursively load all the auxiliary schemas belonging to a namespace
-// into the provided JSON-Schema validator in order to be able to validate incoming
-// nodes for compliance.
+// into the provided JSON-Schema validator in order to be able to validate
+// incoming nodes for compliance.
+//
 // Parameters
 // ns: The string namespace name
 // tv4: The tv4 validator. Each namespace has one.
-// schemas: An array of schema files to load, each may contain references to other schemas
+// schemas: An array of schema files to load, each may contain references to
+//          other schemas
 // then: a callback that is called when the loading is complete
 function recursive_load_helper(ns, tv4, schemas, loaded, then) {
-    osdf_utils.async_for_each(schemas, function(schema, cb) {
-        var schema_src  = locate_aux_schema_source(ns, schema);
+    async.each(schemas, function(schema, cb) {
+        var schema_src = locate_aux_schema_source(ns, schema);
 
         fs.stat(schema_src, function(err, stats) {
             if (err) {
                 logger.debug("Error examining " + schema_src + ": ", err);
-                cb();
-                return;
+                cb(err);
             }
 
             if (stats.isDirectory()) {
@@ -1381,10 +1404,10 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
             } else {
                 var schema_id = path.basename(schema, '.json');
 
-                fs.readFile( schema_src, function(err, data) {
+                fs.readFile(schema_src, function(err, data) {
                     if (err) {
                         logger.error(err);
-                        throw err;
+                        cb(err);
                     }
 
                     var schemaJson, reference_ids;
@@ -1392,9 +1415,8 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
                         schemaJson = JSON.parse(data);
                         reference_ids = schema_utils.extractRefNames(schemaJson);
                     } catch (e) {
-                        logger.warn("Unable to extract references from " + schema_src );
-                        cb();
-                        return;
+                        logger.warn("Unable to extract references from " + schema_src);
+                        cb(e);
                     }
 
                     var reference_schemas = [];
@@ -1406,34 +1428,42 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 
                     // Call ourselves and pass along the list of schemas that we have
                     // already loaded.
-                    recursive_load_helper(ns, tv4, reference_schemas, loaded, function() {
+                    recursive_load_helper(ns, tv4, reference_schemas, loaded, function(err) {
                         if (loaded.hasOwnProperty(schema_id)) {
                             logger.debug("Already loaded " + schema_id);
-                            cb();
                         } else {
                             load_aux_schema_into_validator(tv4, schema_src, cb);
                             // Make a note that we loaded this one already
                             loaded[schema_id] = 1;
                         }
+                        cb();
                     });
-
                 });
             }
         });
-
-    }, then);
+    },
+    function(err) {
+        if (err) {
+            console.log("H3" + err);
+            logger.error("Recursion error. " + err);
+        }
+        then(err);
+    });
 }
 
 function register_aux_schemas(ns, callback) {
     logger.debug("In register_aux_schemas.");
 
     var validator = tv4.freshApi();
+
     register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
-            throw new Error(err);
+            logger.error("Error in register_aux_schemas: " + err);
+            callback(err);
+        } else {
+            validators[ns]['val'] = validator;
+            callback(null);
         }
-        validators[ns]['val'] = validator;
-        callback();
     });
 }
 
@@ -1454,10 +1484,11 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
             });
         },
         function(files, callback) {
-            load_aux_schemas_into_validator(ns, tv4, files, function() {
-                callback(null);
+            load_aux_schemas_into_validator(ns, tv4, files, function(err) {
+                callback(err);
             });
-        }], function(err, results) {
+        }],
+        function(err, results) {
             then(err);
         }
     );
