@@ -1,6 +1,5 @@
-/*jshint sub:true*/
-
 var _ = require('lodash');
+var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
@@ -10,9 +9,84 @@ var logger = osdf_utils.get_logger();
 var acl = {};
 var namespace_user_acls = {};
 
+function process_namespace(namespace, cb) {
+    var acl_dir = path.join(osdf_utils.get_working_dir(), 'namespaces',
+                            namespace, 'acls');
+
+    fs.readdir(acl_dir, function(err, files) {
+        if (err) {
+            throw err;
+        }
+
+        // Reject any hidden files/directories, such as .svn directories
+        files = _.reject(files, function(file) {
+            return file.substr(0, 1) === '.';
+        });
+
+        // So, if we're here, the scan has been completed and the 'files'
+        // array is populated without incident.
+        logger.debug("Found " + files.length +
+                     " ACL files for namespace " + namespace);
+
+        async.each(files, function(file, callback) {
+            var acl_file = path.join(acl_dir, file);
+
+            fs.readFile(acl_file, 'utf-8', function(err, data) {
+                if (err) {
+                    callback(err);
+                }
+
+                var members = data.split('\n');
+
+                // Reject any strange members
+                members = _.reject(members, function(member) {
+                    return member === null ||
+                        member.length === 0 ||
+                        member === "all";
+                });
+
+                // Remove any that have spaces in them.
+                members = _.reject(members, function(member) {
+                    return osdf_utils.has_white_space(member);
+                });
+
+                // Sort them
+                members = _.sortBy(members, function(member) {
+                    return member;
+                });
+
+                // Remove any duplicates...
+                members = _.uniq(members, true);
+
+                // Populate the acl object
+                acl[namespace][file] = members;
+
+                // Populate the namespace_user_acls object
+                _.each(members, function(member) {
+                    if (! namespace_user_acls[namespace][member]) {
+                        namespace_user_acls[namespace][member] = [];
+                    }
+                    namespace_user_acls[namespace][member].push(file);
+                });
+
+                callback();
+            });
+        }, function(err) {
+            if (err) {
+                logger.error("Namespace " + namespace +
+                             " had an ACL error: " + err);
+                cb(err);
+            } else {
+                logger.info("Processed namespace " + namespace + " ACLs fine.");
+                cb();
+            }
+        });
+    });
+}
+
 // Initialize the handler by scanning the 'acls' directory in each namespace
-// directory, reading the files therein, and adding the contents to a datastructure
-// in memory for faster lookups during runtime.
+// directory, reading the files therein, and adding the contents to a
+// datastructure in memory for faster lookups during runtime.
 exports.init = function(emitter) {
     logger.info("In " + path.basename(__filename) + " init().");
 
@@ -24,74 +98,30 @@ exports.init = function(emitter) {
         });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
-        osdf_utils.async_for_each(namespaces, function(namespace, cb) {
-
-            var acl_dir = path.join(osdf_utils.get_working_dir(), 'namespaces',
-                                    namespace, 'acls');
-
-            fs.readdir(acl_dir, function(err, files) {
+        async.each(namespaces, function(namesspace, callback) {
+            process_namespace(namespace, function(err) {
                 if (err) {
-                    throw err;
+                    callback(err);
+                } else {
+                    callback();
                 }
-
-                // Reject any hidden files/directories, such as .svn directories
-                files = _.reject(files, function(file) {
-                    return file.substr(0, 1) === '.';
-                });
-
-                // So, if we're here, the scan has been completed and the 'files'
-                // array is populated without incident.
-                logger.debug("Found " + files.length + " ACL files for namespace " + namespace);
-
-                osdf_utils.async_for_each(files, function(file, file_cb) {
-                    var acl_file = path.join(acl_dir, file);
-
-                    fs.readFile(acl_file, 'utf-8', function(err, data) {
-                        if (err) {
-                            throw err;
-                        }
-
-                        var members = data.split('\n');
-
-                        // Reject any strange members
-                        members = _.reject(members, function(member) {
-                            return member === null || member.length === 0 || member === "all";
-                        });
-
-                        // Remove any that have spaces in them.
-                        members = _.reject(members, function(member) {
-                            return osdf_utils.has_white_space(member);
-                        });
-
-                        // Sort them
-                        members = _.sortBy(members, function(member) { return member; });
-
-                        // Remove any duplicates...
-                        members = _.uniq(members, true);
-
-                        // Populate the acl object
-                        acl[namespace][file] = members;
-
-                        // Populate the namespace_user_acls object
-                        _.each(members, function(member) {
-                            if (!namespace_user_acls[namespace][member]) {
-                                namespace_user_acls[namespace][member] = [];
-                            }
-                            namespace_user_acls[namespace][member].push(file);
-                        });
-
-                        file_cb();
-                    });
-                }, function() { cb(); });
-
             });
-        }, function() {
-            emitter.emit('perms_handler_initialized');
+        }, function(err) {
+            if (err) {
+                emitter.emit('perms_handler_aborted', err);
+            } else {
+                emitter.emit('perms_handler_initialized');
+            }
         });
     };
 
-    osdf_utils.get_namespace_names(function(namespaces) {
-        acl_reader(namespaces);
+    osdf_utils.get_namespace_names(function(err, namespaces) {
+        if (err) {
+            logger.error('Error getting namespace names.');
+            emitter.emit('perms_handler_aborted', err);
+        } else {
+            acl_reader(namespaces);
+        }
     });
 };
 
