@@ -45,34 +45,33 @@ exports.init = function(emitter, working_dir_custom) {
     var ns_schema_dir;
 
     // Get all the namespace names into a list of strings
-    osdf_utils.get_namespace_names(function(err, namespaces) {
-        logger.debug("Namespaces to scan: " + namespaces.length);
+    osdf_utils.get_namespace_names(function(ns_err, namespaces) {
+        if (ns_err) {
+            logger.error('Aborting schema_handler initialization.');
+            emitter.emit('schema_handler_aborted', ns_err);
+        } else {
+            logger.debug("Namespaces to scan: " + namespaces.length);
 
-        if (err) {
-            logger.error('Error getting namespace names.');
-            emitter.emit('schema_handler_aborted', err);
-            return;
-        }
-
-        async.each(namespaces, function(ns, cb) {
-            get_ns_schemas(ns, function(err, ns_schemas) {
+            async.each(namespaces, function(ns, cb) {
+                get_ns_schemas(ns, function(err, ns_schemas) {
+                    if (err) {
+                        logger.error(err);
+                        cb(err);
+                    } else {
+                        global_schemas[ns] = ns_schemas;
+                        cb();
+                    }
+                });
+            }, function(err) {
                 if (err) {
-                    logger.error(err);
-                    cb(err);
+                    logger.error('Aborting schema_handler initialization.');
+                    emitter.emit('schema_handler_aborted', err);
                 } else {
-                    global_schemas[ns] = ns_schemas;
-                    cb();
+                    logger.info("Finished scanning all schemas.");
+                    emitter.emit('schema_handler_initialized');
                 }
             });
-        }, function(err) {
-            if (err) {
-                logger.error('Aborting schema_handler initialization.');
-                emitter.emit('schema_handler_aborted', err);
-            } else {
-                logger.info("Finished scanning all schemas.");
-                emitter.emit('schema_handler_initialized');
-            }
-        });
+        }
     });
 };
 
@@ -982,7 +981,7 @@ function get_ns_schemas(ns, callback) {
 
             var aux_schemas = {};
 
-            async.each(files, function(file, db) {
+            async.each(files, function(file, cb) {
                 var file_path = path.join(ns_aux_schema_dir, file);
 
                 fs.readFile(ns_aux_schema_dir + '/' + file, 'utf8', function(err, file_text) {
