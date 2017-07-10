@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var async = require('async');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
@@ -24,9 +22,9 @@ exports['test_empty_query'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -36,8 +34,8 @@ exports['test_empty_query'] = function(test) {
 exports['test_basic_query'] = function(test) {
     test.expect(8);
 
-    var es_query = {"query":{
-                      "filtered":{"filter":[{"term":{"node_type":"example"}}]}}
+    var es_query = {'query':{
+                      'filtered':{'filter':[{'term':{'node_type':'example'}}]}}
                    };
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
@@ -48,28 +46,28 @@ exports['test_basic_query'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-               "Correct status for elasticsearch query response.");
+                'Correct status for elasticsearch query response.');
 
             test.ok(data !== '',
-                    "Content returned on basic elasticsearch query.");
+                'Content returned on basic elasticsearch query.');
 
             var result;
 
             test.doesNotThrow( function() {
                 result = JSON.parse(data);
-            }, Error, "Data returned is valid JSON.");
+            }, Error, 'Data returned is valid JSON.');
 
             test.ok(result !== null && result.hasOwnProperty('results'),
-                    'Result has "results" key.');
+                'Result has "results" key.');
             test.ok(result !== null && result.hasOwnProperty('result_count'),
-                    'Result has "result_count" key.');
+                'Result has "result_count" key.');
             test.ok(result !== null && result.hasOwnProperty('page'),
-                    'Result has "page" key.');
+                'Result has "page" key.');
 
             test.ok(result !== null && result.hasOwnProperty('result_count') &&
-                   (result['result_count'] > 0), "Positive number of results.");
+                   (result['result_count'] > 0), 'Positive number of results.');
             test.ok(result !== null && result.hasOwnProperty('page') &&
-                   (result['page'] > 0), "Positive number of pages.");
+                   (result['page'] > 0), 'Positive number of pages.');
         }
 
         test.done();
@@ -82,7 +80,7 @@ exports['test_basic_query'] = function(test) {
 exports['test_invalid_query'] = function (test) {
     test.expect(2);
 
-    var es_query = "adioasdkjf";
+    var es_query = 'adioasdkjf';
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -92,9 +90,9 @@ exports['test_invalid_query'] = function (test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -104,7 +102,7 @@ exports['test_invalid_query'] = function (test) {
 exports['test_empty_string_query'] = function (test) {
     test.expect(2);
 
-    var es_query = "";
+    var es_query = '';
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -114,9 +112,9 @@ exports['test_empty_string_query'] = function (test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -126,7 +124,7 @@ exports['test_empty_string_query'] = function (test) {
 exports['test_null_query'] = function(test) {
     test.expect(2);
 
-    var es_query = null
+    var es_query = null;
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -136,9 +134,9 @@ exports['test_null_query'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -148,7 +146,7 @@ exports['test_null_query'] = function(test) {
 exports['test_bogus_json_array'] = function(test) {
     test.expect(2);
 
-    var es_query = [ "moe", "curly", "larry" ];
+    var es_query = [ 'moe', 'curly', 'larry' ];
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -158,9 +156,9 @@ exports['test_bogus_json_array'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -170,9 +168,9 @@ exports['test_bogus_json_array'] = function(test) {
 exports['test_bogus_json_object'] = function(test) {
     test.expect(2);
 
-    var es_query = { "moe": "What's the big idea here?!",
-                     "curly": "Nyuk nyuk nyuk!",
-                     "larry": "Ooo, wise guy eh?" };
+    var es_query = { 'moe': "What's the big idea?!",
+                     'curly': 'Nyuk nyuk nyuk!',
+                     'larry': 'Ooo, wise guy eh?' };
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -182,9 +180,9 @@ exports['test_bogus_json_object'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-               "Correct status code for invalid elasticsearch query.");
+                'Correct status code for invalid elasticsearch query.');
 
-            test.ok(data.length === 0, "No data provided in the response.");
+            test.ok(data.length === 0, 'No data provided in the response.');
         }
 
         test.done();
@@ -199,7 +197,7 @@ exports['test_paginated_query_results'] = function(test) {
         // documents...
         wipe_test_docs(function(err) {
             if (err) {
-                console.log("Error wiping test documents.");
+                console.log('Error wiping test documents.');
             }
             callback(err);
         });
@@ -209,11 +207,11 @@ exports['test_paginated_query_results'] = function(test) {
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
-            var test_doc = { "ns": "test",
-                            "node_type": "random_string",
-                            "acl": { "read": ["all"], "write": ["all"] },
-                            "linkage": {},
-                            "meta": {},
+            var test_doc = { 'ns': 'test',
+                             'node_type': 'random_string',
+                             'acl': { 'read': ['all'], 'write': ['all'] },
+                             'linkage': {},
+                             'meta': {},
                           };
             test_doc['meta']['random_string'] = osdf_utils.random_string(8);
 
@@ -236,8 +234,8 @@ exports['test_paginated_query_results'] = function(test) {
     },
     function(node_ids, callback) {
         // Okay, now we should be able to test
-        var es_query = {"query":{"filtered":{"filter":[
-                          {"term":{"node_type":"random_string"}}
+        var es_query = {'query':{'filtered':{'filter':[
+                          {'term':{'node_type':'random_string'}}
                        ]}}};
 
         tutils.query(es_query, test_ns, auth, function(err, resp) {
@@ -252,29 +250,29 @@ exports['test_paginated_query_results'] = function(test) {
         var data = resp['body'];
         var response = resp['response'];
 
-        test.ok(data.length > 0, "Query returned data.");
+        test.ok(data.length > 0, 'Query returned data.');
 
         var result;
         test.doesNotThrow( function() {
             result = JSON.parse(data);
-        }, Error, "Data returned is valid JSON.");
+        }, Error, 'Data returned is valid JSON.');
 
         test.ok(response.statusCode === 206,
-                "Correct status code of 206 for partial results returned.");
+            'Correct status code of 206 for partial results returned.');
 
         test.ok(result.hasOwnProperty('results') &&
                 result.hasOwnProperty('search_result_total') &&
                 result.hasOwnProperty('result_count') &&
                 result['search_result_total'] > result['result_count'],
-                'Returned results are less than total available results.'),
+            'Returned results are less than total available results.'),
 
         test.ok(response.headers.hasOwnProperty('x-osdf-query-resultset'),
-                'Contains the header to point to the next result set.');
+            'Contains the header to point to the next result set.');
 
         // Delete them all again...
         delete_nodes(node_ids, function(err) {
             if (err) {
-                console.log("Problem deleting nodes.");
+                console.log('Problem deleting nodes.');
             }
         });
 
@@ -282,7 +280,7 @@ exports['test_paginated_query_results'] = function(test) {
     }],
     function(err, results) {
         if (err) {
-           console.log(err);
+            console.log(err);
         }
 
         test.done();
@@ -292,8 +290,8 @@ exports['test_paginated_query_results'] = function(test) {
 exports['test_query_all_pages'] = function (test) {
     test.expect(4);
 
-    var es_query = {"query":{"filtered":{"filter":[
-                       {"term":{"node_type":"random_string"}}
+    var es_query = {'query':{'filtered':{'filter':[
+                       {'term':{'node_type':'random_string'}}
                    ]}}};
 
     async.waterfall([function(callback) {
@@ -301,7 +299,7 @@ exports['test_query_all_pages'] = function (test) {
         // documents...
         wipe_test_docs(function(err) {
             if (err) {
-                console.log("Error wiping test documents.");
+                console.log('Error wiping test documents.');
             }
             callback(err);
         });
@@ -311,15 +309,15 @@ exports['test_query_all_pages'] = function (test) {
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
-           var test_doc = { "ns": "test",
-                            "node_type": "random_string",
-                            "acl": { "read": ["all"], "write": ["all"] },
-                            "linkage": {},
-                            "meta": {},
+            var test_doc = { 'ns': 'test',
+                             'node_type': 'random_string',
+                             'acl': { 'read': ['all'], 'write': ['all'] },
+                             'linkage': {},
+                             'meta': {},
                           };
-           test_doc['meta']['random_string'] = osdf_utils.random_string(8);
+            test_doc['meta']['random_string'] = osdf_utils.random_string(8);
 
-           test_docs.push(test_doc);
+            test_docs.push(test_doc);
         }
 
         callback(null, test_docs);
@@ -363,7 +361,7 @@ exports['test_query_all_pages'] = function (test) {
             } else {
                 var total = results['total'];
                 test.equal(node_ids.length, total,
-                    "Query result total equals number of nodes inserted.");
+                    'Query result total equals number of nodes inserted.');
 
                 callback(null, node_ids, total);
             }
@@ -376,16 +374,16 @@ exports['test_query_all_pages'] = function (test) {
             } else {
                 var body = resp['body'];
                 test.ok(body !== undefined && body.length > 0,
-                        "Query all returned data.");
+                    'Query all returned data.');
 
                 var result;
 
                 test.doesNotThrow( function() {
                     result = JSON.parse(body);
-                }, Error, "Data returned is valid JSON.");
+                }, Error, 'Data returned is valid JSON.');
 
                 test.equal(result['results'].length, total,
-                           "Same count when traversing result pagination.");
+                    'Same count when traversing result pagination.');
 
                 callback(null);
             }
@@ -395,11 +393,11 @@ exports['test_query_all_pages'] = function (test) {
         // Delete all test nodes again to leave a pristine server...
         wipe_test_docs(function(err) {
             if (err) {
-                console.log("Problem deleting test nodes.");
+                console.log('Problem deleting test nodes.');
             }
 
             if (error) {
-               console.log("Failure");
+                console.log('Failure');
             }
 
             test.done();
@@ -417,13 +415,13 @@ function delete_nodes(node_ids, callback) {
                 if (response.statusCode === 204) {
                     cb();
                 } else {
-                    cb("Unable to delete test node!");
+                    cb('Unable to delete test node!');
                 }
             });
         },
         function(err) {
             if (err) {
-                callback("One or more nodes were not deleted.");
+                callback('One or more nodes were not deleted.');
             } else {
                 callback();
             }
@@ -445,13 +443,13 @@ function insert_nodes(test_docs, callback) {
                     node_ids.push(id);
                     cb();
                 } else {
-                    cb("Unable to insert test node!");
+                    cb('Unable to insert test node!');
                 }
             });
         },
         function(err) {
             if (err) {
-                callback("One or more nodes were not able to be inserted.", node_ids);
+                callback('One or more nodes were not able to be inserted.', node_ids);
             } else {
                 callback(null, node_ids);
             }
@@ -469,13 +467,13 @@ function validate_nodes(test_docs, callback) {
                 if (response.statusCode === 200) {
                     cb();
                 } else {
-                    cb("Node did not validate!");
+                    cb('Node did not validate!');
                 }
             });
         },
         function(err) {
             if (err) {
-                callback("One or more nodes did not validate.");
+                callback('One or more nodes did not validate.');
             } else {
                 callback();
             }
@@ -484,8 +482,8 @@ function validate_nodes(test_docs, callback) {
 }
 
 function wipe_test_docs(callback) {
-    var es_query = {"query":{"filtered":{"filter":[
-                      {"term":{"node_type":"random_string"}}
+    var es_query = {'query':{'filtered':{'filter':[
+                      {'term':{'node_type':'random_string'}}
                    ]}}};
 
     tutils.query_all(es_query, test_ns, auth, function(err, resp) {
@@ -509,6 +507,6 @@ function wipe_test_docs(callback) {
                     callback(null);
                 }
             });
-        };
+        }
     });
 }

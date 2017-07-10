@@ -1,5 +1,7 @@
 #!/usr/bin/env nodeunit
 
+/*eslint indent: 0*/
+
 var diff = require('deep-diff').diff;
 var parser = require('oql_compiler');
 
@@ -7,8 +9,8 @@ exports.BasicSearch = function(test) {
     var query = '"text"[type]';
 
     var expected = [
-            "text",
-            "type"
+            'text',
+            'type'
             ];
 
     performTest(test, query, expected);
@@ -270,26 +272,26 @@ exports.NestedWithFloatLTEComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        "<=",
+        'ver',
+        '<=',
         0.2
       ]
     ];
@@ -305,26 +307,26 @@ exports.NestedWithFloatLTComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        "<",
+        'ver',
+        '<',
         0.2
       ]
     ];
@@ -340,26 +342,26 @@ exports.NestedWithFloatGTEComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        ">=",
+        'ver',
+        '>=',
         0.2
       ]
     ];
@@ -375,26 +377,26 @@ exports.NestedWithFloatGTComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        ">",
+        'ver',
+        '>',
         0.2
       ]
     ];
@@ -410,26 +412,26 @@ exports.NestedWithFloatEQComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        "==",
+        'ver',
+        '==',
         0.2
       ]
     ];
@@ -446,26 +448,26 @@ exports.NestedWithFloatNEComparison = function(test) {
     var expected = [
       [
         [
-          "832586",
-          "rand_subj_id"
+          '832586',
+          'rand_subj_id'
         ],
-        "&&",
+        '&&',
         [
           [
-            "subject",
-            "node_type"
+            'subject',
+            'node_type'
           ],
-          "&&",
+          '&&',
           [
-            "male",
-            "sex"
+            'male',
+            'sex'
           ]
         ]
       ],
-      "||",
+      '||',
       [
-        "ver",
-        "!=",
+        'ver',
+        '!=',
         0.2
       ]
     ];
@@ -477,8 +479,8 @@ exports.DottedFieldSearch = function(test) {
     var query = '"text"[abc.efg]';
 
     var expected = [
-            "text",
-            "abc.efg"
+            'text',
+            'abc.efg'
             ];
 
     performTest(test, query, expected);
@@ -488,8 +490,8 @@ exports.SpacesInSearchText = function(test) {
     var query = '"spaced text"[abc]';
 
     var expected = [
-            "spaced text",
-            "abc"
+            'spaced text',
+            'abc'
             ];
 
     performTest(test, query, expected);
@@ -499,8 +501,8 @@ exports.MultiSpacesInSearchTextPreserved = function(test) {
     var query = '"spaced   text"[abc]';
 
     var expected = [
-            "spaced   text",
-            "abc"
+            'spaced   text',
+            'abc'
             ];
 
     performTest(test, query, expected);
@@ -510,8 +512,8 @@ exports.DottedFieldWithMultiSpaceText = function(test) {
     var query = '"spaced   text"[abc.def.ghi]';
 
     var expected = [
-            "spaced   text",
-            "abc.def.ghi"
+            'spaced   text',
+            'abc.def.ghi'
             ];
 
     performTest(test, query, expected);
@@ -524,7 +526,7 @@ function performTest(test, query, expected) {
 
     var differences = diff(tree, expected);
 
-    test.ok(differences === undefined, "Parser produced expected output.");
+    test.ok(differences === undefined, 'Parser produced expected output.');
 
     test.done();
 }
