@@ -2,10 +2,9 @@
 Open Science Data Framework (OSDF) Installation Overview
 ===============================================================================
 
-
 Requirements
 ===============================================================================
-  - Node.js 4.x or better
+  - Node.js 6.x or better
   - CouchDB 1.6.x running on the same machine, or available on a separate
     host
   - ElasticSearch 1.6 (or better) running on the same machine, or available
@@ -27,7 +26,7 @@ For package installation:
 1. Download the package. If you have the wget tool available on your target
 system, you can download the package like so:
 
-  $ wget http://osdf.igs.umaryland.edu/dl/deb/osdf_0.20-1_amd64.deb
+  $ wget http://osdf.igs.umaryland.edu/dl/deb/osdf_0.21-1_amd64.deb
 
 You may have to alter the version number in the above URL to match the latest
 stable version that is available.
@@ -44,11 +43,11 @@ file in your current working directory.
 
 As root:
 
-  # dpkg -i osdf_0.20-1_amd64.deb
+  # dpkg -i osdf_0.21-1_amd64.deb
 
 or using sudo:
 
-  $ sudo dpkg -i osdf_0.20-1_amd64.deb
+  $ sudo dpkg -i osdf_0.21-1_amd64.deb
 
 3. Verify the installation succeeded
 
@@ -56,7 +55,7 @@ or using sudo:
 
 You should see output confirming that OSDF was installed properly:
 
-   ii  osdf                                     0.20-1...................
+   ii  osdf                                     0.21-1...................
 
 Configuration
 =============
