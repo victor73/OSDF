@@ -1,7 +1,5 @@
 #!/usr/bin/node
 
-/*jshint sub:true*/
-
 var _ = require('lodash');
 var cluster = require('cluster');
 var path = require('path');
@@ -294,6 +292,6 @@ function show_ready(ready_data) {
                    'LwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=',
                    'base64').toString('utf8')
     );
-    console.log("Open Science Data Framework\n");
+    console.log('Open Science Data Framework' + "\n");
     console.log('===============================================');
 }
