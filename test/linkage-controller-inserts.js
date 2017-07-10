@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var osdf_utils = require('osdf_utils');
 var async = require('async');
 var tutils = require('./lib/test_utils.js');
@@ -10,12 +8,13 @@ var _ = require('lodash');
 // Get a set of valid and invalid credentials for our tests
 var auth = tutils.get_test_auth();
 
-var test_node = { ns: 'test2',
-                  acl: { 'read': ['all'], 'write': ['all'] },
-                  linkage: {},
-                  node_type: '',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test2',
+    acl: { 'read': ['all'], 'write': ['all'] },
+    linkage: {},
+    node_type: '',
+    meta: {}
+};
 
 exports['insert_all_links_disallowed'] = function(test) {
     test.expect(3);
@@ -24,7 +23,7 @@ exports['insert_all_links_disallowed'] = function(test) {
         function(callback) {
             // First we create a starting node
             var start_node = _.cloneDeep(test_node);
-            start_node['node_type'] = "start_test_node";
+            start_node['node_type'] = 'start_test_node';
 
             tutils.insert_node(start_node, auth, function(err, resp) {
                 if (err) {
@@ -43,8 +42,8 @@ exports['insert_all_links_disallowed'] = function(test) {
             // 'start' node.
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
-            target['linkage'] = { "relates_to": [ start_node_id ] };
-            target['meta']['color'] = "red";
+            target['linkage'] = { 'relates_to': [ start_node_id ] };
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -61,15 +60,15 @@ exports['insert_all_links_disallowed'] = function(test) {
             // Confirm that we failed, because "target" nodes cannot link to
             // anything
             test.equal(response.statusCode, 422,
-                       "Correct status for insertion with illegal linkage.");
+                'Correct status for insertion with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error') &&
-                    response.headers['x-osdf-error'].search(/linkage/),
-                    -1, "Error message makes mention of 'linkage'");
+                response.headers['x-osdf-error'].search(/linkage/),
+                -1, "Error message makes mention of 'linkage'");
 
             // If the node still got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -92,13 +91,12 @@ exports['insert_all_links_disallowed'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to insert a node that does allow
@@ -109,10 +107,10 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
     test.expect(3);
 
     async.waterfall([
-       function(callback) {
+        function(callback) {
             // First we create a starting node
             var start_node = _.cloneDeep(test_node);
-            start_node['node_type'] = "start_test_node";
+            start_node['node_type'] = 'start_test_node';
 
             tutils.insert_node(start_node, auth, function(err, resp) {
                 if (err) {
@@ -121,8 +119,8 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
                     callback(null, resp);
                 }
             });
-       },
-       function(resp, callback) {
+        },
+        function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -132,8 +130,8 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
             // "target" nodes.
             var example = _.cloneDeep(test_node);
             example['node_type'] = 'example';
-            example['linkage'] = { "relates_to": [ start_node_id ] };
-            example['meta']['color'] = "red";
+            example['linkage'] = { 'relates_to': [ start_node_id ] };
+            example['meta']['color'] = 'red';
 
             tutils.insert_node(example, auth, function(err, resp) {
                 if (err) {
@@ -150,13 +148,13 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
             // Confirm that we failed, because "target" nodes cannot link to
             // anything
             test.equal(response.statusCode, 422,
-                       "Correct status for insertion with illegal linkage.");
+                'Correct status for insertion with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                          -1, "Error message makes mention of 'linkage'");
+                -1, "Error message makes mention of 'linkage'");
 
             // If the node got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -179,13 +177,12 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to insert a node with a wildcard for
@@ -200,7 +197,7 @@ exports['insert_wildcard_linkage_valid_target'] = function(test) {
             // First we create a "target" node
             var target2 = _.cloneDeep(test_node);
             target2['node_type'] = 'target';
-            target2['meta']['color'] = "red";
+            target2['meta']['color'] = 'red';
 
             tutils.insert_node(target2, auth, function(err, resp) {
                 if (err) {
@@ -224,8 +221,8 @@ exports['insert_wildcard_linkage_valid_target'] = function(test) {
             any_link_to_target['node_type'] = 'any_link_to_target';
 
             // "abc123" is intended to be somewhat random
-            any_link_to_target['linkage'] = { "abc123": [ target_id ] };
-            any_link_to_target['meta']['color'] = "red";
+            any_link_to_target['linkage'] = { 'abc123': [ target_id ] };
+            any_link_to_target['meta']['color'] = 'red';
 
             tutils.insert_node(any_link_to_target, auth, function(err, resp) {
                 if (err) {
@@ -241,7 +238,7 @@ exports['insert_wildcard_linkage_valid_target'] = function(test) {
 
             // Confirm that we inserted
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
             var any_link_id = tutils.get_node_id(response);
 
@@ -262,13 +259,12 @@ exports['insert_wildcard_linkage_valid_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to insert a node with a wildcard for
@@ -302,8 +298,8 @@ exports['insert_wildcard_linkage_invalid_target'] = function(test) {
             var any_link_to_target = _.cloneDeep(test_node);
             any_link_to_target['node_type'] = 'any_link_to_target';
             // "abc123" is intended to be somewhat random
-            any_link_to_target['linkage'] = { "abc123": [ other_id ] };
-            any_link_to_target['meta']['color'] = "red";
+            any_link_to_target['linkage'] = { 'abc123': [ other_id ] };
+            any_link_to_target['meta']['color'] = 'red';
 
             tutils.insert_node(any_link_to_target, auth, function(err, resp) {
                 if (err) {
@@ -319,10 +315,10 @@ exports['insert_wildcard_linkage_invalid_target'] = function(test) {
             var response = resp['response'];
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/), -1,
-                    "Error message makes mention of 'linkage'");
+                "Error message makes mention of 'linkage'");
 
             // If the node got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -344,13 +340,12 @@ exports['insert_wildcard_linkage_invalid_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //
@@ -387,7 +382,7 @@ exports['insert_wildcard_linkage_wildcard_target'] = function(test) {
             var any_link = _.cloneDeep(test_node);
             any_link['node_type'] = 'any_link';
             // "abc123" is intended to be somewhat random
-            any_link['linkage'] = { "abc123": [ start_node_id ] };
+            any_link['linkage'] = { 'abc123': [ start_node_id ] };
 
             tutils.insert_node(any_link, auth, function(err, resp) {
                 if (err) {
@@ -403,10 +398,10 @@ exports['insert_wildcard_linkage_wildcard_target'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
             test.ok((! response.headers.hasOwnProperty('x-osdf-error')),
-                    "No error message in headers after insertion.");
+                'No error message in headers after insertion.');
 
             var any_link_id = tutils.get_node_id(response);
 
@@ -426,13 +421,12 @@ exports['insert_wildcard_linkage_wildcard_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 
@@ -488,10 +482,10 @@ exports['insert_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
             test.ok((! response.headers.hasOwnProperty('x-osdf-error')),
-                    "No error message in headers after insertion.");
+                'No error message in headers after insertion.');
 
             var randomly_named_id = tutils.get_node_id(response);
 
@@ -511,13 +505,12 @@ exports['insert_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -534,7 +527,7 @@ exports['insert_multi_linkage_multi_target_valid'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -551,8 +544,8 @@ exports['insert_multi_linkage_multi_target_valid'] = function(test) {
             var target_id = tutils.get_node_id(response);
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "connected_to": [ target_id ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'connected_to': [ target_id ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -568,10 +561,10 @@ exports['insert_multi_linkage_multi_target_valid'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
             test.ok((! response.headers.hasOwnProperty('x-osdf-error')),
-                    "No error message in headers after insertion.");
+                'No error message in headers after insertion.');
 
             var example2_id = tutils.get_node_id(response);
 
@@ -590,13 +583,12 @@ exports['insert_multi_linkage_multi_target_valid'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -613,7 +605,7 @@ exports['insert_multi_linkage_multi_target_invalid'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -630,8 +622,8 @@ exports['insert_multi_linkage_multi_target_invalid'] = function(test) {
             var target_id = tutils.get_node_id(response);
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "invalid_linkage_to": [ target_id ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'invalid_linkage_to': [ target_id ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -646,13 +638,13 @@ exports['insert_multi_linkage_multi_target_invalid'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for insertion with illegal linkage.");
+                'Correct status for insertion with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                          -1, "Error message makes mention of 'linkage'");
+                -1, "Error message makes mention of 'linkage'");
 
             // If the node still got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -673,13 +665,12 @@ exports['insert_multi_linkage_multi_target_invalid'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -696,7 +687,7 @@ exports['insert_multi_linkage_multi_target_empty'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -713,8 +704,8 @@ exports['insert_multi_linkage_multi_target_empty'] = function(test) {
             var target_id = tutils.get_node_id(response);
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "related_to": [ ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'related_to': [ ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -729,7 +720,7 @@ exports['insert_multi_linkage_multi_target_empty'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion with empty linkage.");
+                'Correct status for insertion with empty linkage.');
 
             // If the node still got inserted somehow, we make sure we
             // remove it
@@ -751,13 +742,12 @@ exports['insert_multi_linkage_multi_target_empty'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -774,7 +764,7 @@ exports['insert_multi_linkage_multi_target_with_null'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -792,8 +782,8 @@ exports['insert_multi_linkage_multi_target_with_null'] = function(test) {
 
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "related_to": [ target_id, null ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'related_to': [ target_id, null ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -808,8 +798,7 @@ exports['insert_multi_linkage_multi_target_with_null'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for insertion with a null linkage " +
-                       "target.");
+                'Correct status for insertion with a null linkage target.');
 
             // If the node still got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -830,11 +819,10 @@ exports['insert_multi_linkage_multi_target_with_null'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
