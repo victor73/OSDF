@@ -10,19 +10,21 @@ var tutils = require('./lib/test_utils.js');
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
-var test_node = { ns: 'test',
-                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
-var restricted_node = { ns: 'test',
-                        acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
-                        linkage: {},
-                        node_type: 'test',
-                        meta: {}
-                      };
+var restricted_node = {
+    ns: 'test',
+    acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
 // Test basic retrieval of a node. The approach is to first insert a node, then
 // retrieve it. We also make an attempt To cleanup by deleting the node at the
@@ -46,12 +48,12 @@ exports['basic_retrieve'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -69,9 +71,9 @@ exports['basic_retrieve'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node retrieval.");
+                'Correct status for node retrieval.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var node_data;
             try {
@@ -80,31 +82,30 @@ exports['basic_retrieve'] = function(test) {
                 // ignored
             }
 
-            test.ok(node_data !== null, "Data returned was valid JSON.");
-            test.ok("id" in node_data, "Node data has id.");
-            test.ok("ver" in node_data, "Node data has version.");
-            test.ok("meta" in node_data, "Node data has metadata.");
-            test.ok("linkage" in node_data, "Node data has linkage.");
-            test.ok("acl" in node_data, "Node data has acl.");
-            test.ok("node_type" in node_data, "Node data has node_type.");
+            test.ok(node_data !== null, 'Data returned was valid JSON.');
+            test.ok('id' in node_data, 'Node data has id.');
+            test.ok('ver' in node_data, 'Node data has version.');
+            test.ok('meta' in node_data, 'Node data has metadata.');
+            test.ok('linkage' in node_data, 'Node data has linkage.');
+            test.ok('acl' in node_data, 'Node data has acl.');
+            test.ok('node_type' in node_data, 'Node data has node_type.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
                 if (err) {
-                    console.log("Problem deleting test node during cleanup.",
-                                err);
+                    console.log('Problem deleting test node during cleanup.',
+                        err);
                 }
             });
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Attempt a retrieval with no authentication header provided.
@@ -117,7 +118,7 @@ exports['basic_retrieve_no_auth'] = function(test) {
             // First we create a node...
             tutils.insert_node(test_node, auth, function(err, resp) {
                 if (err) {
-                  callback(err, null);
+                    callback(err, null);
                 } else {
                     callback(null, resp);
                 }
@@ -128,12 +129,12 @@ exports['basic_retrieve_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.' );
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -152,25 +153,24 @@ exports['basic_retrieve_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for retrieval without auth token.");
+                'Correct status for retrieval without auth token.');
 
-            test.ok(data.length === 0, "No data returned.");
+            test.ok(data.length === 0, 'No data returned.');
 
             tutils.delete_node(node_id, auth, function(err) {
                 if (err) {
-                    console.log("Problem deleting test node during cleanup.");
+                    console.log('Problem deleting test node during cleanup.');
                 }
             });
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Attempt a retreival with no authentication header provided.
@@ -194,12 +194,12 @@ exports['basic_retrieve_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.' );
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -217,25 +217,24 @@ exports['basic_retrieve_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for retrieval without auth token.");
+                'Correct status for retrieval without auth token.');
 
-            test.ok(data.length === 0, "No data returned.");
+            test.ok(data.length === 0, 'No data returned.');
 
             tutils.delete_node(node_id, auth, function(err) {
                 if (err) {
-                    console.log("Problem deleting test node during cleanup.");
+                    console.log('Problem deleting test node during cleanup.');
                 }
             });
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Retreive a node by version.
@@ -247,7 +246,7 @@ exports['retrieve_by_version'] = function(test) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
                 if (err) {
-                    calbackk(err, null);
+                    callback(err, null);
                 } else {
                     callback(null, resp);
                 }
@@ -259,12 +258,12 @@ exports['retrieve_by_version'] = function(test) {
 
             // Check that the insertion happened properly
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -283,7 +282,7 @@ exports['retrieve_by_version'] = function(test) {
 
             // Perform a modification
             var inserted_node = JSON.parse(data);
-            test.ok("ver" in inserted_node, "Inserted node has version.");
+            test.ok('ver' in inserted_node, 'Inserted node has version.');
             var version = inserted_node['ver'];
 
             var modified_data = test_node;
@@ -315,18 +314,17 @@ exports['retrieve_by_version'] = function(test) {
             // and double check that it was modified
             var updated = JSON.parse(data);
 
-            test.ok("id" in updated, "Updated node has an id.");
+            test.ok('id' in updated, 'Updated node has an id.');
             test.equal(updated.id, node_id,
-                       "Updated node has the same id as original.");
-            test.ok("ver" in updated, "Updated node has a version.");
+                'Updated node has the same id as original.');
+            test.ok('ver' in updated, 'Updated node has a version.');
             var updated_version = updated['ver'];
 
             test.ok(updated_version !== version,
-                    "Updated node and original have different versions.");
+                'Updated node and original have different versions.');
 
-            test.ok("modified" in updated['meta'] &&
-                        updated['meta']['modified'] === true,
-                    "Updated node is modified as expected.");
+            test.ok('modified' in updated['meta'] && updated['meta']['modified'] === true,
+                'Updated node is modified as expected.');
 
             // Now, retrieve the older node by version
             tutils.retrieve_node_by_version(node_id, version, auth,
@@ -345,9 +343,9 @@ exports['retrieve_by_version'] = function(test) {
 
             // And examine it in detail
             test.equal(response.statusCode, 200,
-                       "Correct status for node retrieval by version.");
+                'Correct status for node retrieval by version.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var node_data = null;
             try {
@@ -357,21 +355,21 @@ exports['retrieve_by_version'] = function(test) {
                 callback(e, null);
             }
 
-            test.ok(typeof node_data !== "undefined" && node_data !== null,
-                    "Data returned was valid JSON.");
-            test.ok("id" in node_data, "Node data has id.");
-            test.ok("ver" in node_data, "Node data has version.");
-            test.ok("meta" in node_data, "Node data has metadata.");
-            test.ok("linkage" in node_data, "Node data has linkage.");
-            test.ok("acl" in node_data, "Node data has acl.");
-            test.ok("node_type" in node_data, "Node data has node_type.");
+            test.ok(typeof node_data !== 'undefined' && node_data !== null,
+                'Data returned was valid JSON.');
+            test.ok('id' in node_data, 'Node data has id.');
+            test.ok('ver' in node_data, 'Node data has version.');
+            test.ok('meta' in node_data, 'Node data has metadata.');
+            test.ok('linkage' in node_data, 'Node data has linkage.');
+            test.ok('acl' in node_data, 'Node data has acl.');
+            test.ok('node_type' in node_data, 'Node data has node_type.');
 
             // Also test that the version we requested is the version we got
             test.equal(version, node_data['ver'],
-                       "Version requested and retrieved match.");
+                'Version requested and retrieved match.');
 
-            test.ok(node_data !== null && (! ("modified" in node_data['meta'])),
-                    "Older version of node does not have modification.");
+            test.ok(node_data !== null && (! ('modified' in node_data['meta'])),
+                'Older version of node does not have modification.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -380,13 +378,12 @@ exports['retrieve_by_version'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Retreive a node by version.
@@ -410,12 +407,12 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
 
             // Check that the insertion happened properly
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -436,9 +433,9 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for version number of zero.");
+                'Correct status for version number of zero.');
 
-            test.equal(data.length, 0, "No data returned.");
+            test.equal(data.length, 0, 'No data returned.');
 
             // Now, retrieve the node (by version) using an invalid
             // (negative) version number.
@@ -454,14 +451,14 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
             var data = resp['body'];
             var response = resp['response'];
             test.equal(response.statusCode, 422,
-                       "Correct status for negative version number.");
+                'Correct status for negative version number.');
 
             // Now, retrieve the node (by version) using an invalid (string)
             // version number. We generate it randomly.
             var random_string = osdf_utils.random_string(8);
             random_string = random_string.replace(/[0-9]/g, '');
             if (random_string.length === 0) {
-                random_string = "ABCDEFG";
+                random_string = 'ABCDEFG';
             }
 
             tutils.retrieve_node_by_version(node_id, random_string, auth,
@@ -479,8 +476,7 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for invalid (alphanumeric string) " +
-                       "version.");
+                'Correct status for invalid (alphanumeric string) version.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -489,13 +485,12 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Retreive a node by version, but ask for the CURRENT version of the node.
@@ -523,12 +518,12 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 
             // Check that the insertion happened properly
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -547,7 +542,7 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 
             // Perform a modification
             var inserted_node = JSON.parse(data);
-            test.ok("ver" in inserted_node, "Inserted node has version.");
+            test.ok('ver' in inserted_node, 'Inserted node has version.');
             var version = inserted_node['ver'];
 
             var modified_data = test_node;
@@ -582,18 +577,17 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
             // and double check that it was modified
             var updated = JSON.parse(data);
 
-            test.ok("id" in updated, "Updated node has an id.");
+            test.ok('id' in updated, 'Updated node has an id.');
             test.equal(updated.id, node_id,
-                       "Updated node has the same id as original.");
-            test.ok("ver" in updated, "Updated node has a version.");
+                'Updated node has the same id as original.');
+            test.ok('ver' in updated, 'Updated node has a version.');
             var updated_version = updated['ver'];
 
             test.ok(updated_version !== version,
-                    "Updated node and original have different versions.");
+                'Updated node and original have different versions.');
 
-            test.ok("modified" in updated['meta'] &&
-                        updated['meta']['modified'] === true,
-                    "Updated node is modified as expected.");
+            test.ok('modified' in updated['meta'] && updated['meta']['modified'] === true,
+                'Updated node is modified as expected.');
 
             // Now, retrieve the LATEST version of the node by version
             tutils.retrieve_node_by_version(node_id, updated_version, auth,
@@ -612,9 +606,9 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 
             // And examine it in detail
             test.equal(response.statusCode, 200,
-                       "Correct status for node retrieval by version.");
+                'Correct status for node retrieval by version.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var node_data = null;
             try {
@@ -624,20 +618,20 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
                 callback(e);
             }
 
-            test.ok(node_data !== null, "Data returned was valid JSON.");
-            test.ok("id" in node_data, "Node data has id.");
-            test.ok("ver" in node_data, "Node data has version.");
-            test.ok("meta" in node_data, "Node data has metadata.");
-            test.ok("linkage" in node_data, "Node data has linkage.");
-            test.ok("acl" in node_data, "Node data has acl.");
-            test.ok("node_type" in node_data, "Node data has node_type.");
+            test.ok(node_data !== null, 'Data returned was valid JSON.');
+            test.ok('id' in node_data, 'Node data has id.');
+            test.ok('ver' in node_data, 'Node data has version.');
+            test.ok('meta' in node_data, 'Node data has metadata.');
+            test.ok('linkage' in node_data, 'Node data has linkage.');
+            test.ok('acl' in node_data, 'Node data has acl.');
+            test.ok('node_type' in node_data, 'Node data has node_type.');
 
             // Also test that the version we requested is the version we got
             test.equal(updated_version, node_data['ver'],
-                       "Version requested and retrieved match.");
+                'Version requested and retrieved match.');
 
-            test.ok(node_data !== null && ("modified" in node_data['meta']),
-                    "Current version of node has our modification.");
+            test.ok(node_data !== null && ('modified' in node_data['meta']),
+                'Current version of node has our modification.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -646,13 +640,12 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Retrieve a node by requesting a specific version, but attempt to do so
@@ -676,12 +669,12 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -699,7 +692,7 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             var response = resp['response'];
 
             var inserted_node = JSON.parse(data);
-            test.ok("ver" in inserted_node, "Inserted node has version.");
+            test.ok('ver' in inserted_node, 'Inserted node has version.');
             var version = inserted_node['ver'];
 
             var modified_data = test_node;
@@ -734,15 +727,15 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             // and seeing if the 'modified' flag is set
             var updated = JSON.parse(data);
 
-            test.ok("id" in updated, "Updated node has an id.");
+            test.ok('id' in updated, 'Updated node has an id.');
             test.equal(updated.id, node_id,
-                       "Updated node has the same id as original.");
-            test.ok("ver" in updated, "Updated node has a version.");
+                'Updated node has the same id as original.');
+            test.ok('ver' in updated, 'Updated node has a version.');
             test.ok(updated.ver != version,
-                    "Updated node and original have different versions.");
+                'Updated node and original have different versions.');
 
-            test.ok("modified" in updated.meta && updated.meta.modified === true,
-                    "Updated node is modified as expected.");
+            test.ok('modified' in updated.meta && updated.meta.modified === true,
+                'Updated node is modified as expected.');
 
             // Now, retrieve the older node by version, but WITHOUT
             // supplying credentials.
@@ -761,9 +754,9 @@ exports['retrieve_by_version_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node retrieval by id.");
+                'Correct status for node retrieval by id.');
 
-            test.ok(data.length === 0, "No data returned.");
+            test.ok(data.length === 0, 'No data returned.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -772,13 +765,12 @@ exports['retrieve_by_version_no_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Retrieve a node by requesting a specific version, but attempt to do so
@@ -802,12 +794,12 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -825,10 +817,10 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
             var response = resp['response'];
 
             var inserted_node = JSON.parse(data);
-            test.ok("ver" in inserted_node, "Inserted node has version.");
+            test.ok('ver' in inserted_node, 'Inserted node has version.');
             var version = inserted_node['ver'];
 
-            modified_data = test_node;
+            var modified_data = test_node;
             modified_data.meta['modified'] = true;
             modified_data['ver'] = version;
 
@@ -860,15 +852,15 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
             // and seeing if the 'modified' flag is set
             var updated = JSON.parse(data);
 
-            test.ok("id" in updated, "Updated node has an id.");
+            test.ok('id' in updated, 'Updated node has an id.');
             test.equal(updated.id, node_id,
-                       "Updated node has the same id as original.");
-            test.ok("ver" in updated, "Updated node has a version.");
+                'Updated node has the same id as original.');
+            test.ok('ver' in updated, 'Updated node has a version.');
             test.ok(updated.ver !== version,
-                    "Updated node and original have different versions.");
+                'Updated node and original have different versions.');
 
-            test.ok("modified" in updated.meta && updated.meta.modified === true,
-                    "Updated node is modified as expected.");
+            test.ok('modified' in updated.meta && updated.meta.modified === true,
+                'Updated node is modified as expected.');
 
             // Now, retrieve the older node by version, but with INVALID
             // credentials.
@@ -887,9 +879,9 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node retrieval by id.");
+                'Correct status for node retrieval by id.');
 
-            test.ok(data.length === 0, "No data returned.");
+            test.ok(data.length === 0, 'No data returned.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(data, response) {
@@ -898,13 +890,12 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // This is a helper function to run tests for requesting nodes by version.
@@ -929,12 +920,12 @@ function retrieve_by_version_test(test, auth) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -952,7 +943,7 @@ function retrieve_by_version_test(test, auth) {
             var response = resp['response'];
 
             var inserted_node = JSON.parse(data);
-            test.ok("ver" in inserted_node, "Inserted node has version.");
+            test.ok('ver' in inserted_node, 'Inserted node has version.');
             var version = inserted_node['ver'];
 
             var modified_data = test_node;
@@ -987,16 +978,15 @@ function retrieve_by_version_test(test, auth) {
             // and seeing if the 'modified' flag is set
             var updated = JSON.parse(data);
 
-            test.ok("id" in updated, "Updated node has an id.");
+            test.ok('id' in updated, 'Updated node has an id.');
             test.equal(updated.id, node_id,
-                       "Updated node has the same id as original.");
-            test.ok("ver" in updated, "Updated node has a version.");
+                'Updated node has the same id as original.');
+            test.ok('ver' in updated, 'Updated node has a version.');
             test.ok(updated.ver != version,
-                    "Updated node and original have different versions.");
+                'Updated node and original have different versions.');
 
-            test.ok("modified" in updated.meta &&
-                        updated.meta.modified === true,
-                    "Updated node is modified as expected.");
+            test.ok('modified' in updated.meta && updated.meta.modified === true,
+                'Updated node is modified as expected.');
 
             // Now, retrieve the older node by version using the supplied
             // credentials
@@ -1015,9 +1005,9 @@ function retrieve_by_version_test(test, auth) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node retrieval by id.");
+                'Correct status for node retrieval by id.');
 
-            test.ok(data.length === '', "No data returned.");
+            test.ok(data.length === '', 'No data returned.');
 
             // Perform cleanup by removing what we just inserted and retrieved.
             tutils.delete_node(node_id, auth, function(err) {
@@ -1026,13 +1016,12 @@ function retrieve_by_version_test(test, auth) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 }
 
 // Test the behavior of retrieving a non-existent node.
@@ -1049,10 +1038,10 @@ exports['retrieve_nonexistent'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 404,
-                       "Correct status for retrieval of non-existent node.");
+                'Correct status for retrieval of non-existent node.');
 
             test.ok(data === '',
-                    "No data returned for retrieval of non-existent node.");
+                'No data returned for retrieval of non-existent node.');
         }
 
         test.done();
@@ -1076,11 +1065,11 @@ exports['retrieve_nonexistent_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for retrieval " +
-                       "of non-existent node with no auth.");
+                'Correct status for retrieval ' +
+                'of non-existent node with no auth.');
 
-            test.ok(data === '', "No data returned for retrieval of " +
-                    "non-existent node with no auth.");
+            test.ok(data === '', 'No data returned for retrieval of ' +
+                'non-existent node with no auth.');
         }
 
         test.done();
@@ -1103,11 +1092,11 @@ exports['retrieve_nonexistent_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for retrieval " +
-                       "of non-existent node with no auth.");
+                'Correct status for retrieval ' +
+                'of non-existent node with no auth.');
 
-            test.ok(data === '', "No data returned for retrieval of " +
-                    "non-existent node with no auth.");
+            test.ok(data === '', 'No data returned for retrieval of ' +
+                'non-existent node with no auth.');
         }
 
         test.done();

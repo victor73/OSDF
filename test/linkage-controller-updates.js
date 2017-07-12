@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var osdf_utils = require('osdf_utils');
 var async = require('async');
 var tutils = require('./lib/test_utils.js');
@@ -10,12 +8,13 @@ var _ = require('lodash');
 // Get a set of valid and invalid credentials for our tests
 var auth = tutils.get_test_auth();
 
-var test_node = { ns: 'test2',
-                  acl: { 'read': ['all'], 'write': ['all'] },
-                  linkage: {},
-                  node_type: '',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test2',
+    acl: { 'read': ['all'], 'write': ['all'] },
+    linkage: {},
+    node_type: '',
+    meta: {}
+};
 
 exports['update_all_links_disallowed'] = function(test) {
     test.expect(3);
@@ -24,7 +23,7 @@ exports['update_all_links_disallowed'] = function(test) {
         function(callback) {
             // First we create a starting node
             var start_node = _.cloneDeep(test_node);
-            start_node['node_type'] = "start_test_node";
+            start_node['node_type'] = 'start_test_node';
 
             tutils.insert_node(start_node, auth, function(err, resp) {
                 if (err) {
@@ -45,7 +44,7 @@ exports['update_all_links_disallowed'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -87,13 +86,13 @@ exports['update_all_links_disallowed'] = function(test) {
             // Confirm that we failed, because "target" nodes cannot link to
             // anything
             test.equal(response.statusCode, 422,
-                       "Correct status for update with illegal linkage.");
+                'Correct status for update with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                          -1, "Error message makes mention of 'linkage'");
+                -1, "Error message makes mention of 'linkage'");
 
             // Perform cleanup by removing what we just inserted/updated. We
             // have to delete in the correct order because the API doesn't
@@ -113,13 +112,12 @@ exports['update_all_links_disallowed'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to update a node that does allow
@@ -135,7 +133,7 @@ exports['update_one_allowance_invalid_link'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -144,17 +142,17 @@ exports['update_one_allowance_invalid_link'] = function(test) {
                     callback(null, resp);
                 }
             });
-       },
-       function(resp, callback) {
+        },
+        function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
             var target_node_id = tutils.get_node_id(response);
             // Then we create an "example" node
             var example_node = _.cloneDeep(test_node);
-            example_node['node_type'] = "example";
+            example_node['node_type'] = 'example';
             example_node['linkage'] = { related_to: [target_node_id] };
-            example_node['meta']['color'] = "red";
+            example_node['meta']['color'] = 'red';
             example_node['ver'] = 1;
 
             tutils.insert_node(example_node, auth, function(err, resp) {
@@ -164,8 +162,8 @@ exports['update_one_allowance_invalid_link'] = function(test) {
                     callback(null, example_node, target_node_id, resp);
                 }
             });
-       },
-       function(example_node, target_node_id, resp, callback) {
+        },
+        function(example_node, target_node_id, resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -195,13 +193,13 @@ exports['update_one_allowance_invalid_link'] = function(test) {
 
             // Confirm that we failed...
             test.equal(response.statusCode, 422,
-                    "Correct status for update with illegal linkage.");
+                'Correct status for update with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/), -1,
-                    "Error message makes mention of 'linkage'");
+                "Error message makes mention of 'linkage'");
 
             // Perform cleanup by removing what we just inserted/updated. We have to
             // delete in the correct order because the API doesn't allow dangling
@@ -221,13 +219,12 @@ exports['update_one_allowance_invalid_link'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to update a node with a wildcard for
@@ -247,7 +244,7 @@ exports['update_wildcard_linkage_valid_target'] = function(test) {
             // First we create a "target" node
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -293,7 +290,7 @@ exports['update_wildcard_linkage_valid_target'] = function(test) {
             // Make a random link name
             var random_link_name = osdf_utils.random_string(6);
 
-            any_link_cloned = _.cloneDeep(any_link_to_target);
+            var any_link_cloned = _.cloneDeep(any_link_to_target);
             any_link_cloned['linkage'][ random_link_name ] = [ target_id ];
             any_link_cloned['ver'] = 1;
 
@@ -313,10 +310,10 @@ exports['update_wildcard_linkage_valid_target'] = function(test) {
 
             // Confirm that we succeeded...
             test.equal(response.statusCode, 200,
-                    "Correct status for update with valid linkage.");
+                'Correct status for update with valid linkage.');
 
             test.ok(! response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF did not report any error message in the headers.');
+                'OSDF did not report any error message in the headers.');
 
             // Clean up after the newly created 'any_link_to_target'
             tutils.delete_node(any_link_id, auth, function(err, resp) {
@@ -335,13 +332,12 @@ exports['update_wildcard_linkage_valid_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test to ensure that if we try to update a node with a wildcard for
@@ -360,7 +356,7 @@ exports['update_wildcard_linkage_invalid_target'] = function(test) {
             // First we create a "target" node
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -400,7 +396,7 @@ exports['update_wildcard_linkage_invalid_target'] = function(test) {
             var random_link_name = osdf_utils.random_string(6);
             any_link_to_target['node_type'] = 'any_link_to_target';
             any_link_to_target['linkage'][random_link_name] = [target_id];
-            any_link_to_target['meta']['color'] = "red";
+            any_link_to_target['meta']['color'] = 'red';
 
             tutils.insert_node(any_link_to_target, auth, function(err, resp) {
                 if (err) {
@@ -438,14 +434,13 @@ exports['update_wildcard_linkage_invalid_target'] = function(test) {
 
             // Confirm that we failed...
             test.equal(response.statusCode, 422,
-                    "Correct status for update with link to impermissible " +
-                    "target.");
+                'Correct status for update with link to impermissible target.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                    -1, "Error message makes mention of 'linkage'");
+                -1, "Error message makes mention of 'linkage'");
 
             tutils.delete_node(any_id, auth, function(err, resp) {
                 if (err) {
@@ -473,13 +468,12 @@ exports['update_wildcard_linkage_invalid_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 
@@ -552,10 +546,10 @@ exports['update_wildcard_linkage_wildcard_target'] = function(test) {
 
             // Confirm that we succeeded...
             test.equal(response.statusCode, 200,
-                    "Correct status for update with valid linkage.");
+                'Correct status for update with valid linkage.');
 
             test.ok(! response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF did not report any error message in the headers.');
+                'OSDF did not report any error message in the headers.');
 
             tutils.delete_node(any_link_id, auth, function(err, resp) {
                 if (err) {
@@ -573,13 +567,12 @@ exports['update_wildcard_linkage_wildcard_target'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 
@@ -660,10 +653,10 @@ exports['update_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 200, "Correct status for update.");
+            test.equal(response.statusCode, 200, 'Correct status for update.');
 
             test.ok((! response.headers.hasOwnProperty('x-osdf-error')),
-                    "No error message in headers after insertion.");
+                'No error message in headers after insertion.');
 
             tutils.delete_node(randomly_named_id, auth, function(err, resp) {
                 if (err) {
@@ -681,13 +674,12 @@ exports['update_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -704,7 +696,7 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -721,8 +713,8 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
             var target_id = tutils.get_node_id(response);
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "related_to": [ target_id ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'related_to': [ target_id ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -739,8 +731,8 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
             var example2_id = tutils.get_node_id(response);
             // Now modify the example2 node and attempt an update
             var example2_modified = _.cloneDeep(test_node);
-            example2_modified['node_type'] = "example2";
-            example2_modified['linkage'] = { "connected_to": [ target_id ] };
+            example2_modified['node_type'] = 'example2';
+            example2_modified['linkage'] = { 'connected_to': [ target_id ] };
             example2_modified['ver'] = 1;
 
             tutils.update_node(example2_id, example2_modified, auth, function(err, resp) {
@@ -756,10 +748,10 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 200, "Correct status for update.");
+            test.equal(response.statusCode, 200, 'Correct status for update.');
 
             test.ok((! response.headers.hasOwnProperty('x-osdf-error')),
-                    "No error message in headers after insertion.");
+                'No error message in headers after insertion.');
 
             tutils.delete_node(example2_id, auth, function(err, resp) {
                 if (err) {
@@ -776,13 +768,12 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 //    "example2": {
@@ -799,7 +790,7 @@ exports['update_multi_linkage_multi_target_invalid'] = function(test) {
             var target = _.cloneDeep(test_node);
             target['node_type'] = 'target';
             target['linkage'] = {};
-            target['meta']['color'] = "red";
+            target['meta']['color'] = 'red';
 
             tutils.insert_node(target, auth, function(err, resp) {
                 if (err) {
@@ -817,8 +808,8 @@ exports['update_multi_linkage_multi_target_invalid'] = function(test) {
 
             // Now make an example2 node
             var example2 = _.cloneDeep(test_node);
-            example2['node_type'] = "example2";
-            example2['linkage'] = { "connected_to": [ target_id ] };
+            example2['node_type'] = 'example2';
+            example2['linkage'] = { 'connected_to': [ target_id ] };
 
             tutils.insert_node(example2, auth, function(err, resp) {
                 if (err) {
@@ -838,7 +829,7 @@ exports['update_multi_linkage_multi_target_invalid'] = function(test) {
             var random_linkage_name = osdf_utils.random_string(6);
 
             modified_example2['ver'] = 1;
-            modified_example2['node_type'] = "example2";
+            modified_example2['node_type'] = 'example2';
             modified_example2['linkage'][ random_linkage_name ] = [ target_id ];
 
             tutils.update_node(example2_id, modified_example2, auth,
@@ -857,13 +848,13 @@ exports['update_multi_linkage_multi_target_invalid'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for update with illegal linkage.");
+                'Correct status for update with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                    'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the right header.');
 
             test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                          -1, "Error message makes mention of 'linkage'");
+                -1, "Error message makes mention of 'linkage'");
 
             tutils.delete_node(example2_id, auth, function(err, resp) {
                 if (err) {
@@ -880,11 +871,10 @@ exports['update_multi_linkage_multi_target_invalid'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };

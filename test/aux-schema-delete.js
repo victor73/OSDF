@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
@@ -14,19 +12,19 @@ var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
 var test_primary_schema = {
-    description: "A test primary schema.",
-    type: "object",
+    description: 'A test primary schema.',
+    type: 'object',
     properties: {},
     additionalProperties: false
 };
 
 var test_aux_schema = {
-    type: "string",
+    type: 'string',
     enum: [
-        "alpha",
-        "bravo",
-        "charlie",
-        "delta"
+        'alpha',
+        'bravo',
+        'charlie',
+        'delta'
     ]
 };
 
@@ -42,8 +40,10 @@ exports['delete_aux_schema'] = function(test) {
     async.waterfall([
         function(callback) {
             // First we insert an auxiliary schema
-            var aux_schema_doc = { name: aux_schema_name,
-                                   schema: test_aux_schema };
+            var aux_schema_doc = {
+                name: aux_schema_name,
+                schema: test_aux_schema
+            };
 
             tutils.insert_aux_schema(test_ns, aux_schema_doc, auth,
                 function(err, resp) {
@@ -60,10 +60,10 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for auxiliary schema insertion.");
+                'Correct status for auxiliary schema insertion.');
 
             test.equal(data.length, 0,
-                       "No content returned on a auxiliary schema insertion.");
+                'No content returned on a auxiliary schema insertion.');
 
             // then try to retrieve it
             tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth,
@@ -81,10 +81,10 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Auxiliary schema retrieval yielded correct status " +
-                       "code after deletion.");
+                'Auxiliary schema retrieval yielded correct status ' +
+                'code after deletion.');
 
-            test.ok(data.length > 0, "Data returned on deletion.");
+            test.ok(data.length > 0, 'Data returned on deletion.');
 
             // Check that it appears in the master listing of auxiliary schemas
             // for the test namespace
@@ -101,13 +101,13 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for auxiliary schema listing.");
+                'Correct status for auxiliary schema listing.');
 
-            test.ok(data.length > 0, "Got data for auxiliary schema listing.");
+            test.ok(data.length > 0, 'Got data for auxiliary schema listing.');
 
             var aux_schemas = JSON.parse(data);
             test.ok(aux_schemas.hasOwnProperty(aux_schema_name),
-                    "Auxiliary schema listing contains the test schema.");
+                'Auxiliary schema listing contains the test schema.');
 
             // Now, delete the auxiliary schema
             tutils.delete_aux_schema(test_ns, aux_schema_name, auth,
@@ -125,8 +125,7 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 204,
-                       "Auxiliary schema deletion yielded correct " +
-                       "status code.");
+                'Auxiliary schema deletion yielded correct status code.');
 
             // Now try to retrieve the schema again. It should not be
             // available any longer...
@@ -145,12 +144,11 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 404,
-                       "Auxiliary schema retrieval yielded correct status " +
-                       "after deletion.");
+                'Auxiliary schema retrieval yielded correct status ' +
+                'after deletion.');
 
             test.equal(data.length, 0,
-                      "No data returned on retrieval of deleted " +
-                      "auxiliary schema.");
+                'No data returned on retrieval of deleted auxiliary schema.');
 
             // Also check that the schema is also removed from the namespace's
             // auxiliary schema master listing
@@ -167,24 +165,22 @@ exports['delete_aux_schema'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for auxiliary schema listing.");
+                'Correct status for auxiliary schema listing.');
 
-            test.ok(data.length > 0, "Got data for auxiliary schema listing.");
+            test.ok(data.length > 0, 'Got data for auxiliary schema listing.');
 
             var aux_schemas = JSON.parse(data);
             test.ok(! aux_schemas.hasOwnProperty(aux_schema_name),
-                    "Auxiliary schema listing no longer contains the test " +
-                    "schema.");
+                'Auxiliary schema listing no longer contains the test schema.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test deletion of an auxiliary schema that is in use by existing primary
@@ -201,15 +197,19 @@ exports['delete_aux_schema_in_use'] = function(test) {
     var primary_schema_name = osdf_utils.random_string(8);
     var aux_schema_name = osdf_utils.random_string(8);
 
-    var aux_schema_doc = { name: aux_schema_name,
-                           schema: test_aux_schema };
+    var aux_schema_doc = {
+        name: aux_schema_name,
+        schema: test_aux_schema
+    };
 
     // Make the primary schema refer to the auxiliary schema
     test_primary_schema['properties']['testprop'] = {};
     test_primary_schema['properties']['testprop']['$ref'] = aux_schema_name;
 
-    var primary_schema_doc = { name: primary_schema_name,
-                               schema: test_primary_schema };
+    var primary_schema_doc = {
+        name: primary_schema_name,
+        schema: test_primary_schema
+    };
 
     async.waterfall([
         function(callback) {
@@ -229,7 +229,7 @@ exports['delete_aux_schema_in_use'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for auxiliary schema insertion.");
+                'Correct status for auxiliary schema insertion.');
 
             // Now, insert the primary schema that uses (refers to) it.
             tutils.insert_schema(test_ns, primary_schema_doc, auth,
@@ -247,7 +247,7 @@ exports['delete_aux_schema_in_use'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for primary schema insertion.");
+                'Correct status for primary schema insertion.');
 
             // Now, try to delete the auxiliary schema (which is now in use)
             tutils.delete_aux_schema(test_ns, aux_schema_name, auth,
@@ -265,10 +265,9 @@ exports['delete_aux_schema_in_use'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 409,
-                       "Correct status for auxiliary schema deletion " +
-                       "when in use.");
+                'Correct status for auxiliary schema deletion when in use.');
 
-            test.ok(data.length === 0, "No data returned on deletion attempt.");
+            test.ok(data.length === 0, 'No data returned on deletion attempt.');
 
             // Cleanup by removing the primary and auxiliary schemas that we
             // inserted.
@@ -295,13 +294,12 @@ exports['delete_aux_schema_in_use'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-           if (err) {
-               console.log(err);
-           }
-           test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test deletion of an auxiliary schema when no authentication credentials are
@@ -328,8 +326,10 @@ function invalid_credentials_helper(test, test_auth) {
     async.waterfall([
         function(callback) {
             // First we insert a schema
-            var aux_schema_doc = { name: aux_schema_name,
-                                   schema: test_aux_schema };
+            var aux_schema_doc = {
+                name: aux_schema_name,
+                schema: test_aux_schema
+            };
 
             // Make sure we use the invalid credentials here
             tutils.insert_aux_schema(test_ns, aux_schema_doc, test_auth,
@@ -347,10 +347,10 @@ function invalid_credentials_helper(test, test_auth) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for auxiliary schema insertion.");
+                'Correct status for auxiliary schema insertion.');
 
             test.ok(data === '',
-                    "No content returned on an auxiliary schema insertion.");
+                'No content returned on an auxiliary schema insertion.');
 
             // then try to retrieve it (with valid credentials)
             tutils.retrieve_aux_schema(test_ns, aux_schema_name, auth,
@@ -368,11 +368,11 @@ function invalid_credentials_helper(test, test_auth) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 404,
-                       "Auxiliary schema retrieval of failed insertion " +
-                       "yielded correct code.");
+                'Auxiliary schema retrieval of failed insertion ' +
+                'yielded correct code.');
 
-            test.ok(data.length === 0, "No data returned on auxiliary " +
-                    "schema retrieval.");
+            test.ok(data.length === 0, 'No data returned on auxiliary ' +
+                'schema retrieval.');
 
             // Cleanup. Remove the schema that we inserted. Use valid
             // credentials here.
@@ -384,11 +384,10 @@ function invalid_credentials_helper(test, test_auth) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 }

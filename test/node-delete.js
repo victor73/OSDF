@@ -1,6 +1,4 @@
-#!/usr/bin/node
-
-/*jshint sub:true*/
+#!/usr/bin/env nodeunit
 
 var async = require('async');
 var osdf_utils = require('../lib/osdf_utils');
@@ -17,19 +15,21 @@ var bad_auth = tutils.get_invalid_auth();
 // For testing node ACL permissions
 var executive_auth = executive_user + ':' + executive_password;
 
-var test_node = { ns: 'test',
-                  acl: { read: ['all'], write: ['all'] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { read: ['all'], write: ['all'] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
-var restricted_node = { ns: 'test',
-                        acl: { read: ['all'], write: ['executives'] },
-                        linkage: {},
-                        node_type: 'test',
-                        meta: {}
-                      };
+var restricted_node = {
+    ns: 'test',
+    acl: { read: ['all'], write: ['executives'] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
 // Just try the simple case. Good node, that doesn't have restrictive
 // permissions and that doesn't have any dependencies.
@@ -52,13 +52,13 @@ exports['basic_deletion'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+                'Correct status for insertion.');
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
             var node_id = tutils.get_node_id(response);
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             // Then we delete it
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -74,9 +74,9 @@ exports['basic_deletion'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 204,
-                      "Correct status for deletion.");
+                'Correct status for deletion.');
 
-            test.ok(data === '', "No content returned on a node deletion.");
+            test.ok(data === '', 'No content returned on a node deletion.');
 
             // Finally, we try to retrieve it again (it shouldn't be
             // there anymore).
@@ -93,17 +93,16 @@ exports['basic_deletion'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 404,
-                       "Correct status for retrieval of deleted node.");
+                'Correct status for retrieval of deleted node.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Examine the behavior of the system when we attempt to delete a node
@@ -142,9 +141,9 @@ exports['deletion_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for deletion without auth token.");
+                'Correct status for deletion without auth token.');
 
-            test.ok(data === '', "No content returned on a node deletion.");
+            test.ok(data === '', 'No content returned on a node deletion.');
 
             // Finally, we try to retrieve it again (it should still be there).
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -159,7 +158,7 @@ exports['deletion_no_auth'] = function(test) {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 200, "Node was not deleted.");
+            test.equal(response.statusCode, 200, 'Node was not deleted.');
 
             // "Really" delete the node now (clean up)
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -168,13 +167,12 @@ exports['deletion_no_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Examine the behavior of the system when we attempt to delete a node
@@ -213,9 +211,9 @@ exports['deletion_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                "Correct status for deletion with an invalid auth token.");
+                'Correct status for deletion with an invalid auth token.');
 
-            test.ok(data === '', "No content returned on a node deletion.");
+            test.ok(data === '', 'No content returned on a node deletion.');
 
             // Finally, we try to retrieve it again (it should still be there).
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -230,7 +228,7 @@ exports['deletion_bad_auth'] = function(test) {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 200, "Node was not deleted.");
+            test.equal(response.statusCode, 200, 'Node was not deleted.');
 
             // "Really" delete the node now (clean up)
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -239,13 +237,12 @@ exports['deletion_bad_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Examine the behavior of the system when we atempt to delete a non-existent
@@ -265,11 +262,10 @@ exports['deletion_of_nonexistent_node'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for deletion of non-existent node.");
+                'Correct status for deletion of non-existent node.');
 
             test.ok(data === '',
-                    "No content returned on node deletion of " +
-                    "non-existent node.");
+                'No content returned on node deletion of non-existent node.');
         }
 
         test.done();
@@ -298,13 +294,13 @@ exports['deletion_of_node_without_write_perms'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+                'Correct status for insertion.');
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
             var node_id = tutils.get_node_id(response);
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             // Then we attempt to delete it
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -320,11 +316,10 @@ exports['deletion_of_node_without_write_perms'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                      "Correct status for deletion without ACL " +
-                      "write permission.");
+                'Correct status for deletion without ACL write permission.');
 
-            test.ok(data === '', "No content returned on failed " +
-                    "node deletion.");
+            test.ok(data === '', 'No content returned on failed ' +
+                'node deletion.');
 
             // Finally, we try to retrieve it again, but we should not be
             // allowed since we are not in the correct ACL.
@@ -341,7 +336,7 @@ exports['deletion_of_node_without_write_perms'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Node still present after failed deletion.");
+                'Node still present after failed deletion.');
 
             // Now delete it with an authorization that is permitted to do so.
             tutils.delete_node(node_id, executive_auth, function(err, resp) {
@@ -357,19 +352,18 @@ exports['deletion_of_node_without_write_perms'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 204,
-                       "Correct status for node deletion.");
+                'Correct status for node deletion.');
 
-            test.ok(data === '', "No content returned on node deletion.");
+            test.ok(data === '', 'No content returned on node deletion.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // The API specifies that, in order to prevent dangling nodes, nodes are not
@@ -398,17 +392,17 @@ exports['deletion_of_node_with_linkage_dependencies'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+                'Correct status for insertion.');
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
             var parent_node_id = tutils.get_node_id(response);
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             // Make a new node that's connected to the previous one.
             var child_node = test_node;
-            child_node['linkage'] = { "connected_to": [ parent_node_id ] };
+            child_node['linkage'] = { 'connected_to': [ parent_node_id ] };
 
             tutils.insert_node(child_node, auth, function(err, resp) {
                 if (err) {
@@ -423,11 +417,11 @@ exports['deletion_of_node_with_linkage_dependencies'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
-            test.ok(data === '', "No content returned on a node insertion.");
+                'Correct status for insertion.');
+            test.ok(data === '', 'No content returned on a node insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
             var child_node_id = tutils.get_node_id(response);
 
@@ -445,8 +439,8 @@ exports['deletion_of_node_with_linkage_dependencies'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 409,
-                "Correct status when trying to delete a node with " +
-                "dependencies.");
+                'Correct status when trying to delete a node with ' +
+                'dependencies.');
 
             // Now cleanup by deleting both nodes, child first
             tutils.delete_node(child_node_id, auth, function(err, resp) {
@@ -465,11 +459,10 @@ exports['deletion_of_node_with_linkage_dependencies'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };

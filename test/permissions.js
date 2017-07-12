@@ -1,6 +1,4 @@
-#!/usr/bin/node
-
-/*jshint sub:true*/
+#!/usr/bin/env nodeunit
 
 var events = require('events');
 var sec = require('perms-handler');
@@ -8,28 +6,29 @@ var osdf_utils = require('osdf_utils');
 
 var logger = osdf_utils.get_logger();
 var sec_initialized = false;
-var test_user = "test";
-var privileged_user = "test_executive";
+var test_user = 'test';
+var privileged_user = 'test_executive';
 
-var test_node = { ns: 'test',
-                  acl: { read: [ 'all' ], write: [ 'all' ] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { read: [ 'all' ], write: [ 'all' ] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
 var restricted_node = {
-                  ns: 'test',
-                  acl: { read: [ 'executives' ], write: [ 'executives' ] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
-            
+    ns: 'test',
+    acl: { read: [ 'executives' ], write: [ 'executives' ] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
+
 // Test the behavior of whether the system can decide if a user can read
 // a node given that node's ACL settings.
 exports['test_read_perms'] = function(test) {
-    logger.debug("In test_read_perms.");
+    logger.debug('In test_read_perms.');
 
     if (sec_initialized) {
         // Already initialized, so we can skip initialization.
@@ -39,7 +38,7 @@ exports['test_read_perms'] = function(test) {
         // but we don't.
         var eventEmitter = new events.EventEmitter();
 
-        eventEmitter.on("perms_handler_initialized", function(message) {
+        eventEmitter.on('perms_handler_initialized', function(message) {
             sec_initialized = true;
             read_tests(test);
         });
@@ -51,7 +50,7 @@ exports['test_read_perms'] = function(test) {
 // Test the behavior of whether the system can decide if a user can write
 // (update/delete) a node given that node's ACL settings.
 exports['test_write_perms'] = function(test) {
-    logger.debug("In test_write_perms.");
+    logger.debug('In test_write_perms.');
 
     if (sec_initialized) {
         // Already initialized, so we can skip initialization.
@@ -61,7 +60,7 @@ exports['test_write_perms'] = function(test) {
         // but we don't.
         var eventEmitter = new events.EventEmitter();
 
-        eventEmitter.on("perms_handler_initialized", function(message) {
+        eventEmitter.on('perms_handler_initialized', function(message) {
             sec_initialized = true;
             write_tests(test);
         });
@@ -75,7 +74,7 @@ function read_tests(test) {
 
     var has_read = sec.has_read_permission(test_user, test_node);
     test.ok(has_read === true, "User '" + test_user + "' can read test node.");
-    
+
     has_read = sec.has_read_permission(test_user, restricted_node);
     test.ok(has_read === false, "User '" + test_user +
             "' cannot read restricted test node.");
@@ -90,7 +89,7 @@ function read_tests(test) {
 function write_tests(test) {
     test.expect(3);
 
-    var has_write = sec.has_write_permission("test", test_node);
+    var has_write = sec.has_write_permission('test', test_node);
     test.ok(has_write, "User '" + test_user + "' can write test node");
 
     has_write = sec.has_write_permission(test_user, restricted_node);

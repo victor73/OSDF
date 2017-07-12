@@ -5,8 +5,6 @@
 // is needed and useful so that tests can be written to examine things such as
 // status codes and content type.
 
-/*jshint sub:true*/
-
 var async = require('async');
 var http = require('http');
 var utils = require('osdf_utils');
@@ -20,14 +18,15 @@ var password = server_info['password'];
 
 function get_server_info() {
     var config_path;
+
     try {
-       config_path = require.resolve("test_config.ini")
+        config_path = require.resolve('test_config.ini');
     } catch (e) {
-        console.log("Unable to find a test_config.ini in the search path.");
-        console.log("Please place an INI file with server settings where " +
-                    "require() will find it.");
+        console.log('Unable to find a test_config.ini in the search path.');
+        console.log('Please place an INI file with server settings where ' +
+                    'require() will find it.');
         console.log("Section heading should be 'osdf', and have settings " +
-                    "for: host, port, username and password.");
+                    'for: host, port, username and password.');
         process.exit(1);
     }
 
@@ -46,39 +45,43 @@ function get_server_info() {
         (username === undefined || username === null) ||
         (password === undefined || password === null)) {
 
-        console.log("One or more configuration parameters missing from " +
-                    "test_config.ini");
-        console.log("Must have host, port, username and password " +
+        console.log('One or more configuration parameters missing from ' +
+                    'test_config.ini');
+        console.log('Must have host, port, username and password ' +
                     "configured under an 'osdf' section.");
 
         process.exit(1);
     }
 
-    var server_info = { 'host': host,
-                        'port': port,
-                        'username': username,
-                        'password': password };
+    var server_info = {
+        'host': host,
+        'port': port,
+        'username': username,
+        'password': password
+    };
 
     return server_info;
 }
 
 // Auxiliary function to retrieve a single individual namespace.
 exports.retrieve_namespace = function(namespace, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace,
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace,
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -93,22 +96,23 @@ exports.retrieve_namespace = function(namespace, auth, callback) {
 
 // Auxiliary function to retrieve all namespaces.
 exports.retrieve_all_namespaces = function(auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces',
-                    method: 'GET' };
-
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -122,21 +126,23 @@ exports.retrieve_all_namespaces = function(auth, callback) {
 };
 
 exports.insert_node = function(node_data, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes',
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes',
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -152,21 +158,23 @@ exports.insert_node = function(node_data, auth, callback) {
 
 // Auxiliary function to delete a node
 exports.delete_node = function(node_id, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id,
-                    method: 'DELETE' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id,
+        method: 'DELETE'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -180,21 +188,23 @@ exports.delete_node = function(node_id, auth, callback) {
 };
 
 exports.retrieve_node = function(node_id, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id,
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id,
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -208,21 +218,23 @@ exports.retrieve_node = function(node_id, auth, callback) {
 };
 
 exports.retrieve_node_out_links = function(node_id, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id + '/out',
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id + '/out',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -236,21 +248,23 @@ exports.retrieve_node_out_links = function(node_id, auth, callback) {
 };
 
 exports.retrieve_node_in_links = function(node_id, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id + '/in',
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id + '/in',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -264,21 +278,23 @@ exports.retrieve_node_in_links = function(node_id, auth, callback) {
 };
 
 exports.retrieve_node_by_version = function(node_id, version, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id + '/ver/' + version,
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id + '/ver/' + version,
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -292,21 +308,23 @@ exports.retrieve_node_by_version = function(node_id, version, auth, callback) {
 };
 
 exports.retrieve_info = function(auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/info',
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/info',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -320,21 +338,23 @@ exports.retrieve_info = function(auth, callback) {
 };
 
 exports.insert_aux_schema = function(namespace, aux_schema_doc, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/aux',
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/aux',
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -349,21 +369,23 @@ exports.insert_aux_schema = function(namespace, aux_schema_doc, auth, callback) 
 };
 
 exports.insert_schema = function(namespace, schema_doc, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas',
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas',
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -378,21 +400,23 @@ exports.insert_schema = function(namespace, schema_doc, auth, callback) {
 };
 
 exports.delete_aux_schema = function(namespace, aux_schema_name, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
-                    method: 'DELETE' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
+        method: 'DELETE'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -406,21 +430,23 @@ exports.delete_aux_schema = function(namespace, aux_schema_name, auth, callback)
 };
 
 exports.delete_schema = function(namespace, schema_name, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/' + schema_name,
-                    method: 'DELETE' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/' + schema_name,
+        method: 'DELETE'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -434,21 +460,23 @@ exports.delete_schema = function(namespace, schema_name, auth, callback) {
 };
 
 exports.retrieve_all_schemas = function(namespace, auth, callback ) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/',
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -462,21 +490,23 @@ exports.retrieve_all_schemas = function(namespace, auth, callback ) {
 };
 
 exports.retrieve_all_aux_schemas = function(namespace, auth, callback ) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/aux/',
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/aux/',
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -490,22 +520,23 @@ exports.retrieve_all_aux_schemas = function(namespace, auth, callback ) {
 };
 
 exports.retrieve_aux_schema = function(namespace, aux_schema_name, auth, callback ) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/aux/' +
-                           aux_schema_name,
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -519,21 +550,23 @@ exports.retrieve_aux_schema = function(namespace, aux_schema_name, auth, callbac
 };
 
 exports.retrieve_schema = function(namespace, schema_name, auth, callback ) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/' + schema_name,
-                    method: 'GET' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/' + schema_name,
+        method: 'GET'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -547,22 +580,23 @@ exports.retrieve_schema = function(namespace, schema_name, auth, callback ) {
 };
 
 exports.update_aux_schema = function(namespace, aux_schema_name, aux_schema_doc, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/aux/' +
-                          aux_schema_name,
-                    method: 'PUT' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/aux/' + aux_schema_name,
+        method: 'PUT'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -577,21 +611,23 @@ exports.update_aux_schema = function(namespace, aux_schema_name, aux_schema_doc,
 };
 
 exports.update_schema = function(namespace, schema_name, schema_doc, auth, callback ) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/namespaces/' + namespace + '/schemas/' + schema_name,
-                    method: 'PUT' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/namespaces/' + namespace + '/schemas/' + schema_name,
+        method: 'PUT'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -606,21 +642,23 @@ exports.update_schema = function(namespace, schema_name, schema_doc, auth, callb
 };
 
 exports.update_node = function(node_id, node_data, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/' + node_id,
-                    method: 'PUT' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/' + node_id,
+        method: 'PUT'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -635,21 +673,23 @@ exports.update_node = function(node_id, node_data, auth, callback) {
 };
 
 exports.validate_node = function(node_data, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/validate',
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/validate',
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -664,21 +704,23 @@ exports.validate_node = function(node_data, auth, callback) {
 };
 
 exports.query = function(es_query, namespace, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/query/' + namespace,
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/query/' + namespace,
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -699,21 +741,23 @@ exports.query = function(es_query, namespace, auth, callback) {
 };
 
 exports.query_page = function(es_query, namespace, page, auth, callback) {
-    var body = "";
+    var body = '';
 
     var cb = function(response) {
         response.on('data', function(chunk) {
             body = body + chunk;
         });
         response.on('end', function() {
-            callback(null, {'body': body, "response": response});
+            callback(null, {'body': body, 'response': response});
         });
     };
 
-    var options = { host: host,
-                    port: port,
-                    path: '/nodes/query/' + namespace + '/page/' + page,
-                    method: 'POST' };
+    var options = {
+        host: host,
+        port: port,
+        path: '/nodes/query/' + namespace + '/page/' + page,
+        method: 'POST'
+    };
 
     if (auth !== null) {
         options['auth'] = auth;
@@ -752,8 +796,8 @@ exports.query_all = function(es_query, namespace, auth, callback) {
                     var response = resp['response'];
 
                     has_next_page = response
-                                      .headers
-                                      .hasOwnProperty('x-osdf-query-resultset');
+                        .headers
+                        .hasOwnProperty('x-osdf-query-resultset');
                     page++;
 
                     var json_data = JSON.parse(data);
@@ -770,9 +814,11 @@ exports.query_all = function(es_query, namespace, auth, callback) {
             if (err) {
                 callback(err, null);
             } else {
-                var final = { "search_result_total": all_results.length,
-                              "result_count": all_results.length,
-                              "results": all_results };
+                var final = {
+                    'search_result_total': all_results.length,
+                    'result_count': all_results.length,
+                    'results': all_results
+                };
                 callback(null, { 'body': JSON.stringify(final), 'response': 200 } );
             }
         }
@@ -812,7 +858,7 @@ exports.isRFC822ValidEmail = function(sEmail) {
 };
 
 exports.get_test_auth = function() {
-    var auth = username + ":" + password;
+    var auth = username + ':' + password;
     return auth;
 };
 

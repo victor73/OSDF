@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var clone = require('clone');
 var events = require('events');
 var ee = new events.EventEmitter();
@@ -15,22 +13,24 @@ var tutils = require('./lib/test_utils.js');
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
-var test_node = { ns: 'test',
-                  acl: { read: ['all'], write: ['all'] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { read: ['all'], write: ['all'] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
-var test_node_controlled = { ns: 'test',
-                             acl: { read: ['all'], write: ['all'] },
-                             linkage: {},
-                             node_type: 'example',
-                             meta: {
-                                 description: "my description",
-                                 color: "indigo"
-                             }
-                           };
+var test_node_controlled = {
+    ns: 'test',
+    acl: { read: ['all'], write: ['all'] },
+    linkage: {},
+    node_type: 'example',
+    meta: {
+        description: 'my description',
+        color: 'indigo'
+    }
+};
 
 exports['basic_update'] = function(test) {
     test.expect(8);
@@ -51,12 +51,12 @@ exports['basic_update'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -92,9 +92,9 @@ exports['basic_update'] = function(test) {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 200, "Correct status for update.");
+            test.equal(response.statusCode, 200, 'Correct status for update.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Retreieve and check that the update took effect
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -116,11 +116,11 @@ exports['basic_update'] = function(test) {
                 callback(err);
             }
 
-            test.ok("ver" in retrieved, "Retrieved node has version in it.");
-            test.ok("meta" in retrieved, "Retrieved node has metadata in it.");
+            test.ok('ver' in retrieved, 'Retrieved node has version in it.');
+            test.ok('meta' in retrieved, 'Retrieved node has metadata in it.');
 
-            test.ok("modified" in retrieved.meta,
-                    "Retrieved node modified as expected.");
+            test.ok('modified' in retrieved.meta,
+                'Retrieved node modified as expected.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -129,13 +129,12 @@ exports['basic_update'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior of the system when a user attempts to update a node without
@@ -179,12 +178,12 @@ exports['update_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for insertion w/o auth (forbidden).");
+                'Correct status for insertion w/o auth (forbidden).');
 
-            test.ok(! ("location" in response.headers),
-                    "Response header does not contain location of new node." );
+            test.ok(! ('location' in response.headers),
+                'Response header does not contain location of new node.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -193,13 +192,12 @@ exports['update_no_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior of the system when a user attempts to update a node with
@@ -244,12 +242,12 @@ exports['update_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                "Correct status for insertion w/o auth (forbidden).");
+                'Correct status for insertion w/o auth (forbidden).');
 
-            test.ok(! ("location" in response.headers),
-                "Response header does not contain location of new node.");
+            test.ok(! ('location' in response.headers),
+                'Response header does not contain location of new node.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -258,13 +256,12 @@ exports['update_bad_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the system's behavior when updating a node that is tied
@@ -290,7 +287,7 @@ exports['valid_update_with_schema_validation'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
             var node_id = tutils.get_node_id(response);
 
@@ -334,9 +331,9 @@ exports['valid_update_with_schema_validation'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Retrieve the node and double check that it was modified.
             tutils.retrieve_node(node_id, auth, function(err, resp) {
@@ -354,9 +351,9 @@ exports['valid_update_with_schema_validation'] = function(test) {
             var retrieved = JSON.parse(data);
 
             test.ok(retrieved.node_type === 'example',
-                    "Updated node was modified.");
+                'Updated node was modified.');
             test.ok(retrieved['ver'] !== initial_version,
-                    "Module version changed.");
+                'Module version changed.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -365,13 +362,12 @@ exports['valid_update_with_schema_validation'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 exports['invalid_update_with_schema_validation'] = function(test) {
@@ -413,7 +409,7 @@ exports['invalid_update_with_schema_validation'] = function(test) {
 
             // Use a value in the new node that is invalid per the schema. In
             // this case, we're going to use an invalid color
-            modified_node['meta']['color'] = "pink";
+            modified_node['meta']['color'] = 'pink';
 
             // then try to update it with data that is valid and controlled
             // by a schema
@@ -432,24 +428,23 @@ exports['invalid_update_with_schema_validation'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for insertion with invalid data.");
+                'Correct status for insertion with invalid data.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
-                 // ignored
+                // ignored
             });
 
             callback(null);
         }],
-        function(err, response) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, response) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Check the behavior of the system when an attempt is made to modify a
@@ -515,9 +510,9 @@ exports['update_into_unknown_namespace'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                "Correct status for insertion with invalid data.");
+                'Correct status for insertion with invalid data.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             // Try to clean up by deleting the node.
             tutils.delete_node(node_id, auth, function(err, resp) {
@@ -526,13 +521,12 @@ exports['update_into_unknown_namespace'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // The API requires that updates to a node include the version of the node that
@@ -579,7 +573,7 @@ exports['update_with_invalid_version'] = function(test) {
                 callback(err);
             }
             var initial_version = initial_node.ver;
-            test.equal(initial_version, 1, "First version is equal to 1.");
+            test.equal(initial_version, 1, 'First version is equal to 1.');
 
             var modified_node = test_node;
             modified_node['ver'] = initial_version + 10;
@@ -601,17 +595,16 @@ exports['update_with_invalid_version'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                "Correct status for update with invalid version.");
+                'Correct status for update with invalid version.');
 
-            test.ok(data === '', "No content returned.");
+            test.ok(data === '', 'No content returned.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };

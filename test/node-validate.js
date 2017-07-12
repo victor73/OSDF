@@ -1,7 +1,5 @@
 #!/usr/bin/node
 
-/*jshint sub:true*/
-
 var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -9,23 +7,24 @@ var tutils = require('./lib/test_utils.js');
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
-var test_node = { ns: 'test',
-                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
-                  linkage: {},
-                  node_type: 'unregistered',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
+    linkage: {},
+    node_type: 'unregistered',
+    meta: {}
+};
 
 var test_node_with_schema = {
-                  ns: 'test',
-                  acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
-                  linkage: {},
-                  node_type: 'example',
-                  meta: {
-                      description: "something",
-                      color: "blue"
-                  }
-              };
+    ns: 'test',
+    acl: { 'read': [ 'all' ], 'write': [ 'all' ] },
+    linkage: {},
+    node_type: 'example',
+    meta: {
+        description: 'something',
+        color: 'blue'
+    }
+};
 
 exports['basic_validation_no_schema_control'] = function(test) {
     test.expect(2);
@@ -38,10 +37,10 @@ exports['basic_validation_no_schema_control'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for validation.");
+                'Correct status for validation.');
 
             test.ok(data === '',
-                    "No content returned on a good node validation.");
+                'No content returned on a good node validation.');
         }
 
         test.done();
@@ -59,10 +58,10 @@ exports['basic_validation_with_schema_control'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for validation.");
+                'Correct status for validation.');
 
             test.ok(data === '',
-                    "No content returned on a good node validation.");
+                'No content returned on a good node validation.');
         }
 
         test.done();
@@ -83,13 +82,13 @@ exports['basic_validation_with_invalid_node'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for invalid node.");
+                'Correct status for invalid node.');
 
-            test.ok(data !== '', "Content returned on a bad node validation.");
+            test.ok(data !== '', 'Content returned on a bad node validation.');
 
             // Message should say something about 'color' being missing...
-            test.ok(data.indexOf("color") !== -1,
-                    "Error message mentioned missing property.");
+            test.ok(data.indexOf('color') !== -1,
+                'Error message mentioned missing property.');
         }
 
         test.done();
@@ -108,10 +107,10 @@ exports['basic_validation_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for unauthorized validation.");
+                'Correct status for unauthorized validation.');
 
             test.ok(data === '',
-                    "No content returned on a unauthorized node validation.");
+                'No content returned on a unauthorized node validation.');
         }
 
         test.done();
@@ -131,10 +130,10 @@ exports['basic_validation_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for unauthorized validation.");
+                'Correct status for unauthorized validation.');
 
             test.ok(data === '',
-                    "No content returned on a unauthorized node validation.");
+                'No content returned on a unauthorized node validation.');
         }
 
         test.done();
@@ -159,9 +158,9 @@ exports['validation_with_unknown_namespace'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for node with bad namespace.");
+                'Correct status for node with bad namespace.');
 
-            test.ok(data !== "", "Content is returned on bad node validation.");
+            test.ok(data !== '', 'Content is returned on bad node validation.');
         }
 
         test.done();
@@ -187,10 +186,10 @@ exports['validation_with_unknown_namespace_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node with bad namespace, no auth.");
+                'Correct status for node with bad namespace, no auth.');
 
-            test.ok(data === "", "No content returned on bad node " +
-                                 "validation with no authentication.");
+            test.ok(data === '', 'No content returned on bad node ' +
+                'validation with no authentication.');
         }
 
         test.done();
@@ -200,12 +199,13 @@ exports['validation_with_unknown_namespace_no_auth'] = function(test) {
 exports['validation_with_valid_linkage'] = function(test) {
     test.expect(2);
 
-    var test_node = { ns: 'test2',
-                      acl: { 'read': ['all'], 'write': ['all'] },
-                      linkage: {},
-                      node_type: 'target',
-                      meta: { color: 'red' }
-                    };
+    var test_node = {
+        ns: 'test2',
+        acl: { 'read': ['all'], 'write': ['all'] },
+        linkage: {},
+        node_type: 'target',
+        meta: { color: 'red' }
+    };
 
     tutils.validate_node(test_node, auth, function(err, resp) {
         if (err) {
@@ -215,9 +215,9 @@ exports['validation_with_valid_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node with valid linkages.");
+                'Correct status for node with valid linkages.');
 
-            test.ok(data === "", "No Content returned.");
+            test.ok(data === '', 'No Content returned.');
         }
 
         test.done();
@@ -227,12 +227,13 @@ exports['validation_with_valid_linkage'] = function(test) {
 exports['validation_with_invalid_linkage'] = function(test) {
     test.expect(3);
 
-    var test_node = { ns: 'test2',
-                      acl: { 'read': ['all'], 'write': ['all'] },
-                      linkage: { related_to: [ "XXXXXX" ]},
-                      node_type: 'example',
-                      meta: {}
-                    };
+    var test_node = {
+        ns: 'test2',
+        acl: { 'read': ['all'], 'write': ['all'] },
+        linkage: { related_to: [ 'XXXXXX' ]},
+        node_type: 'example',
+        meta: {}
+    };
 
     tutils.validate_node(test_node, auth, function(err, resp) {
         if (err) {
@@ -242,12 +243,12 @@ exports['validation_with_invalid_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                       "Correct status for node with valid linkages.");
+                'Correct status for node with valid linkages.');
 
-            test.ok(data !== "", "Validation results returned.");
+            test.ok(data !== '', 'Validation results returned.');
 
-            test.ok(data.search("linkage") !== -1,
-                    "Validation output mentioned linkage.");
+            test.ok(data.search('linkage') !== -1,
+                'Validation output mentioned linkage.');
         }
 
         test.done();

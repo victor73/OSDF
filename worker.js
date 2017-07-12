@@ -1,5 +1,3 @@
-/*jshint sub:true*/
-
 var _ = require('lodash');
 var auth_enforcer = require('auth_enforcer');
 var async = require('async');
@@ -17,8 +15,8 @@ var ns_handler = require('namespace-handler');
 var schema_handler = require('schema-handler');
 var query_handler = require('query-handler');
 
-// This event emitter is instrumental in providing us
-// a way of knowing when all our handlers are ready.
+// This event emitter is instrumental in providing us a way of knowing when all
+// of our handlers are ready.
 var eventEmitter = new events.EventEmitter();
 eventEmitter.setMaxListeners(0);
 
@@ -60,15 +58,15 @@ function launch(config) {
     var app = express();
 
     // Check if CORS Support should be enabled or not.
-    var cors = config.value("global", "cors_enabled");
-    if (cors != undefined && cors != null && (cors === "true" || cors === "yes")) {
+    var cors = config.value('global', 'cors_enabled');
+    if (cors != undefined && cors != null && (cors === 'true' || cors === 'yes')) {
         app.use(allowCrossDomain);
     }
 
     // Check if CORS Support should be enabled or not.
-    var https_enabled = config.value("global", "https_enabled");
+    var https_enabled = config.value('global', 'https_enabled');
     if (https_enabled !== undefined && https_enabled !== null &&
-            (https_enabled === "true" || https_enabled === "yes")) {
+            (https_enabled === 'true' || https_enabled === 'yes')) {
         https_enabled = true;
     } else {
         https_enabled = false;
@@ -101,8 +99,8 @@ function launch(config) {
     var routes = require('routes');
     routes.set_routes(app);
 
-    var bind_address = config.value("global", "bind_address");
-    var port = config.value("global", "port");
+    var bind_address = config.value('global', 'bind_address');
+    var port = config.value('global', 'port');
 
     // Check that we have some valid settings.
     if (bind_address === undefined ||
@@ -110,47 +108,47 @@ function launch(config) {
             bind_address.length === 0) {
         var bind_err = "The 'bind_address' setting is not configured.";
         console.log(bind_err);
-        process.send({ cmd: "abort", reason: bind_err });
+        process.send({ cmd: 'abort', reason: bind_err });
     }
 
     if (port === undefined || port === null || port.length === 0) {
         var port_err = "The 'port' setting is not configured.";
         console.log(port_err);
-        process.send({ cmd: "abort", reason: port_err });
+        process.send({ cmd: 'abort', reason: port_err });
     }
 
     process.on('uncaughtException', function(err) {
-        logger.error("Caught exception: " + err);
+        logger.error('Caught exception: ' + err);
         logger.error(err.stack);
-        console.log("Check log file for stack trace. Caught exception: " + err);
+        console.log('Check log file for stack trace. Caught exception: ' + err);
     });
 
     process.on('message', function(msg) {
-        if (msg && msg.hasOwnProperty("cmd")) {
-            logger.info("Got a message from the master: " +  msg['cmd']);
+        if (msg && msg.hasOwnProperty('cmd')) {
+            logger.info('Got a message from the master: ' +  msg['cmd']);
 
-            if (msg['cmd'] === "schema_change") {
+            if (msg['cmd'] === 'schema_change') {
                 node_handler.process_schema_change(msg);
                 schema_handler.process_schema_change(msg);
-            } else if (msg['cmd'] === "aux_schema_change") {
+            } else if (msg['cmd'] === 'aux_schema_change') {
                 node_handler.process_aux_schema_change(msg);
                 schema_handler.process_aux_schema_change(msg);
             } else {
-                logger.error("Received unknown process message type.");
+                logger.error('Received unknown process message type.');
             }
         } else {
-            logger.error("Received invalid process message.");
+            logger.error('Received invalid process message.');
         }
     });
 
     if (https_enabled) {
-        logger.info("Using encrypted https.");
+        logger.info('Using encrypted https.');
 
         // Need the key and cert to establish the SSL enabled server
         get_ssl_options(config, function(err, options) {
             if (err) {
-                logger.error("Unable to configure SSL: " + err.message);
-                process.send({ cmd: "abort", reason: err.message });
+                logger.error('Unable to configure SSL: ' + err.message);
+                process.send({ cmd: 'abort', reason: err.message });
             } else {
                 var https = require('https');
                 var server  = https.createServer(options, app);
@@ -158,7 +156,7 @@ function launch(config) {
             }
         });
     } else {
-        logger.info("Using regular http (unencrypted).");
+        logger.info('Using regular http (unencrypted).');
         // Just use regular http
         var http = require('http');
         var server  = http.createServer(app);
@@ -170,13 +168,13 @@ function launch(config) {
     // launched as root to bind to the port, but then drop down to another UID.
     if (process.getuid() === 0) {
         // Who do we drop privileges to?
-        var user = config.value("global", "user");
+        var user = config.value('global', 'user');
         if (user === null) {
             console.log("The 'user' setting is not configured.");
             process.exit(1);
         }
 
-        console.log("Launched as root. Switching to " + user);
+        console.log('Launched as root. Switching to ' + user);
         process.setuid(user);
     }
 }
@@ -186,13 +184,13 @@ function launch(config) {
 // when they are finished. When all the events are received, we're ready
 // to proceed, and launch() is called.
 function listen_for_init_completion(config) {
-    var handlers = [ "node", "info", "auth", "perms", "query", "schema" ];
+    var handlers = [ 'node', 'info', 'auth', 'perms', 'query', 'schema' ];
     var handler_count = 0;
 
     var examine_handlers = function() {
         if (++handler_count === handlers.length) {
-            console.log("Handlers initialized for worker with PID " +
-                        process.pid + ".");
+            console.log('Handlers initialized for worker with PID ' +
+                        process.pid + '.');
 
             // Send message to master process
             process.send({ cmd: 'init_completed' });
@@ -201,109 +199,108 @@ function listen_for_init_completion(config) {
             try {
                 launch(config);
             } catch (err) {
-                process.send({ cmd: "abort", reason: err.message });
+                process.send({ cmd: 'abort', reason: err.message });
             }
         }
     };
 
-    eventEmitter.on("auth_handler_initialized", function(message) {
+    eventEmitter.on('auth_handler_initialized', function(message) {
         var user_count = message;
-        process.send({ cmd: "user_count", users: user_count });
+        process.send({ cmd: 'user_count', users: user_count });
     });
 
     // Allow each handler to abort the launch if there is a configuration
     // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
     _.each(handlers, function (handler) {
-        eventEmitter.on(handler + "_handler_initialized", function(message) {
+        eventEmitter.on(handler + '_handler_initialized', function(message) {
             examine_handlers();
         });
 
-        eventEmitter.on(handler + "_handler_aborted", function(message) {
-            console.error("Got an abort from " + handler +
-                          " handler. Reason: " + message);
-            process.send({ cmd: "abort", reason: message });
+        eventEmitter.on(handler + '_handler_aborted', function(message) {
+            console.error('Got an abort from ' + handler +
+                          ' handler. Reason: ' + message);
+            process.send({ cmd: 'abort', reason: message });
         });
     });
 }
 
 function get_ssl_options(config, callback) {
-    logger.debug("In get_ssl_options.");
+    logger.debug('In get_ssl_options.');
 
     async.parallel([
         function(callback) {
-            var ca_file = config.value("global", "ca_file");
+            var ca_file = config.value('global', 'ca_file');
             var ca = [];
             if (ca_file == undefined || ca_file == null) {
-                logger.debug("Certificate Authority (CA) listing not set.");
+                logger.debug('Certificate Authority (CA) listing not set.');
                 // This will return an empty array
                 callback(null, ca);
             } else {
-                logger.debug("Certificate Authority (CA) file listing found.");
+                logger.debug('Certificate Authority (CA) file listing found.');
 
-                fs.readFile(ca_file, "utf8", function(err, chain) {
+                fs.readFile(ca_file, 'utf8', function(err, chain) {
                     var chain_files = chain.split("\n");
                     chain_files = _.without(chain_files, '');
-                    logger.debug("Number of CA chain files to read: " +
+                    logger.debug('Number of CA chain files to read: ' +
                                  chain_files.length);
 
                     async.each(chain_files, function(file, cb) {
-                            logger.debug("Reading file " + file);
-                            fs.readFile(file, "utf8", function(err, data) {
-                                if (err) {
-                                    cb(err);
-                                } else {
-                                    ca.push(data);
-                                    cb();
-                                }
-                            })
-                        },
-                        function(err) {
+                        logger.debug('Reading file ' + file);
+                        fs.readFile(file, 'utf8', function(err, data) {
                             if (err) {
-                                logger.error(err);
-                                callback(err, null);
+                                cb(err);
                             } else {
-                                // Return the array of CA data...
-                                logger.debug("Completed reading SSL CA files.");
-                                callback(null, ca);
+                                ca.push(data);
+                                cb();
                             }
+                        });
+                    },
+                    function(err) {
+                        if (err) {
+                            logger.error(err);
+                            callback(err, null);
+                        } else {
+                            // Return the array of CA data...
+                            logger.debug('Completed reading SSL CA files.');
+                            callback(null, ca);
                         }
-                    );
+                    });
                 });
             }
         },
         function(callback) {
-            var key_file = config.value("global", "key_file");
+            var key_file = config.value('global', 'key_file');
             if (key_file == undefined || key_file == null) {
-                callback("key_file not set in configuration file.", null);
+                callback('key_file not set in configuration file.', null);
                 return;
             }
 
-            logger.debug("Reading key_file " + key_file);
-            fs.readFile(key_file, "utf8", function(err, data) {
-                 if (err) {
-                    logger.error("Error reading SSL key file.", err);
+            logger.debug('Reading key_file ' + key_file);
+            fs.readFile(key_file, 'utf8', function(err, data) {
+                if (err) {
+                    logger.error('Error reading SSL key file.', err);
                     callback(err, null);
-                 } else {
+                } else {
                     callback(null, data);
-                 }
+                }
             });
         },
         function(callback) {
-            var cert_file = config.value("global", "cert_file");
+            var cert_file = config.value('global', 'cert_file');
             if (cert_file == undefined || cert_file == null) {
-                callback("cert_file not set in configuration file.", null);
+                callback('cert_file not set in configuration file.', null);
                 return;
             }
 
-            logger.debug("Reading cert_file " + cert_file);
+            logger.debug('Reading cert_file ' + cert_file);
 
-            fs.readFile(cert_file, "utf8", function(err, data) {
-                 if (err) {
-                    logger.error("Error reading SSL cert file.", err);
+            fs.readFile(cert_file, 'utf8', function(err, data) {
+                if (err) {
+                    logger.error('Error reading SSL cert file.', err);
                     callback(err, null);
-                 } else {
+                } else {
                     callback(null, data);
-                 }
+                }
             });
         }
     ],
@@ -332,5 +329,3 @@ exports.start_worker = function(config, working_path) {
     listen_for_init_completion(config);
     initialize(working_path);
 };
-
-

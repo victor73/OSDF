@@ -1,5 +1,3 @@
-/*jshint sub:true*/
-
 var _ = require('lodash');
 var nh = require('node-handler');
 var osdf_utils = require('osdf_utils');
@@ -11,7 +9,7 @@ var linkage_control_map = {};
 var logger = osdf_utils.get_logger();
 
 function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
-    logger.debug("In areTargetNodesAllowed.");
+    logger.debug('In areTargetNodesAllowed.');
     var valid = true;
 
     if (_.isEmpty(node_ids)) {
@@ -21,7 +19,7 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
     }
 
     if (! _.every(node_ids, _.isString)) {
-        logger.info("Detected non-string value in linkage targets.");
+        logger.info('Detected non-string value in linkage targets.');
         callback(null, false);
         return;
     }
@@ -38,7 +36,7 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
         db.get(node_id, function(err, target_node) {
             if (err) {
                 if (err.hasOwnProperty('error') && err['error'].search('not_found') !== -1) {
-                    logger.warn("Linkage points to non-existent node.");
+                    logger.warn('Linkage points to non-existent node.');
                     valid = false;
                     cb();
                 } else {
@@ -58,10 +56,10 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
         });
     }, function(err) {
         if (err) {
-            logger.error("An error with areTargetNodesAllowed occurred: " + err);
+            logger.error('An error with areTargetNodesAllowed occurred: ' + err);
             valid = false;
         }
-        logger.debug("areTargetNodesAllowed returning: " + valid);
+        logger.debug('areTargetNodesAllowed returning: ' + valid);
         callback(err, valid);
     });
 }
@@ -90,23 +88,23 @@ function check(ns_control, node, edge, edgeKey, callback) {
 }
 
 exports.set_db_connection = function(connection) {
-    logger.debug("In set_db_connection.");
+    logger.debug('In set_db_connection.');
     db = connection;
 };
 
 exports.set_namespace_linkages = function(namespace, linkage_mapping) {
-    logger.debug("In set_namespace_linkages.");
+    logger.debug('In set_namespace_linkages.');
     linkage_control_map[namespace] = linkage_mapping;
 };
 
 exports.valid_linkage = function(node, callback) {
-    logger.debug("In valid_linkage.");
+    logger.debug('In valid_linkage.');
     var valid = true;
 
     var ns = node['ns'];
 
     if (! (linkage_control_map.hasOwnProperty(ns))) {
-        logger.info("Node's namespace (" + ns + ") not linkage controlled.");
+        logger.info("Node's namespace (" + ns + ') not linkage controlled.');
         callback(null, valid);
         return;
     }
@@ -122,11 +120,11 @@ exports.valid_linkage = function(node, callback) {
         var edges = Object.keys( node['linkage'] );
 
         if (edges.length === 0) {
-            logger.debug("Incoming node has no linkages.");
+            logger.debug('Incoming node has no linkages.');
             callback(null, valid);
             return;
         } else {
-            logger.debug("Incoming node linkage count: " + edges.length);
+            logger.debug('Incoming node linkage count: ' + edges.length);
         }
 
         // A flag to discern a "true" error, as opposed to us using the callback(err)
@@ -172,7 +170,7 @@ exports.valid_linkage = function(node, callback) {
                         }
                     }
                 });
-           } else {
+            } else {
                 logger.debug('Linkage named "' + edge +
                              '" not valid for nodes of type "' + node_type + '".');
                 valid = false;

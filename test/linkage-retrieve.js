@@ -1,7 +1,5 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var async = require('async');
 var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
@@ -10,19 +8,21 @@ var tutils = require('./lib/test_utils.js');
 var auth = tutils.get_test_auth();
 var bad_auth = tutils.get_invalid_auth();
 
-var test_node = { ns: 'test',
-                  acl: { 'read': ['all'], 'write': ['all'] },
-                  linkage: {},
-                  node_type: 'test',
-                  meta: {}
-                };
+var test_node = {
+    ns: 'test',
+    acl: { 'read': ['all'], 'write': ['all'] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
-var restricted_node = { ns: 'test',
-                        acl: { 'read': ['executives'], 'write': ['executives'] },
-                        linkage: {},
-                        node_type: 'test',
-                        meta: {}
-                      };
+var restricted_node = {
+    ns: 'test',
+    acl: { 'read': ['executives'], 'write': ['executives'] },
+    linkage: {},
+    node_type: 'test',
+    meta: {}
+};
 
 // Test basic retrieval of a node's outbound linkages. The approach is to first
 // insert two linked nodes, then retrieve the linking node's links to see if we
@@ -47,12 +47,12 @@ exports['out_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node." );
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -88,41 +88,41 @@ exports['out_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node linkage retrieval.");
+                'Correct status for node linkage retrieval.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var report_data;
             try {
                 report_data = JSON.parse(data);
-                test.ok("Report data returned was valid JSON.");
+                test.ok('Report data returned was valid JSON.');
             } catch (err) {
-                test.fail("Invalid JSON returned.");
+                test.fail('Invalid JSON returned.');
                 callback(err);
             }
 
             test.ok(report_data.hasOwnProperty('result_count'),
-                    "Report data has the result count.");
-            test.ok(typeof report_data['result_count'] === "number",
-                    "Result count is of the right type.");
+                'Report data has the result count.');
+            test.ok(typeof report_data['result_count'] === 'number',
+                'Result count is of the right type.');
             test.equals(report_data['result_count'], 1,
-                        "Result count is correct.");
+                'Result count is correct.');
 
             test.ok(report_data.hasOwnProperty('page'),
-                    "Report data has the page number.");
-            test.ok(typeof report_data['page'] === "number",
-                    "Page number is of the right type.");
-            test.equals(report_data['page'], 1, "Page number is correct.");
+                'Report data has the page number.');
+            test.ok(typeof report_data['page'] === 'number',
+                'Page number is of the right type.');
+            test.equals(report_data['page'], 1, 'Page number is correct.');
 
-            test.ok("results" in report_data,
-                    "Report data has the 'results' key.");
-            test.ok(typeof report_data['results'] === "object",
-                    "Results in report is an object.");
+            test.ok('results' in report_data,
+                "Report data has the 'results' key.");
+            test.ok(typeof report_data['results'] === 'object',
+                'Results in report is an object.');
             test.equals(report_data['results'].length, 1,
-                        "Correct number of entries in the results array.");
+                'Correct number of entries in the results array.');
 
             test.ok(report_data['results'][0]['id'] === node_id1,
-                                "Retrieved linkage points to correct node.");
+                'Retrieved linkage points to correct node.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -138,13 +138,12 @@ exports['out_linkage'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Check whether we are able to obtain outbound linkages without using an
@@ -168,12 +167,12 @@ exports['out_linkage_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -210,10 +209,9 @@ exports['out_linkage_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node outbound linkage " +
-                       "with no auth.");
+                'Correct status for node outbound linkage with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -233,13 +231,12 @@ exports['out_linkage_no_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Check whether we are able to obtain outbound linkages using an
@@ -263,12 +260,12 @@ exports['out_linkage_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -307,10 +304,9 @@ exports['out_linkage_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node outbound linkage " +
-                       "with no auth.");
+                'Correct status for node outbound linkage with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -330,13 +326,12 @@ exports['out_linkage_bad_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test basic retrieval of a node's inbound linkages. The approach is to first
@@ -362,12 +357,12 @@ exports['in_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on node insertion.");
+            test.ok(data === '', 'No content returned on node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -403,42 +398,42 @@ exports['in_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node linkage retrieval.");
+                'Correct status for node linkage retrieval.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var report_data;
             try {
                 report_data = JSON.parse(data);
-                test.ok("Report data returned was valid JSON.");
+                test.ok('Report data returned was valid JSON.');
             } catch (err) {
-                test.fail("Invalid JSON returned.");
+                test.fail('Invalid JSON returned.');
                 callback(err);
                 return;
             }
 
             test.ok(report_data.hasOwnProperty('result_count'),
-                    "Report data has the result count.");
-            test.ok(typeof report_data['result_count'] === "number",
-                    "Result count is of the right type.");
+                'Report data has the result count.');
+            test.ok(typeof report_data['result_count'] === 'number',
+                'Result count is of the right type.');
             test.equals(report_data['result_count'], 1,
-                        "Result count is correct.");
+                'Result count is correct.');
 
             test.ok(report_data.hasOwnProperty('page'),
-                    "Report data has the page number.");
-            test.ok(typeof report_data['page'] === "number",
-                    "Page number is of the right type.");
-            test.equals(report_data['page'], 1, "Page number is correct.");
+                'Report data has the page number.');
+            test.ok(typeof report_data['page'] === 'number',
+                'Page number is of the right type.');
+            test.equals(report_data['page'], 1, 'Page number is correct.');
 
             test.ok(report_data.hasOwnProperty('results'),
-                    "Report data has the 'results' key.");
-            test.ok(typeof report_data['results'] === "object",
-                    "Results in report is an object.");
+                "Report data has the 'results' key.");
+            test.ok(typeof report_data['results'] === 'object',
+                'Results in report is an object.');
             test.equals(report_data['results'].length, 1,
-                        "Correct number of entries in the results array.");
+                'Correct number of entries in the results array.');
 
             test.ok(report_data['results'][0]['id'] === node_id2,
-                    "Retrieved linkage points to correct node.");
+                'Retrieved linkage points to correct node.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -458,13 +453,12 @@ exports['in_linkage'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Check whether we are able to obtain inbound linkages without using an
@@ -488,12 +482,12 @@ exports['in_linkage_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -529,9 +523,9 @@ exports['in_linkage_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node inbound linkage with no auth.");
+                'Correct status for node inbound linkage with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -551,13 +545,12 @@ exports['in_linkage_no_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Check whether we are able to obtain inbound linkages without using an
@@ -581,12 +574,12 @@ exports['in_linkage_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -625,9 +618,9 @@ exports['in_linkage_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for node inbound linkage with no auth.");
+                'Correct status for node inbound linkage with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -647,13 +640,12 @@ exports['in_linkage_bad_auth'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // The idea here is that there could be a node that the user is able to read,
@@ -681,12 +673,12 @@ exports['out_linkage_with_restricted'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -722,39 +714,39 @@ exports['out_linkage_with_restricted'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node linkage retrieval.");
+                'Correct status for node linkage retrieval.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var report_data;
             try {
                 report_data = JSON.parse(data);
-                test.ok("Report data returned was valid JSON.");
+                test.ok('Report data returned was valid JSON.');
             } catch (e) {
-                test.fail("Invalid JSON returned.");
+                test.fail('Invalid JSON returned.');
                 callback(e);
                 return;
             }
 
             test.ok(report_data.hasOwnProperty('result_count'),
-                    "Report data has the result count.");
-            test.ok(typeof report_data['result_count'] === "number",
-                    "Result count is of the right type.");
+                'Report data has the result count.');
+            test.ok(typeof report_data['result_count'] === 'number',
+                'Result count is of the right type.');
             test.equals(report_data['result_count'], 0,
-                        "Result count is correct.");
+                'Result count is correct.');
 
             test.ok(report_data.hasOwnProperty('page'),
-                    "Report data has the page number.");
-            test.ok(typeof report_data['page'] === "number",
-                    "Page number is of the right type.");
-            test.equals(report_data['page'], 1, "Page number is correct.");
+                'Report data has the page number.');
+            test.ok(typeof report_data['page'] === 'number',
+                'Page number is of the right type.');
+            test.equals(report_data['page'], 1, 'Page number is correct.');
 
-            test.ok("results" in report_data,
-                    "Report data has the 'results' key.");
-            test.ok(typeof report_data['results'] === "object",
-                    "Results in report is an object.");
+            test.ok('results' in report_data,
+                "Report data has the 'results' key.");
+            test.ok(typeof report_data['results'] === 'object',
+                'Results in report is an object.');
             test.equals(report_data['results'].length, 0,
-                        "Correct number of entries in the results array.");
+                'Correct number of entries in the results array.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -774,13 +766,12 @@ exports['out_linkage_with_restricted'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // There could be a node that the user is able to read, that has incoming links
@@ -808,12 +799,12 @@ exports['in_linkage_with_restricted'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 201,
-                       "Correct status for insertion.");
+                'Correct status for insertion.');
 
-            test.ok("location" in response.headers,
-                    "Response header contains location of new node.");
+            test.ok('location' in response.headers,
+                'Response header contains location of new node.');
 
-            test.ok(data === '', "No content returned on a node insertion.");
+            test.ok(data === '', 'No content returned on a node insertion.');
 
             var node_id1 = tutils.get_node_id(response);
 
@@ -849,39 +840,39 @@ exports['in_linkage_with_restricted'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for node linkage retrieval.");
+                'Correct status for node linkage retrieval.');
 
-            test.ok(data.length > 0, "Data returned.");
+            test.ok(data.length > 0, 'Data returned.');
 
             var report_data;
             try {
                 report_data = JSON.parse(data);
-                test.ok("Report data returned was valid JSON.");
+                test.ok('Report data returned was valid JSON.');
             } catch (err) {
-                test.fail("Invalid JSON returned.");
+                test.fail('Invalid JSON returned.');
                 callback(err);
                 return;
             }
 
             test.ok(report_data.hasOwnProperty('result_count'),
-                    "Report data has the result count.");
-            test.ok(typeof report_data['result_count'] === "number",
-                    "Result count is of the right type.");
+                'Report data has the result count.');
+            test.ok(typeof report_data['result_count'] === 'number',
+                'Result count is of the right type.');
             test.equals(report_data['result_count'], 0,
-                        "Result count is correct.");
+                'Result count is correct.');
 
             test.ok(report_data.hasOwnProperty('page'),
-                    "Report data has the page number.");
-            test.ok(typeof report_data['page'] === "number",
-                    "Page number is of the right type.");
-            test.equals(report_data['page'], 1, "Page number is correct.");
+                'Report data has the page number.');
+            test.ok(typeof report_data['page'] === 'number',
+                'Page number is of the right type.');
+            test.equals(report_data['page'], 1, 'Page number is correct.');
 
             test.ok(report_data.hasOwnProperty('results'),
-                    "Report data has the 'results' key.");
-            test.ok(typeof report_data['results'] === "object",
-                    "Results in report is an object.");
+                "Report data has the 'results' key.");
+            test.ok(typeof report_data['results'] === 'object',
+                'Results in report is an object.');
             test.equals(report_data['results'].length, 0,
-                        "Correct number of entries in the results array.");
+                'Correct number of entries in the results array.');
 
             // Perform cleanup by removing what we just inserted. We have to
             // delete in the correct order because the API doesn't allow
@@ -901,11 +892,10 @@ exports['in_linkage_with_restricted'] = function(test) {
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };

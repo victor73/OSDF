@@ -34,9 +34,11 @@ exports['test_empty_query'] = function(test) {
 exports['test_basic_query'] = function(test) {
     test.expect(8);
 
-    var es_query = {'query':{
-                      'filtered':{'filter':[{'term':{'node_type':'example'}}]}}
-                   };
+    var es_query = {
+        'query':{
+            'filtered':{'filter':[{'term':{'node_type':'example'}}]}
+        }
+    };
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -168,9 +170,11 @@ exports['test_bogus_json_array'] = function(test) {
 exports['test_bogus_json_object'] = function(test) {
     test.expect(2);
 
-    var es_query = { 'moe': "What's the big idea?!",
-                     'curly': 'Nyuk nyuk nyuk!',
-                     'larry': 'Ooo, wise guy eh?' };
+    var es_query = {
+        'moe': "What's the big idea?!",
+        'curly': 'Nyuk nyuk nyuk!',
+        'larry': 'Ooo, wise guy eh?'
+    };
 
     tutils.query(es_query, test_ns, auth, function(err, resp) {
         if (err) {
@@ -207,12 +211,14 @@ exports['test_paginated_query_results'] = function(test) {
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
-            var test_doc = { 'ns': 'test',
-                             'node_type': 'random_string',
-                             'acl': { 'read': ['all'], 'write': ['all'] },
-                             'linkage': {},
-                             'meta': {},
-                          };
+            var test_doc = {
+                'ns': 'test',
+                'node_type': 'random_string',
+                'acl': { 'read': ['all'], 'write': ['all'] },
+                'linkage': {},
+                'meta': {},
+            };
+
             test_doc['meta']['random_string'] = osdf_utils.random_string(8);
 
             test_docs.push(test_doc);
@@ -235,8 +241,8 @@ exports['test_paginated_query_results'] = function(test) {
     function(node_ids, callback) {
         // Okay, now we should be able to test
         var es_query = {'query':{'filtered':{'filter':[
-                          {'term':{'node_type':'random_string'}}
-                       ]}}};
+            {'term':{'node_type':'random_string'}}
+        ]}}};
 
         tutils.query(es_query, test_ns, auth, function(err, resp) {
             if (err) {
@@ -290,9 +296,13 @@ exports['test_paginated_query_results'] = function(test) {
 exports['test_query_all_pages'] = function (test) {
     test.expect(4);
 
-    var es_query = {'query':{'filtered':{'filter':[
-                       {'term':{'node_type':'random_string'}}
-                   ]}}};
+    var es_query = {
+        'query':{
+            'filtered':{'filter':[
+                {'term':{'node_type':'random_string'}}
+            ]}
+        }
+    };
 
     async.waterfall([function(callback) {
         // First, ensure we're starting with a blank slate. Delete any test
@@ -309,12 +319,14 @@ exports['test_query_all_pages'] = function (test) {
         var test_docs = [];
 
         for (var idx = 1; idx <= 3100; idx++) {
-            var test_doc = { 'ns': 'test',
-                             'node_type': 'random_string',
-                             'acl': { 'read': ['all'], 'write': ['all'] },
-                             'linkage': {},
-                             'meta': {},
-                          };
+            var test_doc = {
+                'ns': 'test',
+                'node_type': 'random_string',
+                'acl': { 'read': ['all'], 'write': ['all'] },
+                'linkage': {},
+                'meta': {},
+            };
+
             test_doc['meta']['random_string'] = osdf_utils.random_string(8);
 
             test_docs.push(test_doc);
@@ -482,9 +494,13 @@ function validate_nodes(test_docs, callback) {
 }
 
 function wipe_test_docs(callback) {
-    var es_query = {'query':{'filtered':{'filter':[
-                      {'term':{'node_type':'random_string'}}
-                   ]}}};
+    var es_query = {
+        'query': {
+            'filtered':{'filter':[
+                {'term':{'node_type':'random_string'}}
+            ]}
+        }
+    };
 
     tutils.query_all(es_query, test_ns, auth, function(err, resp) {
         if (err) {

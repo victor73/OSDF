@@ -1,6 +1,4 @@
-#!/usr/bin/node
-
-/*jshint sub:true*/
+#!/usr/bin/env nodeunit
 
 var async = require('async');
 var _ = require('lodash');
@@ -34,10 +32,9 @@ exports['retrieve_all_namespaces'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status from request for all namespaces.");
-            test.ok(response.headers['content-type']
-                    .indexOf("application/json") != -1,
-                    "Correct content type for namespaces request.");
+                'Correct status from request for all namespaces.');
+            test.ok(response.headers['content-type'].indexOf('application/json') != -1,
+                'Correct content type for namespaces request.');
 
             var namespaces_json;
             try {
@@ -49,32 +46,31 @@ exports['retrieve_all_namespaces'] = function(test) {
             callback(null, namespaces_json);
         },
         function(namespaces_json, callback) {
-            test.ok("Content returned is valid JSON.");
+            test.ok('Content returned is valid JSON.');
 
             test.ok(namespaces_json.hasOwnProperty('page'),
-                    "Data contained 'page' key.");
-            test.equal(typeof(namespaces_json.page), "number",
-                       "Type of 'page' key is correct.");
+                "Data contained 'page' key.");
+            test.equal(typeof(namespaces_json.page), 'number',
+                "Type of 'page' key is correct.");
 
             test.ok(namespaces_json.hasOwnProperty('result_count'),
-                    "Data contained 'result_count' key.");
-            test.equal(typeof(namespaces_json.result_count), "number",
-                       "Type of 'result_count' key is correct.");
+                "Data contained 'result_count' key.");
+            test.equal(typeof(namespaces_json.result_count), 'number',
+                "Type of 'result_count' key is correct.");
 
             test.ok( namespaces_json.hasOwnProperty('results'),
-                    "Data contained 'results' key.");
-            test.equal( typeof(namespaces_json.results), "object",
-                        "Type of 'results' key is correct.");
+                "Data contained 'results' key.");
+            test.equal( typeof(namespaces_json.results), 'object',
+                "Type of 'results' key is correct.");
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior we get when we attempt to list the namespaces with an
@@ -91,11 +87,11 @@ exports['retrieve_all_namespaces_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for namespace listing without " +
-                       "auth token.");
+                'Correct status for namespace listing without ' +
+                'auth token.');
             test.ok(data === '',
-                    "No content returned for namespace listing without " +
-                    "auth token.");
+                'No content returned for namespace listing without ' +
+                'auth token.');
         }
         test.done();
     });
@@ -115,10 +111,9 @@ exports['retrieve_all_namespaces_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for namespace listing without " +
-                       "auth token.");
-            test.ok(data === '', "No content returned for namespace listing " +
-                    "without auth token.");
+                'Correct status for namespace listing without auth token.');
+            test.ok(data === '', 'No content returned for namespace listing ' +
+                'without auth token.');
         }
         test.done();
     });
@@ -157,7 +152,7 @@ exports['retrieve_valid_namespace'] = function(test) {
             // So we have our namespace names now after we have extracted the
             // keys.  There should actually be only 1, so use the first element
             if (ns_names.length != 1) {
-                callback("Invalid number of namespace names.", null);
+                callback('Invalid number of namespace names.', null);
             }
 
             // Just look at the first one
@@ -178,38 +173,36 @@ exports['retrieve_valid_namespace'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 200,
-                       "Correct status for valid namespace retrieval.");
+                'Correct status for valid namespace retrieval.');
 
             test.ok(
-                response.headers['content-type']
-                .indexOf("application/json") != -1,
-                "Correct content type for namespace retrieval."
+                response.headers['content-type'].indexOf('application/json') != -1,
+                'Correct content type for namespace retrieval.'
             );
 
             test.ok(data !== null,
-                    "Namespace retrieval yielded non-null data.");
+                'Namespace retrieval yielded non-null data.');
 
-            test.ok(data.length > 0, "Namespace data from retrieval " +
-                    "not the empty string.");
+            test.ok(data.length > 0, 'Namespace data from retrieval ' +
+                'not the empty string.');
 
             var ns = JSON.parse(data);
             test.equal(_.keys(ns).length, 1,
-                       "Number of namespace objects returned is 1.");
+                'Number of namespace objects returned is 1.');
 
-            test.ok("title" in ns[retrieved_ns_name]);
-            test.ok("description" in ns[retrieved_ns_name]);
-            test.ok("acl" in ns[retrieved_ns_name]);
-            test.ok("url" in ns[retrieved_ns_name]);
+            test.ok('title' in ns[retrieved_ns_name]);
+            test.ok('description' in ns[retrieved_ns_name]);
+            test.ok('acl' in ns[retrieved_ns_name]);
+            test.ok('url' in ns[retrieved_ns_name]);
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior of the system for when a user requests a valid namespace,
@@ -246,7 +239,7 @@ exports['retrieve_valid_namespace_no_auth'] = function(test) {
             // the keys. There should actually be only 1, so use the first
             // element
             if (ns_names.length !== 1) {
-                throw "Invalid number of namespace names.";
+                throw 'Invalid number of namespace names.';
             }
             var retrieved_ns_name = ns_names[0];
 
@@ -265,19 +258,18 @@ exports['retrieve_valid_namespace_no_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for namespace retrieval with no auth.");
+                'Correct status for namespace retrieval with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior of the system for when a user requests a valid namespace,
@@ -313,7 +305,7 @@ exports['retrieve_valid_namespace_bad_auth'] = function(test) {
             // So we have our namespace names now after we have extracted the
             // keys. There should actually be only 1, so use the first element
             if (ns_names.length !== 1) {
-                callback("Invalid number of namespace names.", null);
+                callback('Invalid number of namespace names.', null);
             }
             var retrieved_ns_name = ns_names[0];
 
@@ -332,19 +324,18 @@ exports['retrieve_valid_namespace_bad_auth'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 403,
-                       "Correct status for namespace retrieval with no auth.");
+                'Correct status for namespace retrieval with no auth.');
 
-            test.ok(data === '', "No data returned.");
+            test.ok(data === '', 'No data returned.');
 
             callback(null);
         }],
-        function(err, results) {
-            if (err) {
-                console.log(err);
-            }
-            test.done();
+    function(err, results) {
+        if (err) {
+            console.log(err);
         }
-    );
+        test.done();
+    });
 };
 
 // Test the behavior of the system for when a user requests an non-existent
@@ -365,10 +356,10 @@ exports['retrieve_invalid_namespace'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 404,
-                       "Correct status for invalid namespace retrieval.");
+                'Correct status for invalid namespace retrieval.');
 
             test.ok(data === '',
-                    "No data returned for an invalid namespace retrieval.");
+                'No data returned for an invalid namespace retrieval.');
         }
 
         test.done();
