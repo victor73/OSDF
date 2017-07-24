@@ -1,5 +1,3 @@
-/*jshint sub:true*/
-
 // lodash - for generic utility functions
 // cradle - for interactions with CouchDB
 // tv4 - Used for JSON validation with JSON-Schema
@@ -15,23 +13,26 @@ var osdf_utils = require('osdf_utils');
 var schema_utils = require('schema_utils');
 var path = require('path');
 var tv4 = require('tv4');
-var config = require('config');
 var perms = require('perms-handler');
 var auth = require('auth_enforcer');
 var sprintf = require('sprintf').sprintf;
 var linkage_controller = require('linkage-controller');
+var config = require('config');
+var format = require('string-format');
 
-var c = Config.get_instance(osdf_utils.get_config());
+format.extend(String.prototype);
+
+config.load(osdf_utils.get_config());
 
 // Load some important configuration parameters.
-var base_url = c.value('global', 'base_url');
-var port = c.value('global', 'port');
-var couch_address = c.value('global', 'couch_address');
-var couch_port = c.value('global', 'couch_port');
-var couch_user = c.value('global', 'couch_user');
-var couch_pass = c.value('global', 'couch_pass');
+var base_url = config.value('global', 'base_url');
+var port = config.value('global', 'port');
+var couch_address = config.value('global', 'couch_address');
+var couch_port = config.value('global', 'couch_port');
+var couch_user = config.value('global', 'couch_user');
+var couch_pass = config.value('global', 'couch_pass');
 
-var dbname = c.value('global', 'couch_dbname');
+var dbname = config.value('global', 'couch_dbname');
 
 var logger = osdf_utils.get_logger();
 var osdf_error = osdf_utils.send_error;
@@ -47,11 +48,11 @@ var db;
 // CouchDB server, determine what the installed namespaces are, and create
 // the various validators for each of the node types inside each namespace.
 exports.init = function(emitter, working_dir_custom) {
-    logger.debug("In " + path.basename(__filename) + " init().");
+    logger.debug('In ' + path.basename(__filename) + ' init().');
 
     working_dir = osdf_utils.get_working_dir();
 
-    logger.info("Creating couchdb connection. Using db: " + dbname);
+    logger.info('Creating couchdb connection. Using db: ' + dbname);
 
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
@@ -67,11 +68,8 @@ exports.init = function(emitter, working_dir_custom) {
     db.exists(function(err, exists) {
         // Here we emit the error to abort the server startup process.
         if (err) {
-            msg = sprintf("Error connecting to CouchDB database at %s:%s. " +
-                          "Check settings & credentials in %s.",
-                  couch_address,
-                  couch_port,
-                  osdf_utils.get_config() );
+            var msg = sprintf('Error connecting to CouchDB database at %s:%s. ' +
+                'Check settings & credentials in %s.', couch_address, couch_port, osdf_utils.get_config());
             emitter.emit('node_handler_aborted', msg);
         }
 
@@ -90,10 +88,10 @@ exports.init = function(emitter, working_dir_custom) {
 
             osdf_utils.get_namespace_names(function(err, names) {
                 if (err) {
-                    logger.error("Error retrieving namespace names: " + err);
+                    logger.error('Error retrieving namespace names: ' + err);
                     callback(err, null);
                 } else {
-                    logger.info("Namespaces: ", names);
+                    logger.info('Namespaces: ', names);
                     callback(null, names);
                 }
             });
@@ -102,7 +100,7 @@ exports.init = function(emitter, working_dir_custom) {
             namespaces = names;
             populate_validators(function(err) {
                 if (err) {
-                    logger.error("Error populating validators: " + err);
+                    logger.error('Error populating validators: ' + err);
                     callback(err);
                 } else {
                     callback(null);
@@ -112,27 +110,27 @@ exports.init = function(emitter, working_dir_custom) {
         function(callback) {
             establish_linkage_controls(function(err) {
                 if (err) {
-                    logger.error("Error establishing linkage controls: " + err);
+                    logger.error('Error establishing linkage controls: ' + err);
                     callback(err);
                 } else {
+                    logger.info('Successfully established linkage controls.');
                     callback(null);
                 }
             });
         }],
-        function(err) {
-            if (err) {
-                emitter.emit('node_handler_aborted', err);
-            } else {
-                emitter.emit('node_handler_initialized');
-            }
+    function(err) {
+        if (err) {
+            emitter.emit('node_handler_aborted', err);
+        } else {
+            emitter.emit('node_handler_initialized');
         }
-    );
+    });
 };
 
 // This function handles the deletion of nodes. We must check that the
 // node exists and that the user has write permissions to it.
 exports.delete_node = function(request, response) {
-    logger.debug("In delete_node.");
+    logger.debug('In delete_node.');
 
     // Check that we actually have the id in the request...
     var node_id = null;
@@ -140,7 +138,7 @@ exports.delete_node = function(request, response) {
     if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
         node_id = request.params.id;
     } else {
-        var msg = "No node ID provided.";
+        var msg = 'No node ID provided.';
         logger.error(msg);
         throw msg;
     }
@@ -154,23 +152,23 @@ exports.delete_node = function(request, response) {
             }
 
             if (has_dependencies) {
-                osdf_error(response, "Node has dependencies on it.", 409);
+                osdf_error(response, 'Node has dependencies on it.', 409);
             } else {
-                logger.debug("No dependencies, so clear to delete.");
+                logger.debug('No dependencies, so clear to delete.');
                 // Get the user that is making the deletion request.
                 var user = auth.get_user(request);
                 delete_helper(user, node_id, response);
             }
         });
     } catch (e) {
-        osdf_error(response, "Unable to delete node.", 500);
+        osdf_error(response, 'Unable to delete node.', 500);
     }
 };
 
 // This is the method that handles node retrieval. It is called when users HTTP
 // GET the node.
 exports.get_node = function (request, response) {
-    logger.debug("In get_node.");
+    logger.debug('In get_node.');
 
     db.get(request.params.id, function(err, node_data) {
         node_retrieval_helper(request, response, err, node_data);
@@ -181,28 +179,28 @@ exports.get_node = function (request, response) {
 // called when users HTTP GET the node and supply a specific version number in
 // the url.
 exports.get_node_by_version = function (request, response) {
-    logger.debug("In get_node_by_version.");
+    logger.debug('In get_node_by_version.');
 
     var node_id = request.params.id;
     var requested_version = parseInt(request.params.ver, 10);
 
     if (requested_version <= 0) {
-        logger.warn("User asked for invalid version number of node.");
-        osdf_error(response, "Invalid version number.", 422);
+        logger.warn('User asked for invalid version number of node.');
+        osdf_error(response, 'Invalid version number.', 422);
     } else if ( isNaN(requested_version) ) {
         logger.warn("User didn't provide a valid number for the version number.");
-        osdf_error(response, "Invalid version number.", 422);
+        osdf_error(response, 'Invalid version number.', 422);
     } else {
         var version = request.params.ver.toString();
-        var stream = db.getAttachment(node_id + "_hist", version);
-        var data = "";
+        var stream = db.getAttachment(node_id + '_hist', version);
+        var data = '';
 
         stream.on('data', function(chunk) {
             data += chunk;
         });
 
         stream.on('end', function() {
-            logger.debug("CouchDB request for attachment complete.");
+            logger.debug('CouchDB request for attachment complete.');
             var couch_response = null;
             try {
                 couch_response = JSON.parse(data);
@@ -211,17 +209,17 @@ exports.get_node_by_version = function (request, response) {
             }
 
             if (couch_response === null) {
-                osdf_error(response, "Unable to retrieve node version.", 422);
+                osdf_error(response, 'Unable to retrieve node version.', 422);
             } else {
-                logger.info("Got a valid CouchDB response.");
+                logger.info('Got a valid CouchDB response.');
 
-                if (couch_response.hasOwnProperty("error")) {
-                    logger.info("CouchDB response indicated an error occurred.");
+                if (couch_response.hasOwnProperty('error')) {
+                    logger.info('CouchDB response indicated an error occurred.');
 
                     get_couch_doc(node_id, function(err, current_node) {
                         if (err) {
                             logger.error(err);
-                            osdf_error(response, "Unable to retrieve node.", 500);
+                            osdf_error(response, 'Unable to retrieve node.', 500);
                         } else {
                             var current_node_version = parse_version(current_node['_rev']);
 
@@ -232,7 +230,7 @@ exports.get_node_by_version = function (request, response) {
                             if (requested_version === current_node_version) {
                                 response.jsonp(osdf_utils.fix_keys(current_node));
                             } else {
-                                osdf_error(response, "Unable to retrieve node version.", 404);
+                                osdf_error(response, 'Unable to retrieve node version.', 404);
                             }
                         }
                     });
@@ -247,7 +245,7 @@ exports.get_node_by_version = function (request, response) {
 
 // Retrieve the nodes that a particular node links to
 exports.get_out_linkage = function(request, response) {
-    logger.debug("In get_linkage.");
+    logger.debug('In get_linkage.');
 
     // Check that we actually have the id in the request...
     var node_id = null;
@@ -255,16 +253,16 @@ exports.get_out_linkage = function(request, response) {
     if (request.hasOwnProperty('params') && request.params.hasOwnProperty('id')) {
         node_id = request.params.id;
     } else {
-        var msg = "No node ID provided.";
+        var msg = 'No node ID provided.';
         logger.error(msg);
         throw msg;
     }
 
+    var view_opts = {include_docs: true, startkey: [node_id], endkey:[node_id, {}]};
+
     try {
         // This needs to query a view, not issue N queries...
-        db.view('linkage/out',
-            {include_docs: true, startkey: [node_id], endkey:[node_id, {}]},
-            function(err, results) {
+        db.view('linkage/out', view_opts, function(err, results) {
             if (err) {
                 logger.error(err);
                 throw err;
@@ -278,7 +276,7 @@ exports.get_out_linkage = function(request, response) {
             // multiple times, but the API says we only report it once.
             var seen_list = [];
 
-            logger.debug("Filtering duplicates from the result list.");
+            logger.debug('Filtering duplicates from the result list.');
             var filtered = _.filter(results, function(result) {
                 if ( _.includes(seen_list, result['doc']['_id'])) {
                     return false;
@@ -305,10 +303,11 @@ exports.get_out_linkage = function(request, response) {
             });
 
             // Assemble the final document for transmission
-            var report = { "result_count": filtered.length,
-                           "page": 1,
-                           "results": []
-                         };
+            var report = {
+                'result_count': filtered.length,
+                'page': 1,
+                'results': []
+            };
 
             _.each(filtered, function(filtered_result) {
                 report['results'].push( filtered_result );
@@ -324,11 +323,11 @@ exports.get_out_linkage = function(request, response) {
 
 // Retrieve the nodes that point to this node.
 exports.get_in_linkage = function(request, response) {
-    logger.debug("In get_in_linkage.");
+    logger.debug('In get_in_linkage.');
 
     // Check that we actually have the id in the request...
     var node_id = request.params.id;
-    if (node_id === null || node_id === "") {
+    if (node_id === null || node_id === '') {
         osdf_error(response, 'Invalid or missing node id.', 422);
         return;
     }
@@ -345,7 +344,7 @@ exports.get_in_linkage = function(request, response) {
             // the API says we only report it once.
             var seen_list = [];
 
-            logger.debug("Filtering duplicates from the result list.");
+            logger.debug('Filtering duplicates from the result list.');
             var filtered = _.filter(results, function(result) {
                 if ( _.includes(seen_list, result['doc']['_id'])) {
                     return false;
@@ -372,10 +371,11 @@ exports.get_in_linkage = function(request, response) {
             });
 
             // Assemble the final document for transmission
-            var report = { "result_count": filtered.length,
-                           "page": 1,
-                           "results": []
-                         };
+            var report = {
+                'result_count': filtered.length,
+                'page': 1,
+                'results': []
+            };
 
             _.each(filtered, function(filtered_result) {
                 report['results'].push( filtered_result );
@@ -391,7 +391,7 @@ exports.get_in_linkage = function(request, response) {
 
 // This is the method that handles node creation.
 exports.insert_node = function (request, response) {
-    logger.debug("In insert_node.");
+    logger.debug('In insert_node.');
 
     var content = request.rawBody;
 
@@ -401,7 +401,7 @@ exports.insert_node = function (request, response) {
                 var node_data = JSON.parse(content);
                 callback(null, node_data);
             } catch (err) {
-                callback({err: "Invalid JSON data.", code: 422}, null);
+                callback({err: 'Invalid JSON data.', code: 422}, null);
             }
         },
         function(node_data, callback) {
@@ -416,26 +416,26 @@ exports.insert_node = function (request, response) {
         },
         function(report, node_data, callback) {
             if (successful_validation_report(report)) {
-                logger.info("Node validated properly.");
+                logger.info('Node validated properly.');
                 callback(null, node_data);
             } else {
                 if (report !== null && report.errors !== null && report.errors.length > 0) {
                     var first_err = report.errors[0];
-                    logger.info("Node does not validate. Error: " + first_err);
+                    logger.info('Node does not validate. Error: ' + first_err);
                     callback({err: first_err, code: 422});
                 } else {
-                    callback({err: "Node does not validate.", code: 422});
+                    callback({err: 'Node does not validate.', code: 422});
                 }
             }
         },
         function(node_data, callback) {
-            logger.debug("Saving node to CouchDB.");
+            logger.debug('Saving node to CouchDB.');
             db.save(node_data, function(err, couch_response) {
                 if (err) {
                     logger.error(err);
                     callback(err);
                 } else {
-                    logger.debug("Successfully saved node to CouchDB.");
+                    logger.debug('Successfully saved node to CouchDB.');
                     callback(null, couch_response, node_data);
                 }
             });
@@ -458,30 +458,29 @@ exports.insert_node = function (request, response) {
             } else {
                 // This shouldn't happen, but...
                 logger.error("No error, but CouchDB response was not 'ok'.");
-                callback({err: "Unable to save data.", code: 500});
+                callback({err: 'Unable to save data.', code: 500});
             }
         }],
-        function (err, node_url) {
-            if (err) {
-                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
-                    err.hasOwnProperty('code')) {
-                   osdf_error(response, err['err'], err['code']);
-                } else {
-                    logger.error(err);
-                    osdf_error(response, "Unable to save node.", 500);
-                }
+    function (err, node_url) {
+        if (err) {
+            if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                err.hasOwnProperty('code')) {
+                osdf_error(response, err['err'], err['code']);
             } else {
-                logger.info("Successful insertion: " + node_url);
-                response.location(node_url);
-                response.status(201).send('');
+                logger.error(err);
+                osdf_error(response, 'Unable to save node.', 500);
             }
+        } else {
+            logger.info('Successful insertion: ' + node_url);
+            response.location(node_url);
+            response.status(201).send('');
         }
-    );
+    });
 };
 
 // This is the function that handles edits/modifications to nodes.
 exports.update_node = function(request, response) {
-    logger.debug("In update_node.");
+    logger.debug('In update_node.');
 
     var node_id = request.params.id;
     var content = request.rawBody;
@@ -493,16 +492,18 @@ exports.update_node = function(request, response) {
                 var node_data = JSON.parse(content);
                 callback(null, node_data);
             } catch (err) {
-                callback({err: "Invalid JSON data.", code: 422}, null);
+                callback({err: 'Invalid JSON data.', code: 422}, null);
             }
         },
         function(node_data, callback) {
             // Check that the version has been supplied.
-            if (node_data !== null && node_data.hasOwnProperty("ver")) {
+            if (node_data !== null && node_data.hasOwnProperty('ver')) {
                 callback(null, node_data);
             } else {
-                callback({err: "Incoming node data does not supply the node version.",
-                          code: 422 });
+                callback({
+                    err: 'Incoming node data does not supply the node version.',
+                    code: 422
+                });
             }
         },
         function(node_data, callback) {
@@ -516,15 +517,15 @@ exports.update_node = function(request, response) {
         },
         function(report, node_data, callback) {
             if (successful_validation_report(report)) {
-                logger.info("Node validated properly.");
+                logger.info('Node validated properly.');
                 callback(null, node_data);
             } else {
                 if (report !== null && report.errors !== null && report.errors.length > 0) {
                     var first_err = report.errors[0];
-                    logger.info("Node does not validate. Error: " + first_err);
+                    logger.info('Node does not validate. Error: ' + first_err);
                     callback({err: first_err, code: 422});
                 } else {
-                    callback({err: "Node does not validate.", code: 422});
+                    callback({err: 'Node does not validate.', code: 422});
                 }
             }
         },
@@ -532,7 +533,7 @@ exports.update_node = function(request, response) {
             // If here, then we're okay to attempt the update
             update_node_helper(node_id, node_data, function(err, update_result) {
                 if (err) {
-                    logger.error("Unable to update data in CouchDB.", err);
+                    logger.error('Unable to update data in CouchDB.', err);
                     var msg = update_result['msg'];
                     var code = update_result['code'];
                     callback({'err': msg, 'code': code});
@@ -541,21 +542,20 @@ exports.update_node = function(request, response) {
                 }
             });
         }],
-        function(err) {
-            if (err) {
-                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
-                    err.hasOwnProperty('code')) {
-                   osdf_error(response, err['err'], err['code']);
-                } else {
-                    logger.error(err);
-                    osdf_error(response, "Unable to update node.", 500);
-                }
+    function(err) {
+        if (err) {
+            if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                err.hasOwnProperty('code')) {
+                osdf_error(response, err['err'], err['code']);
             } else {
-                logger.info("Successful update for node id: " + node_id);
-                response.status(200).send('');
+                logger.error(err);
+                osdf_error(response, 'Unable to update node.', 500);
             }
+        } else {
+            logger.info('Successful update for node id: ' + node_id);
+            response.status(200).send('');
         }
-    );
+    });
 };
 
 // Just validate a node against a schema if it has one
@@ -563,7 +563,7 @@ exports.update_node = function(request, response) {
 // then then only a check for well-formedness and basic
 // OSDF structure is performed.
 exports.validate_node = function(request, response) {
-    logger.debug("In validate_node.");
+    logger.debug('In validate_node.');
 
     var content = request.rawBody;
 
@@ -575,7 +575,7 @@ exports.validate_node = function(request, response) {
                 var node_data = JSON.parse(content);
                 callback(null, node_data);
             } catch (err) {
-                callback({err: "Invalid JSON provided.", code: 422 });
+                callback({err: 'Invalid JSON provided.', code: 422 });
             }
         },
         function(node_data, callback) {
@@ -591,60 +591,61 @@ exports.validate_node = function(request, response) {
         function(report, callback) {
             if (successful_validation_report(report)) {
                 // If here, then we're valid
-                logger.info("Detected a valid node.");
+                logger.info('Detected a valid node.');
                 callback(null);
             } else {
                 var first_err = report.errors[0];
 
-                logger.info("Invalid node. First error: ", first_err);
+                logger.info('Invalid node. First error: ', first_err);
 
-                var error_text = "";
+                var error_text = '';
                 for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
                     var err = report.errors[errIdx];
-                    error_text = error_text.concat( err + "\n" );
+                    error_text = error_text.concat( err + '\n' );
                 }
-                error_text = error_text.trim() + "\n";
+                error_text = error_text.trim() + '\n';
 
-                var err_object = { err: first_err,
-                                   code: 422,
-                                   content: error_text
-                                 };
+                var err_object = {
+                    err: first_err,
+                    code: 422,
+                    content: error_text
+                };
+
                 callback(err_object);
             }
         }],
-        function(err, result) {
-            if (err) {
-                // If here, then it's because the node data didn't validate
-                // or some other problem occurred.
-                if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
-                    err.hasOwnProperty('code')) {
-                    // Here we do not simply use the osdf_error() function because
-                    // we actually want to list all the error messages without the
-                    // user having to inspect HTTP headers. The first error message
-                    // will still be in the headers though...
-                    response.set('X-OSDF-Error', err['err']);
-                    response.status(err['code']);
+    function(err, result) {
+        if (err) {
+            // If here, then it's because the node data didn't validate
+            // or some other problem occurred.
+            if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
+                err.hasOwnProperty('code')) {
+                // Here we do not simply use the osdf_error() function because
+                // we actually want to list all the error messages without the
+                // user having to inspect HTTP headers. The first error message
+                // will still be in the headers though...
+                response.set('X-OSDF-Error', err['err']);
+                response.status(err['code']);
 
-                    if (err.hasOwnProperty('content')) {
-                        response.send(err['content']);
-                    } else {
-                        response.send('');
-                    }
+                if (err.hasOwnProperty('content')) {
+                    response.send(err['content']);
                 } else {
-                    osdf_error(response, "Could not validate node.", 500);
+                    response.send('');
                 }
             } else {
-                logger.debug("Valid node detected.");
-                response.status(200).send('');
+                osdf_error(response, 'Could not validate node.', 500);
             }
+        } else {
+            logger.debug('Valid node detected.');
+            response.status(200).send('');
         }
-    );
+    });
 };
 
 // This message is used to process auxiliary schema deletion events
 // that are relayed to this process from the master process by worker.js.
 exports.process_aux_schema_change = function (msg) {
-    logger.debug("In process_aux_schema_change.");
+    logger.debug('In process_aux_schema_change.');
 
     var aux_schema_json;
 
@@ -653,15 +654,15 @@ exports.process_aux_schema_change = function (msg) {
         var aux_schema_name = msg['name'];
 
         if (msg.hasOwnProperty('type') && msg['type'] === 'insertion') {
-            logger.debug("Got an auxiliary schema insertion.");
+            logger.debug('Got an auxiliary schema insertion.');
             aux_schema_json = msg['json'];
             insert_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
         } else if (msg.hasOwnProperty('type') && msg['type'] === 'update') {
-            logger.debug("Got an auxiliary schema update.");
+            logger.debug('Got an auxiliary schema update.');
             aux_schema_json = msg['json'];
             update_aux_schema_helper(namespace, aux_schema_name, aux_schema_json);
         } else if (msg.hasOwnProperty('type') && msg['type'] === 'deletion') {
-            logger.debug("Got an auxiliary schema deletion.");
+            logger.debug('Got an auxiliary schema deletion.');
             delete_aux_schema_helper(namespace, aux_schema_name);
         }
     }
@@ -670,7 +671,7 @@ exports.process_aux_schema_change = function (msg) {
 // This message is used to process schema deletion events that are relayed to
 // this process from the master process by worker.js.
 exports.process_schema_change = function (msg) {
-    logger.debug("In process_schema_change.");
+    logger.debug('In process_schema_change.');
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
         var namespace = msg['ns'];
@@ -690,15 +691,16 @@ exports.process_schema_change = function (msg) {
 // are unable to get that far, for instance, if the content can't be parsed
 // into a JSON data structure.
 function validate_incoming_node(node_string, callback) {
-    logger.debug("In validate_incoming_node.");
+    logger.debug('In validate_incoming_node.');
 
     var node;
+    var msg;
 
     if (typeof node_string === 'string') {
         try {
             node = JSON.parse(node_string);
         } catch (e) {
-            var msg = 'Unable to parse content into JSON.';
+            msg = 'Unable to parse content into JSON.';
             logger.debug(msg);
             callback(msg, null);
             return;
@@ -707,21 +709,21 @@ function validate_incoming_node(node_string, callback) {
 
     // Do a rudimentary check for whether the JSON document has the required keys.
     if (! node.ns || ! node.acl || ! node.node_type || ! node.meta || ! node.linkage ) {
-        var msg = "Node JSON does not possess the correct structure.";
+        msg = 'Node JSON does not possess the correct structure.';
         logger.debug(msg);
         callback(msg, null);
         return;
     }
 
     if (! (node.acl.hasOwnProperty('read') && node.acl['read'] instanceof Array)) {
-        var msg = "Node acl object doesn't have a correctly defined 'read' key.";
+        msg = "Node acl object doesn't have a correctly defined 'read' key.";
         logger.debug(msg);
         callback(msg, null);
         return;
     }
 
     if (! (node.acl.hasOwnProperty('write') && node.acl['write'] instanceof Array)) {
-        var msg = "Node acl object doesn't have a correctly defined 'write' key.";
+        msg = "Node acl object doesn't have a correctly defined 'write' key.";
         logger.debug(msg);
         callback(msg, null);
         return;
@@ -731,7 +733,7 @@ function validate_incoming_node(node_string, callback) {
         function(callback) {
             var errors = [];
             if (! _.includes(namespaces, node.ns)) {
-                var msg = "Node belongs to an unrecognized namespace.";
+                msg = 'Node belongs to an unrecognized namespace.';
                 logger.error(msg);
                 errors.push(msg);
             }
@@ -741,11 +743,11 @@ function validate_incoming_node(node_string, callback) {
             // Check if the linkages look okay...
             linkage_controller.valid_linkage(node, function(err, valid) {
                 if (err) {
-                    logger.error("Error when checking for linkage validity: " + err);
-                    callback("Unable to check linkage validity.");
+                    logger.error('Error when checking for linkage validity: ' + err);
+                    callback('Unable to check linkage validity.');
                 } else {
                     if (! valid) {
-                        errors.push("Invalid linkage detected for node.");
+                        errors.push('Invalid linkage detected for node.');
                     }
 
                     callback(null, errors, valid);
@@ -753,7 +755,7 @@ function validate_incoming_node(node_string, callback) {
             });
         },
         function(errors, linkage_validity, callback) {
-            logger.debug("Linkage validity: " + linkage_validity);
+            logger.debug('Linkage validity: ' + linkage_validity);
 
             var report = null;
 
@@ -774,11 +776,11 @@ function validate_incoming_node(node_string, callback) {
                 try {
                     result = tv4.validateMultiple(meta, schema);
                 } catch (err) {
-                    callback("Error validating document: " + err);
+                    callback('Error validating document: ' + err);
                 }
 
                 _.each(result.errors, function(validation_error) {
-                    var err_msg = validation_error.message + " on path " +
+                    var err_msg = validation_error.message + ' on path ' +
                                   validation_error.dataPath;
                     errors.push(err_msg);
                 });
@@ -787,28 +789,32 @@ function validate_incoming_node(node_string, callback) {
                 // validity
                 var combined_validity = linkage_validity && result.valid;
 
-                report = { valid: combined_validity,
-                           errors: errors };
+                report = {
+                    valid: combined_validity,
+                    errors: errors
+                };
             } else {
-                logger.debug("No validator found for namespace/node_type of " +
-                            node.ns + "/" + node.node_type + ".");
+                logger.debug('No validator found for namespace/node_type of {}/{}.'.
+                    format(node.ns, node.node_type));
 
                 // Since there is no JSON-Schema validation to check, the only
                 // validity to consider at this point is the linkage validity.
-                report = { valid: linkage_validity,
-                           errors: errors };
+                report = {
+                    valid: linkage_validity,
+                    errors: errors
+                };
             }
 
             callback(null, report);
-        }], function (err, report) {
-            if (err) {
-                logger.error(err);
-                callback(err, null);
-            } else {
-                callback(null, report);
-            }
+        }],
+    function (err, report) {
+        if (err) {
+            logger.error(err);
+            callback(err, null);
+        } else {
+            callback(null, report);
         }
-    );
+    });
 }
 
 // A function to parse the version of a CouchDB document out
@@ -817,21 +823,21 @@ function validate_incoming_node(node_string, callback) {
 // Parameters: CouchDB (string)
 // Returns: int
 function parse_version(couchdb_version) {
-    logger.debug("In parse_version.");
+    logger.debug('In parse_version.');
 
     if (couchdb_version === null) {
-        throw "Invalid CouchDB version provided.";
+        throw 'Invalid CouchDB version provided.';
     }
     var couchdb_version_int = parseInt(couchdb_version.split('-')[0], 10);
     return couchdb_version_int;
 }
 
 function get_node_version(node_id, callback) {
-    logger.debug("In get_node_version.");
+    logger.debug('In get_node_version.');
 
     db.get(node_id, function(err, data) {
         if (err) {
-            callback("Unable to retrieve node operation.", null);
+            callback('Unable to retrieve node operation.', null);
         } else {
             var couchdb_version = data['_rev'];
             var version = parse_version(couchdb_version);
@@ -846,11 +852,11 @@ function get_node_version(node_id, callback) {
 // Parameters: couchdb_id (string), callback (function)
 // Returns: none
 function get_couch_doc(couchdb_id, callback) {
-    logger.debug("In get_couch_doc.");
+    logger.debug('In get_couch_doc.');
 
     db.get(couchdb_id, function(err, data) {
         if (err) {
-            callback("Unable to retrieve CouchDB doc.", null);
+            callback('Unable to retrieve CouchDB doc.', null);
         } else {
             callback(null, data);
         }
@@ -858,7 +864,7 @@ function get_couch_doc(couchdb_id, callback) {
 }
 
 function update_node_helper(node_id, node_data, callback) {
-    logger.debug("In update_node_helper.");
+    logger.debug('In update_node_helper.');
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
@@ -867,7 +873,7 @@ function update_node_helper(node_id, node_data, callback) {
         function(callback) {
             get_couch_doc(node_id, function(err, data) {
                 if (err) {
-                    result['msg'] = "Unable to perform update operation.";
+                    result['msg'] = 'Unable to perform update operation.';
                     result['code'] = 500;
 
                     // This should stop the waterfall...
@@ -883,8 +889,8 @@ function update_node_helper(node_id, node_data, callback) {
             var version = parse_version(couchdb_version);
 
             if ( node_version !== version ) {
-                var msg = "Version provided (" + node_version + ") doesn't match " +
-                          "saved (" + version + ").";
+                var msg = 'Version provided (' + node_version + ") doesn't match " +
+                          'saved (' + version + ').';
 
                 result['msg'] = msg;
                 result['code'] = 422;
@@ -908,19 +914,19 @@ function update_node_helper(node_id, node_data, callback) {
                 }
 
                 if (! couch_response.ok) {
-                    result['msg'] =  "Unable to save node data.";
+                    result['msg'] =  'Unable to save node data.';
                     result['code'] = 500;
 
                     callback(result['msg']);
                 }
 
-                logger.info("Successful update for node id: " + node_id);
+                logger.info('Successful update for node id: ' + node_id);
                 callback(null, previous_node);
             });
         },
         function(previous_node, callback) {
             // Save the history
-            logger.debug("Saving node history for node: " + node_id);
+            logger.debug('Saving node history for node: ' + node_id);
 
             previous_node = osdf_utils.fix_keys(previous_node);
 
@@ -929,15 +935,15 @@ function update_node_helper(node_id, node_data, callback) {
                     if (err) {
                         logger.error(err);
 
-                         result['msg'] = err.error;
-                         result['code'] = 500;
+                        result['msg'] = err.error;
+                        result['code'] = 500;
 
-                         callback(err);
+                        callback(err);
                     } else {
-                         result['msg'] = '';
-                         result['code'] = 200;
+                        result['msg'] = '';
+                        result['code'] = 200;
 
-                         callback(null);
+                        callback(null);
                     }
                 });
             } else {
@@ -960,7 +966,7 @@ function update_node_helper(node_id, node_data, callback) {
 }
 
 function define_namespace_validators(namespace, define_cb) {
-    logger.debug("In define_namespace_validators: " + namespace);
+    logger.debug('In define_namespace_validators: ' + namespace);
     var file_idx;
 
     var schema_registrar = function(callback) {
@@ -970,8 +976,14 @@ function define_namespace_validators(namespace, define_cb) {
         // Each .json file in there is basenamed with the name of the node_type.
         fs.readdir(schema_dir, function(err, files) {
             if (err) {
+                logger.error(err);
                 throw err;
             }
+
+            logger.debug('Filtering out non-json files.');
+            files = _.filter(files, function(file) {
+                return path.extname(file) === '.json';
+            });
 
             if (files.length === 0) {
                 validators[namespace] = {};
@@ -980,27 +992,25 @@ function define_namespace_validators(namespace, define_cb) {
                 for (file_idx = 0; file_idx < files.length; file_idx++) {
                     var node_type_schema = files[file_idx];
 
-                    if ( path.extname(node_type_schema) === '.json') {
-                        logger.info("Found a schema! " + node_type_schema);
+                    logger.info('Found a schema! ' + node_type_schema);
 
-                        var node_type = path.basename(node_type_schema, '.json');
+                    var node_type = path.basename(node_type_schema, '.json');
 
-                        var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
+                    var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
 
-                        if (! validators.hasOwnProperty(namespace)) {
-                            validators[namespace] = {};
-                        }
+                    if (! validators.hasOwnProperty(namespace)) {
+                        validators[namespace] = {};
+                    }
 
-                        if (! validators[namespace].hasOwnProperty(node_type)) {
-                            validators[namespace][node_type] = {};
-                        }
+                    if (! validators[namespace].hasOwnProperty(node_type)) {
+                        validators[namespace][node_type] = {};
+                    }
 
-                        try {
-                            validators[namespace][node_type]['schema'] = JSON.parse(data);
-                        } catch (e) {
-                            logger.warn("ERROR: Unable to parse schema " +
-                                        node_type_schema + " to JSON !!!");
-                        }
+                    try {
+                        validators[namespace][node_type]['schema'] = JSON.parse(data);
+                    } catch (e) {
+                        logger.error('ERROR: Unable to parse schema ' +
+                            node_type_schema + ' to JSON !!!');
                     }
                 }
                 callback();
@@ -1019,18 +1029,18 @@ function define_namespace_validators(namespace, define_cb) {
                 if (err) {
                     callback(err);
                 } else {
-                    logger.info("Finished registering auxiliary schemas for: " + namespace);
+                    logger.info('Finished registering auxiliary schemas for ' +
+                        'namespace "{}".'.format(namespace));
                     callback(null);
                 }
             });
         }],
-        function(err) {
-            if (err) {
-                logger.error(err);
-            }
-            define_cb(err);
+    function(err) {
+        if (err) {
+            logger.error(err);
         }
-    );
+        define_cb(err);
+    });
 }
 
 // This function is used to help out with the deletion of nodes once it has already
@@ -1041,12 +1051,12 @@ function define_namespace_validators(namespace, define_cb) {
 //             response (object), the http response object so response can be sent.
 // Returns: none
 function delete_helper(user, node_id, response) {
-    logger.debug("In delete_helper.");
+    logger.debug('In delete_helper.');
 
     db.get(node_id, function(err, node_data) {
         try {
             if (err) {
-                if (err.error && err.error === "not_found") {
+                if (err.error && err.error === 'not_found') {
                     logger.info("User '" + user + "' attempted to delete unknown node: " + node_id);
                     osdf_error(response, 'Unknown node.', 422);
                 } else {
@@ -1058,39 +1068,39 @@ function delete_helper(user, node_id, response) {
                 if ( can_write ) {
                     delete_couch_doc(node_id, function(err) {
                         if (err) {
-                            throw "Unable to delete node " + node_id;
+                            throw 'Unable to delete node ' + node_id;
                         } else {
                             delete_history_node(node_id, function(err) {
                                 if (err) {
-                                    logger.warn("Unable to delete history of node: " +
-                                                node_id + ". " + err.message );
+                                    logger.warn('Unable to delete history of node: ' +
+                                        node_id + '. ' + err.message );
                                 } else {
-                                    logger.info("Successful deletion: " + node_id);
+                                    logger.info('Successful deletion: ' + node_id);
                                 }
                                 response.status(204).send('');
                             });
                         }
                     });
                 } else {
-                    logger.debug("User " + user + " cannot delete node " + node_id);
+                    logger.debug('User ' + user + ' cannot delete node ' + node_id);
                     osdf_error(response, 'No ACL permissions to delete node.', 403);
                 }
             }
         } catch (e) {
-            logger.warn("Failed deletion.", e);
+            logger.warn('Failed deletion.', e);
             response.status(500).send('');
         }
     });
 }
 
 function delete_history_node(node_id, callback) {
-    logger.debug("In delete_history_node.");
+    logger.debug('In delete_history_node.');
 
-    var history_node_id = node_id + "_hist";
+    var history_node_id = node_id + '_hist';
 
-    delete_couch_doc(node_id + "_hist", function(err) {
+    delete_couch_doc(node_id + '_hist', function(err) {
         if (err) {
-            logger.error("Unable to delete history node for node: " + history_node_id);
+            logger.error('Unable to delete history node for node: ' + history_node_id);
             callback(err);
         } else {
             callback(null);
@@ -1099,23 +1109,23 @@ function delete_history_node(node_id, callback) {
 }
 
 function delete_aux_schema_helper(namespace, aux_schema_name) {
-    logger.debug("In node-handler:delete_aux_schema_helper.");
+    logger.debug('In node-handler:delete_aux_schema_helper.');
 
     if (! (validators.hasOwnProperty(namespace))) {
-        logger.error("No such namespace: " + namespace);
+        logger.error('No such namespace: ' + namespace);
     }
 }
 
 function delete_schema_helper(namespace, schema_name) {
-    logger.debug("In node-handler:delete_schema_helper.");
+    logger.debug('In node-handler:delete_schema_helper.');
 
     if (validators.hasOwnProperty(namespace) &&
             validators[namespace].hasOwnProperty(schema_name)) {
-        logger.debug("Deleting schema " + schema_name + " from " +
-                     namespace + " namespace.");
+        logger.debug('Deleting schema ' + schema_name + ' from ' +
+                     namespace + ' namespace.');
         delete validators[namespace][schema_name];
     } else {
-        logger.error("The specified namespace or schema is not known.");
+        logger.error('The specified namespace or schema is not known.');
     }
 }
 
@@ -1130,11 +1140,11 @@ function delete_schema_helper(namespace, schema_name) {
 //                                   argument. Null if operation was successful.
 // Returns: none
 function delete_couch_doc(id, callback) {
-    logger.debug("In delete_couch_doc.");
+    logger.debug('In delete_couch_doc.');
 
     db.get(id, function(err, doc_data) {
         if (err) {
-            logger.error("Unable to determine revision of id " + id + ". Can't delete.");
+            logger.error('Unable to determine revision of id ' + id + ". Can't delete.");
             callback(err);
         } else {
             var doc_revision = doc_data['_rev'];
@@ -1143,7 +1153,7 @@ function delete_couch_doc(id, callback) {
                 if (err) {
                     callback(err);
                 } else {
-                    logger.debug("Successful deletion of node: " + id);
+                    logger.debug('Successful deletion of node: ' + id);
                     callback(null);
                 }
             });
@@ -1161,18 +1171,18 @@ function delete_couch_doc(id, callback) {
 // Parameters: a node object, or node_id string
 // Returns: a boolean
 function has_dependent_nodes(node, callback) {
-    logger.debug("In has_dependent_nodes.");
+    logger.debug('In has_dependent_nodes.');
 
     var node_id;
-    if (typeof(node) === "object" && node.hasOwnProperty('id') &&
+    if (typeof(node) === 'object' && node.hasOwnProperty('id') &&
             node.hasOwnProperty('linkage') && node.hasOwnProperty('meta')) {
         node_id = node['id'];
-    } else if (typeof(node) === "string") {
+    } else if (typeof(node) === 'string') {
         node_id = node;
     } else {
-        throw "Invalid argument.";
+        throw 'Invalid argument.';
     }
-    logger.debug("Checking " + node_id + " for dependencies.");
+    logger.debug('Checking ' + node_id + ' for dependencies.');
 
     var has_dependencies = false;
 
@@ -1189,7 +1199,7 @@ function has_dependent_nodes(node, callback) {
 
         var row_count = response.length;
         if (row_count > 0) {
-            logger.debug("Found dependencies for " + node_id);
+            logger.debug('Found dependencies for ' + node_id);
             has_dependencies = true;
         }
         callback(null, has_dependencies);
@@ -1199,67 +1209,68 @@ function has_dependent_nodes(node, callback) {
 // TODO: Investigate whether tv4 overwrites the previous notion it had
 // for that auxiliary schema. This code assumes that it does.
 function update_aux_schema_helper(namespace, name, aux_schema_json) {
-    logger.debug("In node-handler:update_aux_schema_helper.");
+    logger.debug('In node-handler:update_aux_schema_helper.');
 
-    logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
+    logger.debug('Type of aux schema provided: ' + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
         load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
             if (err) {
-                logger.error("Unable to load aux schema: " + err);
+                logger.error('Unable to load aux schema: ' + err);
             }
             return;
         });
     } else {
-        logger.error("No such namespace: " + namespace);
+        logger.error('No such namespace: ' + namespace);
     }
 }
 
 function insert_aux_schema_helper(namespace, name, aux_schema_json) {
-    logger.debug("In node-handler:insert_aux_schema_helper.");
+    logger.debug('In node-handler:insert_aux_schema_helper.');
 
-    logger.debug("Type of aux schema provided: " + typeof(aux_schema_json));
+    logger.debug('Type of aux schema provided: ' + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
         load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
             if (err) {
-                logger.error("Unable to load aux schema: " + err);
+                logger.error('Unable to load aux schema: ' + err);
             }
             return;
         });
     } else {
-        logger.error("No such namespace: " + namespace);
+        logger.error('No such namespace: ' + namespace);
     }
 }
 
 function insert_schema_helper(namespace, name, schema_json) {
-    logger.debug("In insert_schema_helper.");
+    logger.debug('In insert_schema_helper.');
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
         try {
             tv4.addSchema(name, schema_json);
         } catch (err) {
-            logger.error("Unable to load schema: " + err);
+            logger.error('Unable to load schema: ' + err);
         }
     } else {
-        logger.error("No such namespace: " + namespace);
+        logger.error('No such namespace: ' + namespace);
     }
 }
 
 function load_aux_schema_into_validator(tv4, schema, callback) {
-    logger.debug("In load_aux_schema_into_validator: " + schema);
+    logger.debug('In load_aux_schema_into_validator: ' + schema);
     var basename = path.basename(schema, '.json');
 
     fs.readFile(schema, 'utf-8',
         function(err, data) {
             if (err) {
-                logger.error("Missing or invalid schema found for " + schema );
+                logger.error('Missing or invalid schema found for ' + schema );
                 callback(err);
             } else {
-                logger.debug("Registering schema '" + schema + "' with id '" + basename + "'");
+                logger.debug('Registering schema "{}" with id "{}".'.
+                    format(schema, basename));
                 tv4.addSchema(basename, JSON.parse(data));
                 callback(null);
             }
@@ -1268,17 +1279,17 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
 }
 
 function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, callback) {
-    logger.debug("In load_aux_schema_into_validator_from_json. Aux schema name: " + name);
+    logger.debug('In load_aux_schema_into_validator_from_json. Aux schema name: ' + name);
 
     var json_type = typeof(aux_schema_json);
     try {
-        if (json_type === "object") {
+        if (json_type === 'object') {
             tv4.addSchema(name, aux_schema_json);
-        } else if (json_type === "string") {
+        } else if (json_type === 'string') {
             tv4.addSchema(name, JSON.parse(aux_schema_json));
             callback(null);
         } else {
-            callback("Invalid data type for auxiliary schema.");
+            callback('Invalid data type for auxiliary schema.');
         }
     } catch (err) {
         callback(err);
@@ -1286,7 +1297,7 @@ function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, ca
 }
 
 function load_aux_schemas_into_validator(ns, tv4, schemas, then) {
-    logger.debug("In load_aux_schemas_into_validator.");
+    logger.debug('In load_aux_schemas_into_validator.');
     var loaded = {};
     recursive_load_helper(ns, tv4, schemas, loaded, then);
 }
@@ -1315,13 +1326,13 @@ function ns2working(namespace) {
 // Parameters: populate_callback (function)
 // Returns: none
 function populate_validators(populate_callback) {
-    logger.debug("In populate_validators.");
+    logger.debug('In populate_validators.');
 
     async.each(namespaces, function(ns, cb) {
-        logger.info("Creating validators for namespace: " + ns);
+        logger.info('Creating validators for namespace: ' + ns);
         define_namespace_validators(ns, function(err) {
             if (err) {
-                logger.error("Error creating validators for namespace: " + ns);
+                logger.error('Error creating validators for namespace: ' + ns);
             }
             cb(err);
         });
@@ -1335,16 +1346,16 @@ function populate_validators(populate_callback) {
 }
 
 function establish_linkage_controls(callback) {
-    logger.debug("In establish_linkage_controls.");
+    logger.debug('In establish_linkage_controls.');
 
     async.each(namespaces, function(ns, cb) {
-        logger.info("Checking namespace " + ns + " for linkage.json file.");
-        var linkage_path = path.join(ns2working(ns), "linkage.json");
-        logger.debug("Path to linkage.json: " + linkage_path);
+        logger.info('Checking namespace "{}" for linkage.json file.'.format(ns));
+        var linkage_path = path.join(ns2working(ns), 'linkage.json');
+        logger.debug('Path to linkage.json: ' + linkage_path);
 
         fs.stat(linkage_path, function(err, stat) {
             if (err === null) {
-                logger.info("Linkage control file exists for namespace " + ns + ".");
+                logger.info('Linkage control file exists for namespace ' + ns + '.');
 
                 fs.readFile(linkage_path, 'utf8', function(err, file_text) {
                     if (err) {
@@ -1357,24 +1368,30 @@ function establish_linkage_controls(callback) {
                     try {
                         linkage_json = JSON.parse(file_text);
                     } catch (parse_err) {
-                        var msg = "Unable to parse linkage control file for namespace " + ns + "!";
+                        var msg = 'Unable to parse linkage control file for namespace "{}"!';
+                        msg = msg.format(ns);
                         logger.error(msg);
                         cb(msg);
                     }
 
-                    logger.debug("Successfully parsed linkage control file for namespace " + ns + ".");
+                    logger.debug('Successfully parsed linkage control file ' +
+                        'for namespace "{}".'.format(ns));
                     linkage_controller.set_namespace_linkages(ns, linkage_json);
                     cb(null);
                 });
             } else {
-                logger.info("No linkage control for namespace " + ns + ".");
+                logger.info('No linkage control file for namespace "{}".'.format(ns));
                 cb(null);
             }
         });
     },
     function(err) {
-        logger.error("Error in establish_linkage_controls: " + err);
-        callback(err);
+        if (err) {
+            logger.error('Error in establish_linkage_controls: ' + err);
+            callback(err);
+        } else {
+            callback(null);
+        }
     });
 }
 
@@ -1394,12 +1411,12 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 
         fs.stat(schema_src, function(err, stats) {
             if (err) {
-                logger.debug("Error examining " + schema_src + ": ", err);
+                logger.debug('Error examining ' + schema_src + ': ', err);
                 cb(err);
             }
 
             if (stats.isDirectory()) {
-                logger.warn("Skipping directory: " + schema_src);
+                logger.warn('Skipping directory: ' + schema_src);
                 cb();
             } else {
                 var schema_id = path.basename(schema, '.json');
@@ -1415,14 +1432,14 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
                         schemaJson = JSON.parse(data);
                         reference_ids = schema_utils.extractRefNames(schemaJson);
                     } catch (e) {
-                        logger.warn("Unable to extract references from " + schema_src);
+                        logger.warn('Unable to extract references from ' + schema_src);
                         cb(e);
                     }
 
                     var reference_schemas = [];
                     var refIdx;
                     for (refIdx = 0; refIdx < reference_ids.length; refIdx++) {
-                        var schema_file = reference_ids[refIdx] + ".json";
+                        var schema_file = reference_ids[refIdx] + '.json';
                         reference_schemas.push(schema_file);
                     }
 
@@ -1430,13 +1447,15 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
                     // already loaded.
                     recursive_load_helper(ns, tv4, reference_schemas, loaded, function(err) {
                         if (loaded.hasOwnProperty(schema_id)) {
-                            logger.debug("Already loaded " + schema_id);
+                            logger.debug('Already loaded ' + schema_id);
+                            cb();
                         } else {
-                            load_aux_schema_into_validator(tv4, schema_src, cb);
-                            // Make a note that we loaded this one already
-                            loaded[schema_id] = 1;
+                            load_aux_schema_into_validator(tv4, schema_src, function() {
+                                // Make a note that we loaded this one already
+                                loaded[schema_id] = 1;
+                                cb();
+                            });
                         }
-                        cb();
                     });
                 });
             }
@@ -1444,21 +1463,20 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
     },
     function(err) {
         if (err) {
-            console.log("H3" + err);
-            logger.error("Recursion error. " + err);
+            logger.error('Recursion error. ' + err);
         }
         then(err);
     });
 }
 
 function register_aux_schemas(ns, callback) {
-    logger.debug("In register_aux_schemas.");
+    logger.debug('In register_aux_schemas.');
 
     var validator = tv4.freshApi();
 
     register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
-            logger.error("Error in register_aux_schemas: " + err);
+            logger.error('Error in register_aux_schemas: ' + err);
             callback(err);
         } else {
             validators[ns]['val'] = validator;
@@ -1468,7 +1486,7 @@ function register_aux_schemas(ns, callback) {
 }
 
 function register_aux_schemas_to_validator(tv4, ns, then) {
-    logger.debug("In register_aux_schemas_to_validator.");
+    logger.debug('In register_aux_schemas_to_validator.');
 
     async.waterfall([
         function(callback) {
@@ -1478,9 +1496,15 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
                 if (err) {
                     logger.error(err);
                     callback(err);
-                } else {
-                    callback(null, files);
                 }
+
+                logger.debug('Filtering out non-json files.');
+                var acceptable_files = _.filter(files, function(file) {
+                    return path.extname(file) === '.json';
+                });
+
+                logger.info('Acceptable aux schema file count: ' + acceptable_files.length);
+                callback(null, acceptable_files);
             });
         },
         function(files, callback) {
@@ -1488,18 +1512,17 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
                 callback(err);
             });
         }],
-        function(err, results) {
-            then(err);
-        }
-    );
+    function(err, results) {
+        then(err);
+    });
 }
 
 function node_retrieval_helper(request, response, err, data) {
-    logger.debug("In node_retrieval_helper.");
+    logger.debug('In node_retrieval_helper.');
 
     if (err) {
         if (err.error === 'not_found') {
-            logger.debug("User requested non-existent node.");
+            logger.debug('User requested non-existent node.');
             osdf_error(response, 'Non-existent node.', 404);
         } else {
             logger.error(err);
@@ -1511,7 +1534,7 @@ function node_retrieval_helper(request, response, err, data) {
             var fix = osdf_utils.fix_keys(data);
             response.jsonp(fix);
         } else {
-            logger.info("User does not have read permissions for node.");
+            logger.info('User does not have read permissions for node.');
             osdf_error(response, 'No read access to this node.', 403);
         }
     }
@@ -1528,18 +1551,19 @@ function node_retrieval_helper(request, response, err, data) {
 //             callback (function) - Called when complete
 // Returns: none
 function save_history(node_id, node_data, callback) {
-    logger.debug("In save_history.");
+    logger.debug('In save_history.');
     var version = node_data['ver'];
 
-    var attachment = { contentType: 'application/json',
-                       name: version.toString(),
-                       body: JSON.stringify(node_data),
-                     };
+    var attachment = {
+        body: JSON.stringify(node_data),
+        contentType: 'application/json',
+        name: version.toString()
+    };
 
     try {
         if (version === 1) {
             // This is the first time this node is being edited/changed
-            db.save(node_id + "_hist", {}, function(err, data) {
+            db.save(node_id + '_hist', {}, function(err, data) {
                 if (err) {
                     logger.error(err);
                     throw err;
@@ -1547,9 +1571,10 @@ function save_history(node_id, node_data, callback) {
 
                 var first_hist_version = data['_rev'];
 
-                var doc = { id: node_id + "_hist",
-                            rev: first_hist_version
-                          };
+                var doc = {
+                    id: node_id + '_hist',
+                    rev: first_hist_version
+                };
 
                 // Save the data as an attachment into CouchDB...
                 db.saveAttachment(doc, attachment, function(err, data) {
@@ -1557,21 +1582,22 @@ function save_history(node_id, node_data, callback) {
                         logger.error(err);
                         throw err;
                     }
-                    logger.debug("Saved first history for node " + node_id + ".");
+                    logger.debug('Saved first history for node ' + node_id + '.');
                     callback(null);
                 });
             });
         } else {
             // This is not the first change/edit to this node...
-            db.get(node_id + "_hist", function(err, hist_node) {
+            db.get(node_id + '_hist', function(err, hist_node) {
                 if (err) {
                     logger.error(err);
                     throw err;
                 }
 
-                var doc = { id: node_id + "_hist",
-                            rev: hist_node['_rev']
-                          };
+                var doc = {
+                    id: node_id + '_hist',
+                    rev: hist_node['_rev']
+                };
 
                 // Save the data as an attachment into CouchDB...
                 db.saveAttachment(doc, attachment, function(err, data) {
@@ -1580,7 +1606,7 @@ function save_history(node_id, node_data, callback) {
                         throw err;
                     }
 
-                    logger.debug("Saved history for node " + node_id + ".");
+                    logger.debug('Saved history for node ' + node_id + '.');
                     callback(null);
                 });
             });
@@ -1591,7 +1617,7 @@ function save_history(node_id, node_data, callback) {
 }
 
 function validate_against_schema(data) {
-    logger.debug("In validate_against_schema.");
+    logger.debug('In validate_against_schema.');
 
     // TODO: More validation
     var ns = data.ns;
@@ -1601,14 +1627,16 @@ function validate_against_schema(data) {
     var schema = validators[ns][node_type]['schema'];
     var valid = tv4.validate(data, schema);
 
-    var report = { valid: valid,
-                   errors:  [ tv4.error ] };
+    var report = {
+        valid: valid,
+        errors:  [ tv4.error ]
+    };
 
     return report;
 }
 
 function successful_validation_report(report) {
-    logger.debug("In successful_validation_report.");
+    logger.debug('In successful_validation_report.');
 
     // Assume it's not valid until proven otherwise
     var valid = false;
