@@ -1,0 +1,57 @@
+{
+  "name": "osdf",
+  "version": "0.22.0",
+  "description": "Open Science Data Framework",
+  "main": "osdf.js",
+  "bin": {
+    "osdf": "check_river.js"
+  },
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "dependencies": {
+    "async": "^1.5.2",
+    "clone": "^2.1.1",
+    "commander": "^2.11.0",
+    "cradle": "^0.7.1",
+    "deep-diff": "^0.3.4",
+    "elasticsearch": "^11.0.1",
+    "express": "^4.15.3",
+    "is-my-json-valid": "^2.15.0",
+    "jison": "^0.4.17",
+    "jsonschema": "^1.1.1",
+    "line-reader": "^0.4.0",
+    "lodash": "^4.17.4",
+    "log4js": "^2.3.0",
+    "morgan": "^1.8.2",
+    "password-hash": "^1.2.2",
+    "pw": "^0.0.4",
+    "read": "^1.0.7",
+    "request": "^2.81.0",
+    "sprintf": "^0.1.5",
+    "string-format": "^0.5.0",
+    "tv4": "^1.3.0"
+  },
+  "devDependencies": {
+    "nodeunit": "^0.11.1"
+  },
+  "scripts": {
+    "test": "nodeunit test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/victor73/OSDF.git"
+  },
+  "keywords": [
+    "rest",
+    "science"
+  ],
+  "author": "victor73@github.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/victor73/OSDF/issues"
+  },
+  "homepage": "https://github.com/victor73/OSDF#readme"
+}
