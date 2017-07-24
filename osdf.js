@@ -25,8 +25,8 @@ configure();
 
 function engine_start() {
     // Get the configuration.
-    require('config');
-    var config = Config.get_instance(config_path);
+    var config = require('config');
+    config.load(config_path);
 
     if (cluster.isMaster) {
         start_master(config);
@@ -40,14 +40,14 @@ function configure() {
     var commander = require('commander');
 
     commander.option('-c, --config <path>',
-                     'Specify a configuration file. Default is ' +
-                     '<OSDF_HOME>/conf/config.ini.')
-             .option('-w, --working <path>',
-                     'Specify a path to the working directory where ' +
-                     'namespace data is stored.')
-             .option('-l, --log <path>',
-                     'Specify the path to the log file.')
-             .parse(process.argv);
+        'Specify a configuration file. Default is ' +
+        '<OSDF_HOME>/conf/config.ini.')
+        .option('-w, --working <path>',
+            'Specify a path to the working directory where ' +
+            'namespace data is stored.')
+        .option('-l, --log <path>',
+            'Specify the path to the log file.')
+        .parse(process.argv);
 
     config_path = commander.config;
     working_path = commander.working;
@@ -289,9 +289,9 @@ function show_ready(ready_data) {
     console.log('Welcome to');
     console.log(
         new Buffer('ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFwvIF9f' +
-                   'LwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=',
-                   'base64').toString('utf8')
+            'LwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=',
+        'base64').toString('utf8')
     );
-    console.log('Open Science Data Framework' + "\n");
+    console.log('Open Science Data Framework\n');
     console.log('===============================================');
 }

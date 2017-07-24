@@ -239,7 +239,7 @@ function get_ssl_options(config, callback) {
                 logger.debug('Certificate Authority (CA) file listing found.');
 
                 fs.readFile(ca_file, 'utf8', function(err, chain) {
-                    var chain_files = chain.split("\n");
+                    var chain_files = chain.split('\n');
                     chain_files = _.without(chain_files, '');
                     logger.debug('Number of CA chain files to read: ' +
                                  chain_files.length);

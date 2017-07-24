@@ -6,7 +6,7 @@ var parser = require('oql_jison_parser');
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 exports.compile = function (tree) {
-    logger.debug("In compile.");
+    logger.debug('In compile.');
     var query = {
         query: {
             filtered: {}
@@ -26,21 +26,21 @@ exports.compile = function (tree) {
 };
 
 exports.parse = function (query) {
-    logger.debug("In parse.");
+    logger.debug('In parse.');
     var tree = parser.parse(query);
     return tree;
 };
 
 var generators = {
-    "COMPARISON": function(node) {
+    'COMPARISON': function(node) {
         var left = node[0];
         var comparator = node[1];
         var right = node[2];
-        if (typeof left === "object") {
+        if (typeof left === 'object') {
             left = _processNode(left);
         }
 
-        if (typeof right === "object") {
+        if (typeof right === 'object') {
             right = _processNode(right);
         }
 
@@ -48,20 +48,21 @@ var generators = {
 
         return generated;
     },
-    "ALL": function(node) {
+    'ALL': function(node) {
         var text = node[0];
-        var generated = { 'query': {
-                            'query_string': {
-                              'query': null
-                            }
-                          }
-                        };
+        var generated = {
+            'query': {
+                'query_string': {
+                    'query': null
+                }
+            }
+        };
 
         generated.query.query_string.query = text;
 
         return generated;
     },
-    "SEARCH": function(node) {
+    'SEARCH': function(node) {
         var text = node[0];
         var field = node[1];
 
@@ -70,7 +71,7 @@ var generators = {
 
         return generated;
     },
-    "&&": function(left, right) {
+    '&&': function(left, right) {
         if (isEmpty(left) && isEmpty(right)) {
             return null;
         } else {
@@ -81,7 +82,7 @@ var generators = {
             return _and;
         }
     },
-    "||": function(left, right) {
+    '||': function(left, right) {
         if (isEmpty(left) && isEmpty(right)) {
             return null;
         } else {
@@ -93,7 +94,7 @@ var generators = {
             return _or;
         }
     },
-    "<": function(left, right) {
+    '<': function(left, right) {
         var _lt = {
             range: {}
         };
@@ -104,7 +105,7 @@ var generators = {
 
         return _lt;
     },
-    "<=": function(left, right) {
+    '<=': function(left, right) {
         var _lte = {
             range: {}
         };
@@ -115,7 +116,7 @@ var generators = {
 
         return _lte;
     },
-    ">": function(left, right) {
+    '>': function(left, right) {
         var _gt = {
             range: {}
         };
@@ -126,7 +127,7 @@ var generators = {
 
         return _gt;
     },
-    ">=": function(left, right) {
+    '>=': function(left, right) {
         var _gte = {
             range: {}
         };
@@ -137,12 +138,12 @@ var generators = {
 
         return _gte;
     },
-    "==": function(left, right) {
+    '==': function(left, right) {
         var _eq = {
             term: {}
         };
 
-        if (typeof left === "boolean") {
+        if (typeof left === 'boolean') {
             // As in [ true, '==', field ]
             _eq.term[ right ] = left;
         } else {
@@ -152,7 +153,7 @@ var generators = {
 
         return _eq;
     },
-    "!=": function(left, right) {
+    '!=': function(left, right) {
         var _ne = {
             bool: {
                 must_not: {
@@ -161,7 +162,7 @@ var generators = {
             }
         };
 
-        if (typeof left === "boolean") {
+        if (typeof left === 'boolean') {
             // As in [ true, '!=', field ]
             _ne.bool.must_not.term[ right ] = left;
         } else {
@@ -174,14 +175,14 @@ var generators = {
 };
 
 function _processNode(node) {
-    logger.debug("In _processNode.");
+    logger.debug('In _processNode.');
 
     if (node.length === 1) {
-        return generators["ALL"](node);
+        return generators['ALL'](node);
     } else if (node.length === 2) {
-        return generators["SEARCH"](node);
+        return generators['SEARCH'](node);
     } else if (node.length === 3) {
-        return generators["COMPARISON"](node);
+        return generators['COMPARISON'](node);
     } else {
         throw new Error('Invalid AST node.');
     }

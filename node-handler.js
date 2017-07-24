@@ -2,6 +2,7 @@
 // cradle - for interactions with CouchDB
 // tv4 - Used for JSON validation with JSON-Schema
 // async - For handling complicated async workflows
+// string-format - For easier assembly of more complicated strings
 
 var util = require('util');
 var _ = require('lodash');
@@ -1263,25 +1264,24 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
     logger.debug('In load_aux_schema_into_validator: ' + schema);
     var basename = path.basename(schema, '.json');
 
-    fs.readFile(schema, 'utf-8',
-        function(err, data) {
-            if (err) {
-                logger.error('Missing or invalid schema found for ' + schema );
-                callback(err);
-            } else {
-                logger.debug('Registering schema "{}" with id "{}".'.
-                    format(schema, basename));
-                tv4.addSchema(basename, JSON.parse(data));
-                callback(null);
-            }
+    fs.readFile(schema, 'utf-8', function(err, data) {
+        if (err) {
+            logger.error('Missing or invalid schema found for ' + schema );
+            callback(err);
+        } else {
+            logger.debug('Registering schema "{}" with id "{}".'.
+                format(schema, basename));
+            tv4.addSchema(basename, JSON.parse(data));
+            callback(null);
         }
-    );
+    });
 }
 
 function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, callback) {
     logger.debug('In load_aux_schema_into_validator_from_json. Aux schema name: ' + name);
 
     var json_type = typeof(aux_schema_json);
+
     try {
         if (json_type === 'object') {
             tv4.addSchema(name, aux_schema_json);
@@ -1292,6 +1292,7 @@ function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, ca
             callback('Invalid data type for auxiliary schema.');
         }
     } catch (err) {
+        logger.error('Error in load_aux_schema_into_validator_from_json: ' + err);
         callback(err);
     }
 }
@@ -1355,7 +1356,7 @@ function establish_linkage_controls(callback) {
 
         fs.stat(linkage_path, function(err, stat) {
             if (err === null) {
-                logger.info('Linkage control file exists for namespace ' + ns + '.');
+                logger.info('Linkage control file exists for namespace "{}".'.format(ns));
 
                 fs.readFile(linkage_path, 'utf8', function(err, file_text) {
                     if (err) {
@@ -1582,7 +1583,8 @@ function save_history(node_id, node_data, callback) {
                         logger.error(err);
                         throw err;
                     }
-                    logger.debug('Saved first history for node ' + node_id + '.');
+                    logger.debug('Saved first history for node {}.'.
+                        format(node_id));
                     callback(null);
                 });
             });
@@ -1606,7 +1608,7 @@ function save_history(node_id, node_data, callback) {
                         throw err;
                     }
 
-                    logger.debug('Saved history for node ' + node_id + '.');
+                    logger.debug('Saved history for node {}.'.format(node_id));
                     callback(null);
                 });
             });

@@ -8,9 +8,9 @@ var util = require('util');
 var sprintf = require('sprintf').sprintf;
 
 var es_river_name = 'osdf';
+var config = require('config');
 var logger = osdf_utils.get_logger();
 
-var config;
 var base_url;
 var port;
 var page_size;
@@ -27,8 +27,7 @@ exports.init = function(emitter) {
     logger.debug('In ' + path.basename(__filename) + ' init().');
 
     // Load configuration parameters
-    require('config');
-    config = Config.get_instance(osdf_utils.get_config());
+    config.load(osdf_utils.get_config());
     base_url = config.value('global', 'base_url');
     port = config.value('global', 'port');
     page_size = config.value('global', 'pagesize');
