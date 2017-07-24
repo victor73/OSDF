@@ -1,6 +1,5 @@
-/*jshint sub:true*/
-
 var _ = require('lodash');
+var async = require('async');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
@@ -12,7 +11,7 @@ var osdf_error = osdf_utils.send_error;
 // This is the code that is responsible for assembling the complete list
 // of namespaces that this OSDF instance is aware of.
 exports.get_all_namespaces = function (request, response) {
-    logger.debug("In get_all_namespaces.");
+    logger.debug('In get_all_namespaces.');
 
     var ns_path = path.join(working_dir, 'namespaces');
 
@@ -41,51 +40,55 @@ exports.get_all_namespaces = function (request, response) {
 
         // Reject any hidden files/directories, such as .svn directories
         files = _.reject(files, function(file) {
-                            return file.substr(0, 1) === '.';
-                        });
+            return file.substr(0, 1) === '.';
+        });
 
         // So, if we're here, the scan has been completed and the 'files'
         // array is populated without incident.
-        logger.info("Found " + files.length + " files.");
+        logger.info('Found ' + files.length + ' files.');
 
-        osdf_utils.async_for_each(
-            files,
-            function (file, callback) {
-                fs.stat(path.join(ns_path, file), function(err, stats) {
-                    if (err) {
-                        throw err;
-                    }
+        async.each(files, function(file, callback) {
+            fs.stat(path.join(ns_path, file), function(err, stats) {
+                if (err) {
+                    logger.error(err);
+                    callback(err);
+                }
 
-                    if (stats.isDirectory()) {
-                        var ns_dir = file;
-                        var info_file = path.join(ns_path, ns_dir, 'info.json');
-                        fs.readFile(info_file, function (err, file_text) {
-                            if (err) {
-                                logger.error(err);
-                            } else {
-                                var file_obj = JSON.parse(file_text);
-                                files_array.push(file_obj);
-                            }
-                            callback();
-                        });
-                    } else {
-                        logger.warn("Invalid entry " + file);
-                        callback();
-                    }
-                });
-            },
+                if (stats.isDirectory()) {
+                    var ns_dir = file;
+                    var info_file = path.join(ns_path, ns_dir, 'info.json');
+                    fs.readFile(info_file, function (err, file_text) {
+                        if (err) {
+                            logger.error(err);
+                            callback(err);
+                        } else {
+                            var file_obj = JSON.parse(file_text);
+                            files_array.push(file_obj);
+                            callback(null);
+                        }
+                    });
+                } else {
+                    logger.warn('Invalid entry (not a directory): ' + file);
+                    callback(null);
+                }
+            });
+        },
+        function(err) {
+            if (err) {
+                logger.error('Error retrieving all namespaces: ' + err);
+            }
             // Call the final packager and data sender...
-            final_packager
-        );
+            final_packager;
+        });
     });
 };
 
 // This is the code that is responsible for responding to requests for individual
 // namespaces.
 exports.get_namespace = function (request, response) {
-    logger.debug("In get_namespace.");
+    logger.debug('In get_namespace.');
 
-    var ns_file = path.join(working_dir, 'namespaces', request.params.ns, "info.json");
+    var ns_file = path.join(working_dir, 'namespaces', request.params.ns, 'info.json');
 
     // Check to see if we have a file descriptor (JSON) for the namespace the user
     // has specified. This is also an asynchronous call.
