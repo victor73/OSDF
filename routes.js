@@ -1,5 +1,3 @@
-/*jshint sub:true, es5:true*/
-
 var info_handler = require('info-handler');
 var node_handler = require('node-handler');
 var query_handler = require('query-handler');
