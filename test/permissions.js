@@ -3,8 +3,13 @@
 var events = require('events');
 var sec = require('perms-handler');
 var osdf_utils = require('osdf_utils');
-
 var logger = osdf_utils.get_logger();
+
+// Shutdown logging as it interferes with the nodeunit output
+// Can activate this again if necessary for debugging.
+var log4js = require('log4js');
+log4js.shutdown(function() {});
+
 var sec_initialized = false;
 var test_user = 'test';
 var privileged_user = 'test_executive';
@@ -50,7 +55,7 @@ exports['test_read_perms'] = function(test) {
 // Test the behavior of whether the system can decide if a user can write
 // (update/delete) a node given that node's ACL settings.
 exports['test_write_perms'] = function(test) {
-    logger.debug('In test_write_perms.');
+    logger.debug('In test_read_perms.');
 
     if (sec_initialized) {
         // Already initialized, so we can skip initialization.
@@ -70,6 +75,8 @@ exports['test_write_perms'] = function(test) {
 };
 
 function read_tests(test) {
+    logger.debug('In read_tests.');
+
     test.expect(3);
 
     var has_read = sec.has_read_permission(test_user, test_node);
@@ -87,6 +94,8 @@ function read_tests(test) {
 }
 
 function write_tests(test) {
+    logger.debug('In write_tests.');
+
     test.expect(3);
 
     var has_write = sec.has_write_permission('test', test_node);

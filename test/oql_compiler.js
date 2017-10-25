@@ -3,6 +3,11 @@
 var diff = require('deep-diff').diff;
 var oql2es = require('oql_compiler');
 
+// Shutdown logging as it interferes with the nodeunit output
+// Can activate this again if necessary for debugging.
+var log4js = require('log4js');
+log4js.shutdown(function() {});
+
 exports.BasicSearch = function(test) {
     var tree = [
         'text',
