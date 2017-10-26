@@ -19,7 +19,7 @@
     "deep-diff": "^0.3.4",
     "elasticsearch": "^11.0.1",
     "express": "^4.15.3",
-    "is-my-json-valid": "^2.15.0",
+    "is-my-json-valid": "^2.16.1",
     "jison": "^0.4.17",
     "jsonschema": "^1.1.1",
     "line-reader": "^0.4.0",
