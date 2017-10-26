@@ -1,3 +1,13 @@
+osdf (0.22-1) unstable; urgency=low
+
+  * Formatting and linting changes from switch to eslint.
+  * Using string-format for simplifying log messages in some places.
+  * Upgrades of various modules such as lodash, log4js, clone, async and others.
+  * Eliminated use of custom async code in favor of async module.
+  * Refactored the config module.
+
+ -- Victor <victor73@github.com>  Wed, 25 Oct 2017 12:00:00 -0400
+
 osdf (0.21-1) unstable; urgency=low
 
   * Improved reliability of some nodeunit test scripts

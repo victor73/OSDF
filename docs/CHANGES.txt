@@ -1,3 +1,12 @@
+0.22
+  * Formatting and linting changes from switch to eslint.
+  * Using string-format for simplifying log messages in some places.
+  * Upgrades of various modules such as lodash, log4js, clone, async and others.
+  * Eliminated use of custom async code in favor of async module.
+  * Refactored the config module.
+
+  -- Victor <victor73@github.com>  Wed, 25 Oct 2017 00:00:00 -0400
+
 0.21
   * Improved reliability of some nodeunit test scripts
   * Improved configurability of the test scripts with use
