@@ -270,7 +270,7 @@ exports['test_paginated_query_results'] = function(test) {
                 result.hasOwnProperty('search_result_total') &&
                 result.hasOwnProperty('result_count') &&
                 result['search_result_total'] > result['result_count'],
-            'Returned results are less than total available results.'),
+        'Returned results are less than total available results.');
 
         test.ok(response.headers.hasOwnProperty('x-osdf-query-resultset'),
             'Contains the header to point to the next result set.');
