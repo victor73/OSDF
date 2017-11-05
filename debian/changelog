@@ -1,3 +1,11 @@
+osdf (0.23-1) unstable; urgency=low
+
+  * Upgraded libraries: express, deep-diff, jison, nodeunit and request.
+  * Minor edit to testing document.
+  * Introduction of an .editorconfig file.
+
+ -- Victor <victor73@github.com>  Fri, 03 Nov 2017 12:00:00 -0400
+
 osdf (0.22-1) unstable; urgency=low
 
   * Formatting and linting changes from switch to eslint.
@@ -93,12 +101,12 @@ osdf (0.14-1) unstable; urgency=low
   * Fixed bug with contains() under certain node deletion
     situations. Replaced calls with lodash's includes().
   * Updated request, async and elasticsearch libraries.
- 
+
  -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
 
 osdf (0.13-1) unstable; urgency=low
 
-  * Upgraded elasticsearch, deep-diff, and commander libraries. 
+  * Upgraded elasticsearch, deep-diff, and commander libraries.
   * Changes for compatibility with node 4.2.1.
   * Improved query test script cleanup.
 
@@ -134,7 +142,7 @@ osdf (0.10.1-1) unstable; urgency=low
 
 osdf (0.10-1) unstable; urgency=low
 
-  * Upgraded to latest versions of tv4, request, lodash. 
+  * Upgraded to latest versions of tv4, request, lodash.
 
  -- Victor <victor73@github.com>  Tue, 01 Sep 2015 00:00:00 -0400
 

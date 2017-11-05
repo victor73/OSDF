@@ -1,3 +1,10 @@
+0.23
+  * Upgraded libraries: express, deep-diff, jison, nodeunit and request.
+  * Minor edit to testing document.
+  * Introduction of an .editorconfig file.
+
+  -- Victor <victor73@github.com>  Fri, 03 Nov 2017 00:00:00 -0400
+
 0.22
   * Formatting and linting changes from switch to eslint.
   * Using string-format for simplifying log messages in some places.
@@ -22,7 +29,7 @@
   -- Victor <victor73@github.com>  Fri, 03 Jun 2016 00:00:00 -0400
 
 0.20
-  * Removal of the elasticsearch plugin in the postinst. 
+  * Removal of the elasticsearch plugin in the postinst.
   * Aborting server startup if the user db file is missing or unreadable.
 
   -- Victor <victor73@github.com>  Sun, 29 May 2016 00:00:00 -0400
@@ -36,7 +43,7 @@
 
 0.18
   * Added support for CA chain of trust handling when using htttps.
-  * Improved error handling and logging when starting up. 
+  * Improved error handling and logging when starting up.
 
   -- Victor <victor73@github.com>  Tue, 08 Mar 2016 00:00:00 -0400
 
