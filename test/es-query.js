@@ -79,7 +79,7 @@ exports['test_basic_query'] = function(test) {
 
 // Test the behavior of whether the system can decide if a user can write
 // (update/delete) a node given that node's ACL settings.
-exports['test_invalid_query'] = function (test) {
+exports['test_invalid_query'] = function(test) {
     test.expect(2);
 
     var es_query = 'adioasdkjf';
@@ -101,7 +101,7 @@ exports['test_invalid_query'] = function (test) {
     });
 };
 
-exports['test_empty_string_query'] = function (test) {
+exports['test_empty_string_query'] = function(test) {
     test.expect(2);
 
     var es_query = '';
