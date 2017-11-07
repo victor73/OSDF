@@ -1,6 +1,6 @@
 {
   "name": "osdf",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "Open Science Data Framework",
   "main": "osdf.js",
   "bin": {
@@ -12,7 +12,7 @@
     "test": "test"
   },
   "dependencies": {
-    "async": "^1.5.2",
+    "async": "^2.0.0",
     "clone": "^2.1.1",
     "commander": "^2.11.0",
     "cradle": "^0.7.1",
@@ -24,8 +24,8 @@
     "jsonschema": "^1.1.1",
     "line-reader": "^0.4.0",
     "lodash": "^4.17.4",
-    "log4js": "^2.3.0",
-    "morgan": "^1.8.2",
+    "log4js": "^2.3.11",
+    "morgan": "^1.9.0",
     "password-hash": "^1.2.2",
     "pw": "^0.0.4",
     "read": "^1.0.7",

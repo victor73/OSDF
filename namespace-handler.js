@@ -10,7 +10,7 @@ var osdf_error = osdf_utils.send_error;
 
 // This is the code that is responsible for assembling the complete list
 // of namespaces that this OSDF instance is aware of.
-exports.get_all_namespaces = function (request, response) {
+exports.get_all_namespaces = function(request, response) {
     logger.debug('In get_all_namespaces.');
 
     var ns_path = path.join(working_dir, 'namespaces');
@@ -22,7 +22,7 @@ exports.get_all_namespaces = function (request, response) {
     // This is the function that takes final assembly of the data that has
     // been read from the filesystem, packages it all, and sends the final
     // datastructure to the client via the response object.
-    var final_packager = function () {
+    var final_packager = function() {
         var json = {};
         json.result_count = files_array.length;
         json.page = 1;
@@ -78,14 +78,14 @@ exports.get_all_namespaces = function (request, response) {
                 logger.error('Error retrieving all namespaces: ' + err);
             }
             // Call the final packager and data sender...
-            final_packager;
+            final_packager();
         });
     });
 };
 
 // This is the code that is responsible for responding to requests for individual
 // namespaces.
-exports.get_namespace = function (request, response) {
+exports.get_namespace = function(request, response) {
     logger.debug('In get_namespace.');
 
     var ns_file = path.join(working_dir, 'namespaces', request.params.ns, 'info.json');
@@ -98,7 +98,7 @@ exports.get_namespace = function (request, response) {
             osdf_error(response, "Namespace doesn't exit.", 404);
         } else {
             // File exists. So, let us read the data and send it back.
-            fs.readFile(ns_file, function (err, file_text) {
+            fs.readFile(ns_file, function(err, file_text) {
                 if (err) {
                     logger.error(err);
                     osdf_error(response, err.error, 500);
