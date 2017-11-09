@@ -3,12 +3,9 @@
 var events = require('events');
 var sec = require('perms-handler');
 var osdf_utils = require('osdf_utils');
-var logger = osdf_utils.get_logger();
+var tutils = require('./lib/test_utils');
 
-// Shutdown logging as it interferes with the nodeunit output
-// Can activate this again if necessary for debugging.
-var log4js = require('log4js');
-log4js.shutdown(function() {});
+var logger = tutils.get_null_logger();
 
 var sec_initialized = false;
 var test_user = 'test';

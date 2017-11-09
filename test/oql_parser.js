@@ -7,8 +7,10 @@ var parser = require('oql_compiler');
 
 // Shutdown logging as it interferes with the nodeunit output
 // Can activate this again if necessary for debugging.
-var log4js = require('log4js');
-log4js.shutdown(function() {});
+//var log4js = require('log4js');
+//log4js.shutdown(function() {});
+var tutils = require('./lib/test_utils');
+var logger = tutils.get_null_logger();
 
 exports.BasicSearch = function(test) {
     var query = '"text"[type]';

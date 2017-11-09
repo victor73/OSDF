@@ -2,7 +2,7 @@
 
 var async = require('async');
 var osdf_utils = require('osdf_utils');
-var tutils = require('./lib/test_utils.js');
+var tutils = require('./lib/test_utils');
 
 var test_ns = 'test';
 

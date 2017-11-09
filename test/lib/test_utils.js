@@ -16,6 +16,22 @@ var port = server_info['port'];
 var username = server_info['username'];
 var password = server_info['password'];
 
+exports.get_null_logger = function() {
+    var log4js = require('log4js');
+
+    log4js.configure({
+        appenders: {
+            noop: { type: 'file', filename: '/dev/null' },
+        },
+        categories: {
+            default: { appenders: [ 'noop' ], level: 'error' }
+        }
+    });
+
+    var logger = log4js.getLogger('noop');
+    return logger;
+};
+
 function get_server_info() {
     var config_path;
 
