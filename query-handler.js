@@ -1,11 +1,11 @@
 var _ = require('lodash');
 var auth = require('auth_enforcer');
-var jison = require('jison');
 var elasticsearch = require('elasticsearch');
+var jison = require('jison');
 var osdf_utils = require('osdf_utils');
 var path = require('path');
-var util = require('util');
 var sprintf = require('sprintf').sprintf;
+var util = require('util');
 
 var es_river_name = 'osdf';
 var config = require('config');

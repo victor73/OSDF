@@ -1,13 +1,14 @@
 var _ = require('lodash');
 var auth_enforcer = require('auth_enforcer');
-var async = require('async');
-var fs = require('fs');
-var osdf_utils = require('osdf_utils');
-var logger = osdf_utils.get_logger();
+var each = require('async/each');
 var events = require('events');
 var express = require('express');
+var fs = require('fs');
 var morgan = require('morgan');
+var osdf_utils = require('osdf_utils');
+var parallel = require('async/parallel');
 
+var logger = osdf_utils.get_logger();
 var node_handler = require('node-handler');
 var info_handler = require('info-handler');
 var perms_handler = require('perms-handler');
@@ -227,7 +228,7 @@ function listen_for_init_completion(config) {
 function get_ssl_options(config, callback) {
     logger.debug('In get_ssl_options.');
 
-    async.parallel([
+    parallel([
         function(callback) {
             var ca_file = config.value('global', 'ca_file');
             var ca = [];
@@ -244,7 +245,7 @@ function get_ssl_options(config, callback) {
                     logger.debug('Number of CA chain files to read: ' +
                                  chain_files.length);
 
-                    async.each(chain_files, function(file, cb) {
+                    each(chain_files, function(file, cb) {
                         logger.debug('Reading file ' + file);
                         fs.readFile(file, 'utf8', function(err, data) {
                             if (err) {

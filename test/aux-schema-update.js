@@ -1,11 +1,11 @@
 #!/usr/bin/env nodeunit
 
 var _ = require('lodash');
-var async = require('async');
+var clone = require('clone');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
-var clone = require('clone');
+var waterfall = require('async/waterfall');
 
 var test_ns = 'test';
 
@@ -42,7 +42,7 @@ exports['update_aux_schema'] = function(test) {
     var primary_schema_name = osdf_utils.random_string(8);
     var aux_schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert an auxiliary schema
             var aux_schema_doc = {
@@ -277,7 +277,7 @@ exports['update_aux_schema_with_malformed_json'] = function(test) {
     /*eslint no-useless-escape: 0*/
     var bad_data = '\\\\\/////';
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First, we create the auxiliary schema document
             var aux_schema_doc = {
@@ -399,7 +399,7 @@ exports['update_aux_schema_with_unknown_auxiliary'] = function(test) {
 
     var random_aux_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First, we insert the auxiliary schema that we will use to try
             // the update.
@@ -525,7 +525,7 @@ function invalid_credentials_helper(test, test_auth) {
         schema: test_aux_schema
     };
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert an auxiliary schema
             // Make sure we use the valid credentials here

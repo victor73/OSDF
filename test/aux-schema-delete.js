@@ -3,7 +3,7 @@
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
-var async = require('async');
+var waterfall = require('async/waterfall');
 
 var test_ns = 'test';
 
@@ -37,7 +37,7 @@ exports['delete_aux_schema'] = function(test) {
 
     var aux_schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert an auxiliary schema
             var aux_schema_doc = {
@@ -211,7 +211,7 @@ exports['delete_aux_schema_in_use'] = function(test) {
         schema: test_primary_schema
     };
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert the auxiliary schema
             tutils.insert_aux_schema(test_ns, aux_schema_doc, auth,
@@ -323,7 +323,7 @@ function invalid_credentials_helper(test, test_auth) {
 
     var aux_schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var aux_schema_doc = {

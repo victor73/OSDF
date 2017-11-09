@@ -1,6 +1,6 @@
 #!/usr/bin/env nodeunit
 
-var async = require('async');
+var waterfall = require('async/waterfall');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
 
@@ -39,7 +39,7 @@ exports['retrieve_all'] = function(test) {
         schema: test_schema
     };
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             tutils.insert_schema(test_ns, schema_doc, auth_header,
                 function(err, resp) {
@@ -171,7 +171,7 @@ exports['basic_retrieve'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {
@@ -257,7 +257,7 @@ exports['basic_retrieve_no_auth'] = function(test) {
         schema: test_schema
     };
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             tutils.insert_schema(test_ns, schema_doc, auth_header,
                 function(err, resp) {
@@ -332,7 +332,7 @@ exports['basic_retrieve_bad_auth'] = function(test) {
     };
 
     // First we create a node
-    async.waterfall([
+    waterfall([
         function(callback) {
             tutils.insert_schema( test_ns, schema_doc, auth_header,
                 function(err, resp) {

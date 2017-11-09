@@ -1,8 +1,8 @@
-#!/usr/bin/node
+#!/usr/bin/env nodeunit
 
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
-var async = require('async');
+var waterfall = require('async/waterfall');
 
 var test_ns = 'test';
 
@@ -33,7 +33,7 @@ exports['delete_schema'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {
@@ -145,7 +145,7 @@ exports['delete_schema_no_auth'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {
@@ -246,7 +246,7 @@ exports['delete_schema_bad_auth'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {

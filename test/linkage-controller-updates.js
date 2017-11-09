@@ -1,7 +1,7 @@
 #!/usr/bin/env nodeunit
 
 var osdf_utils = require('osdf_utils');
-var async = require('async');
+var waterfall = require('async/waterfall');
 var tutils = require('./lib/test_utils.js');
 var _ = require('lodash');
 
@@ -19,7 +19,7 @@ var test_node = {
 exports['update_all_links_disallowed'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a starting node
             var start_node = _.cloneDeep(test_node);
@@ -127,7 +127,7 @@ exports['update_all_links_disallowed'] = function(test) {
 exports['update_one_allowance_invalid_link'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we make a "target" node
             var target = _.cloneDeep(test_node);
@@ -239,7 +239,7 @@ exports['update_one_allowance_invalid_link'] = function(test) {
 exports['update_wildcard_linkage_valid_target'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a "target" node
             var target = _.cloneDeep(test_node);
@@ -351,7 +351,7 @@ exports['update_wildcard_linkage_valid_target'] = function(test) {
 exports['update_wildcard_linkage_invalid_target'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a "target" node
             var target = _.cloneDeep(test_node);
@@ -485,7 +485,7 @@ exports['update_wildcard_linkage_invalid_target'] = function(test) {
 exports['update_wildcard_linkage_wildcard_target'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Create a "starting" node
             var start_node = _.cloneDeep(test_node);
@@ -587,7 +587,7 @@ exports['update_wildcard_linkage_wildcard_target'] = function(test) {
 exports['update_wildcard_node_wildcard_linkage_wildcard_target'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Create a "starting" node to
             var start_node = _.cloneDeep(test_node);
@@ -690,7 +690,7 @@ exports['update_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
 exports['update_multi_linkage_multi_target_valid'] = function (test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Make a "target" node to start out with
             var target = _.cloneDeep(test_node);
@@ -784,7 +784,7 @@ exports['update_multi_linkage_multi_target_valid'] = function (test) {
 exports['update_multi_linkage_multi_target_invalid'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Make a "target" node to start out with
             var target = _.cloneDeep(test_node);

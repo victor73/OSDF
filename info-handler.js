@@ -3,7 +3,6 @@ var config = require('config');
 var utils = require('osdf_utils');
 var logger = utils.get_logger();
 var info = {};
-var config = require('config');
 
 exports.init = function(emitter) {
     logger.debug('In ' + path.basename(__filename) + ' init().');

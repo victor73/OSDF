@@ -1,25 +1,29 @@
-// lodash - for generic utility functions
-// cradle - for interactions with CouchDB
-// tv4 - Used for JSON validation with JSON-Schema
-// async - For handling complicated async workflows
-// string-format - For easier assembly of more complicated strings
+// async/each      - For handling async code in series
+// async/waterfall - For handling complicated async workflows
+// async/series    - For handling async code in series
+// cradle          - for interactions with CouchDB
+// lodash          - for generic utility functions
+// string-format   - For easier assembly of more complicated strings
+// tv4             - Used for JSON validation with JSON-Schema
 
-var util = require('util');
 var _ = require('lodash');
-var async = require('async');
+var auth = require('auth_enforcer');
+var config = require('config');
 var cradle = require('cradle');
 var http = require('http');
-var fs = require('fs');
-var osdf_utils = require('osdf_utils');
-var schema_utils = require('schema_utils');
-var path = require('path');
-var tv4 = require('tv4');
-var perms = require('perms-handler');
-var auth = require('auth_enforcer');
-var sprintf = require('sprintf').sprintf;
-var linkage_controller = require('linkage-controller');
-var config = require('config');
+var each = require('async/each');
 var format = require('string-format');
+var fs = require('fs');
+var linkage_controller = require('linkage-controller');
+var osdf_utils = require('osdf_utils');
+var path = require('path');
+var perms = require('perms-handler');
+var schema_utils = require('schema_utils');
+var series = require('async/series');
+var sprintf = require('sprintf').sprintf;
+var tv4 = require('tv4');
+var util = require('util');
+var waterfall = require('async/waterfall');
 
 format.extend(String.prototype);
 
@@ -80,7 +84,7 @@ exports.init = function(emitter, working_dir_custom) {
         }
     });
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // The linkage controller needs its own ability to interact with
             // CouchDB, to validate nodes, so we give it the connection we
@@ -396,7 +400,7 @@ exports.insert_node = function (request, response) {
 
     var content = request.rawBody;
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             try {
                 var node_data = JSON.parse(content);
@@ -486,7 +490,7 @@ exports.update_node = function(request, response) {
     var node_id = request.params.id;
     var content = request.rawBody;
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Check that we have been provided valid JSON
             try {
@@ -570,7 +574,7 @@ exports.validate_node = function(request, response) {
 
     var report; // To hold the results of validation
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             try {
                 var node_data = JSON.parse(content);
@@ -730,7 +734,7 @@ function validate_incoming_node(node_string, callback) {
         return;
     }
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             var errors = [];
             if (! _.includes(namespaces, node.ns)) {
@@ -870,7 +874,7 @@ function update_node_helper(node_id, node_data, callback) {
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             get_couch_doc(node_id, function(err, data) {
                 if (err) {
@@ -1019,7 +1023,7 @@ function define_namespace_validators(namespace, define_cb) {
         });
     };
 
-    async.series([
+    series([
         function(callback) {
             schema_registrar(function() {
                 callback(null);
@@ -1329,7 +1333,7 @@ function ns2working(namespace) {
 function populate_validators(populate_callback) {
     logger.debug('In populate_validators.');
 
-    async.each(namespaces, function(ns, cb) {
+    each(namespaces, function(ns, cb) {
         logger.info('Creating validators for namespace: ' + ns);
         define_namespace_validators(ns, function(err) {
             if (err) {
@@ -1349,7 +1353,7 @@ function populate_validators(populate_callback) {
 function establish_linkage_controls(callback) {
     logger.debug('In establish_linkage_controls.');
 
-    async.each(namespaces, function(ns, cb) {
+    each(namespaces, function(ns, cb) {
         logger.info('Checking namespace "{}" for linkage.json file.'.format(ns));
         var linkage_path = path.join(ns2working(ns), 'linkage.json');
         logger.debug('Path to linkage.json: ' + linkage_path);
@@ -1407,7 +1411,7 @@ function establish_linkage_controls(callback) {
 //          other schemas
 // then: a callback that is called when the loading is complete
 function recursive_load_helper(ns, tv4, schemas, loaded, then) {
-    async.each(schemas, function(schema, cb) {
+    each(schemas, function(schema, cb) {
         var schema_src = locate_aux_schema_source(ns, schema);
 
         fs.stat(schema_src, function(err, stats) {
@@ -1489,7 +1493,7 @@ function register_aux_schemas(ns, callback) {
 function register_aux_schemas_to_validator(tv4, ns, then) {
     logger.debug('In register_aux_schemas_to_validator.');
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
             // Scan the files contained in the directory and process them

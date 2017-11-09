@@ -1,6 +1,6 @@
 #!/usr/bin/env nodeunit
 
-var async = require('async');
+var waterfall = require('async/waterfall');
 var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils');
 
@@ -36,7 +36,7 @@ var restricted_node = {
 exports['basic_deletion'] = function(test) {
     test.expect(6);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -110,7 +110,7 @@ exports['basic_deletion'] = function(test) {
 exports['deletion_no_auth'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -180,7 +180,7 @@ exports['deletion_no_auth'] = function(test) {
 exports['deletion_bad_auth'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -278,7 +278,7 @@ exports['deletion_of_nonexistent_node'] = function(test) {
 exports['deletion_of_node_without_write_perms'] = function(test) {
     test.expect(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node( restricted_node, auth, function(err, resp) {
@@ -375,7 +375,7 @@ exports['deletion_of_node_without_write_perms'] = function(test) {
 exports['deletion_of_node_with_linkage_dependencies'] = function(test) {
     test.expect(7);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             var parent_node = test_node;

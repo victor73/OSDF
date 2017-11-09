@@ -1,10 +1,10 @@
 var _ = require('lodash');
+var eachLimit = require('async/eachLimit');
 var nh = require('node-handler');
 var osdf_utils = require('osdf_utils');
 var util = require('util');
-var async = require('async');
-var db = null;
 
+var db = null;
 var linkage_control_map = {};
 var logger = osdf_utils.get_logger();
 
@@ -32,7 +32,7 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
 
     // Get each of the nodes we're pointing to and check their
     // node types...
-    async.eachLimit(node_ids, 1, function(node_id, cb) {
+    eachLimit(node_ids, 1, function(node_id, cb) {
         db.get(node_id, function(err, target_node) {
             if (err) {
                 if (err.hasOwnProperty('error') && err['error'].search('not_found') !== -1) {
@@ -131,7 +131,7 @@ exports.valid_linkage = function(node, callback) {
         // mechanism to abort the eachLimit() loop.
         var trueErrorFlag = false;
 
-        async.eachLimit(edges, 1, function (edge, cb) {
+        eachLimit(edges, 1, function (edge, cb) {
             logger.debug('Working on linkage named "' + edge + '"');
 
             if (ns_control[node_type].hasOwnProperty(edge)) {

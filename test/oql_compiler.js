@@ -4,7 +4,7 @@ var diff = require('deep-diff').diff;
 var oql2es = require('oql_compiler');
 
 var tutils = require('./lib/test_utils');
-var logger = tutils.get_null_logger()
+var logger = tutils.get_null_logger();
 
 exports.BasicSearch = function(test) {
     var tree = [

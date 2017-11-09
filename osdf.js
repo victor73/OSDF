@@ -2,8 +2,10 @@
 
 var _ = require('lodash');
 var cluster = require('cluster');
-var path = require('path');
+var log4js = require('log4js');
 var os = require('os');
+var path = require('path');
+
 var config_path = null;
 var working_path = null;
 var log_file_path = null;
@@ -101,6 +103,7 @@ function determine_worker_count(config) {
     }
 
     if (workers <= 0) {
+        logger.warn("Detected worker count of zero. Using CPU count.");
         workers = cpu_count;
     }
 
@@ -185,6 +188,7 @@ function start_master(config) {
                     ready_data['port'] = port;
                     ready_data['cors_enabled'] = cors_enabled;
                     ready_data['https_enabled'] = https_enabled;
+                    ready_data['worker_count'] = workers_array.length;
 
                     show_ready(ready_data);
                 }
@@ -214,23 +218,23 @@ function start_master(config) {
 
     process.on('SIGTERM', function() {
         console.error('Caught SIGTERM. Destroying workers.');
-
-        // Modify the flag so that the 'death' handler does not attempt
-        // to replace the workers we are about to destroy off.
-        letWorkersDie = true;
-
-        destroy_workers(workers_array);
+        shutdown(workers_array);
     });
 
     process.on('exit', function() {
         console.error('Exiting. Destroying workers.');
-
-        // Modify the flag so that the 'death' handler does not attempt
-        // to replace the workers we are about to destroy off.
-        letWorkersDie = true;
-
-        destroy_workers(workers_array);
+        shutdown(workers_array);
     });
+}
+
+function shutdown(workers) {
+    // Modify the flag so that the 'death' handler does not attempt
+    // to replace the workers we are about to destroy off.
+    letWorkersDie = true;
+
+    destroy_workers(workers);
+
+    log4js.shutdown();
 }
 
 function destroy_workers(workers) {
@@ -251,6 +255,7 @@ function show_ready(ready_data) {
     var user_count = ready_data['user_count'];
     var address = ready_data['address'];
     var port = ready_data['port'];
+    var worker_count = ready_data['worker_count'];
     var cors_enabled = ready_data['cors_enabled'];
     var https_enabled = ready_data['https_enabled'];
 
@@ -284,6 +289,7 @@ function show_ready(ready_data) {
     console.log('CORS enabled: ' + cors);
     console.log('Total number of registered OSDF users: ' + user_count);
     console.log('Running on node.js version: ' + process.version);
+    console.log('Workers being used: ' + worker_count);
     console.log('Listening on server:port : ' + address + ':' + port);
     console.log('===============================================');
     console.log('Welcome to');

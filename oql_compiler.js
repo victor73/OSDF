@@ -5,7 +5,7 @@ var parser = require('oql_jison_parser');
 // Speed up calls to hasOwnProperty
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-exports.compile = function (tree) {
+exports.compile = function(tree) {
     logger.debug('In compile.');
     var query = {
         query: {
@@ -25,7 +25,7 @@ exports.compile = function (tree) {
     return query;
 };
 
-exports.parse = function (query) {
+exports.parse = function(query) {
     logger.debug('In parse.');
     var tree = parser.parse(query);
     return tree;

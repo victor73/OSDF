@@ -1,15 +1,11 @@
 #!/usr/bin/env nodeunit
 
-var async = require('async');
 var _ = require('lodash');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
-var logger = osdf_utils.get_logger();
+var waterfall = require('async/waterfall');
 
-// Shutdown logging as it interferes with the nodeunit output
-// Can activate this again if necessary for debugging.
-var log4js = require('log4js');
-log4js.shutdown(function() {});
+var logger = tutils.get_null_logger();
 
 // Get a set of valid and invalid credentials for our tests
 var auth = tutils.get_test_auth();
@@ -22,7 +18,7 @@ exports['retrieve_all_namespaces'] = function(test) {
     logger.debug('In retrieve_all_namespaces');
     test.expect(9);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             tutils.retrieve_all_namespaces(auth, function(err, resp) {
                 if (err) {
@@ -132,7 +128,7 @@ exports['retrieve_all_namespaces_bad_auth'] = function(test) {
 exports['retrieve_valid_namespace'] = function(test) {
     test.expect(9);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             tutils.retrieve_all_namespaces(auth, function(err, resp) {
                 if (err) {
@@ -217,7 +213,7 @@ exports['retrieve_valid_namespace'] = function(test) {
 exports['retrieve_valid_namespace_no_auth'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Get the list of namespaces, and then choose one at random.
             tutils.retrieve_all_namespaces(auth, function(err, resp) {
@@ -284,7 +280,7 @@ exports['retrieve_valid_namespace_no_auth'] = function(test) {
 exports['retrieve_valid_namespace_bad_auth'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Get the list of namespaces, and then choose one at random.
             tutils.retrieve_all_namespaces(auth, function(err, resp) {

@@ -1,16 +1,19 @@
-// async - For handling complicated async workflows
+// async/each - For handling async loops
+// format        - For more easily formatting strings
+// fs            - For filesystem operations
 // lodash - for generic utility functions
+// path          - For work with filesystem paths
 // string-format - For easier assembly of more complicated strings
 
 var _ = require('lodash');
-var async = require('async');
+var each = require('async/each');
+var format = require('string-format');
 var fs = require('fs');
 var path = require('path');
 var osdf_utils = require('osdf_utils');
-var format = require('string-format');
-var logger = osdf_utils.get_logger();
 
 format.extend(String.prototype);
+var logger = osdf_utils.get_logger();
 
 // The main data structure to hold our ACL information.
 var acl = {};
@@ -35,7 +38,7 @@ function process_namespace(namespace, cb) {
         logger.debug('Found {} ACL files for namespace {}.'
             .format(files.length, namespace));
 
-        async.each(files, function(file, callback) {
+        each(files, function(file, callback) {
             var acl_file = path.join(acl_dir, file);
 
             fs.readFile(acl_file, 'utf-8', function(err, data) {
@@ -105,7 +108,7 @@ exports.init = function(emitter) {
         });
 
         // Now, iterate over the namespaces and scan the ACL files for each one.
-        async.each(namespaces, function(namespace, callback) {
+        each(namespaces, function(namespace, callback) {
             process_namespace(namespace, function(err) {
                 if (err) {
                     callback(err);

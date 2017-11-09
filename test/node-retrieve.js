@@ -1,9 +1,7 @@
 #!/usr/bin/env nodeunit
 
-/*jshint sub:true*/
-
 var osdf_utils = require('osdf_utils');
-var async = require('async');
+var waterfall = require('async/waterfall');
 var tutils = require('./lib/test_utils.js');
 
 // Get a set of valid and invalid credentials for our tests
@@ -32,7 +30,7 @@ var restricted_node = {
 exports['basic_retrieve'] = function(test) {
     test.expect(12);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -113,7 +111,7 @@ exports['basic_retrieve'] = function(test) {
 exports['basic_retrieve_no_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node...
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -178,7 +176,7 @@ exports['basic_retrieve_no_auth'] = function(test) {
 exports['basic_retrieve_bad_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -241,7 +239,7 @@ exports['basic_retrieve_bad_auth'] = function(test) {
 exports['retrieve_by_version'] = function(test) {
     test.expect(20);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -390,7 +388,7 @@ exports['retrieve_by_version'] = function(test) {
 exports['retrieve_by_version_with_invalid_version'] = function(test) {
     test.expect(7);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -501,7 +499,7 @@ exports['retrieve_by_version_with_invalid_version'] = function(test) {
 exports['retrieve_by_version_using_latest_version'] = function(test) {
     test.expect(20);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -653,7 +651,7 @@ exports['retrieve_by_version_using_latest_version'] = function(test) {
 exports['retrieve_by_version_no_auth'] = function(test) {
     test.expect(11);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -778,7 +776,7 @@ exports['retrieve_by_version_no_auth'] = function(test) {
 exports['retrieve_by_version_bad_auth'] = function(test) {
     test.expect(11);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -904,7 +902,7 @@ exports['retrieve_by_version_bad_auth'] = function(test) {
 function retrieve_by_version_test(test, auth) {
     test.expect(11);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {

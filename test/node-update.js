@@ -5,7 +5,7 @@ var events = require('events');
 var ee = new events.EventEmitter();
 ee.setMaxListeners(0);
 
-var async = require('async');
+var waterfall = require('async/waterfall');
 var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -35,7 +35,7 @@ var test_node_controlled = {
 exports['basic_update'] = function(test) {
     test.expect(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -142,7 +142,7 @@ exports['basic_update'] = function(test) {
 exports['update_no_auth'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Create the initial node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -206,7 +206,7 @@ exports['update_bad_auth'] = function(test) {
 
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Create the initial node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -271,7 +271,7 @@ exports['update_bad_auth'] = function(test) {
 exports['valid_update_with_schema_validation'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -373,7 +373,7 @@ exports['valid_update_with_schema_validation'] = function(test) {
 exports['invalid_update_with_schema_validation'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // create a node
             tutils.insert_node( test_node, auth, function(err, resp) {
@@ -455,7 +455,7 @@ exports['invalid_update_with_schema_validation'] = function(test) {
 exports['update_into_unknown_namespace'] = function(test) {
     test.expect(2);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -537,7 +537,7 @@ exports['update_into_unknown_namespace'] = function(test) {
 exports['update_with_invalid_version'] = function(test) {
     test.expect(3);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // create a node
             tutils.insert_node(test_node, auth, function(err, resp) {

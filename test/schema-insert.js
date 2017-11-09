@@ -1,7 +1,7 @@
 #!/usr/bin/env nodeunit
 
 var osdf_utils = require('osdf_utils');
-var async = require('async');
+var waterfall = require('async/waterfall');
 var tutils = require('./lib/test_utils.js');
 var schema_utils = require('schema_utils');
 
@@ -31,7 +31,7 @@ exports['insert_schema'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {
@@ -100,7 +100,7 @@ exports['insert_schema_with_malformed_json'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {
@@ -184,7 +184,7 @@ exports['insert_conflicting_schema'] = function(test) {
         schema: test_schema
     };
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             tutils.insert_schema(test_ns, schema_doc, auth,
@@ -265,7 +265,7 @@ exports['insert_schema_with_unknown_auxiliary'] = function(test) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Let's take the test schema, add a $ref to it using a
             // randomly generated name, and attempt to insert it. This
@@ -349,7 +349,7 @@ function invalid_credentials_helper(test, test_auth) {
 
     var schema_name = osdf_utils.random_string(8);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we insert a schema
             var schema_doc = {

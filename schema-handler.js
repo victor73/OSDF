@@ -1,12 +1,13 @@
-var fs = require('fs');
-var events = require('events');
-var async = require('async');
-var osdf_utils = require('osdf_utils');
-var schema_utils = require('schema_utils');
-var path = require('path');
 var _ = require('lodash');
-var util = require('util');
 var config = require('config');
+var each = require('async/each');
+var events = require('events');
+var fs = require('fs');
+var osdf_utils = require('osdf_utils');
+var path = require('path');
+var schema_utils = require('schema_utils');
+var util = require('util');
+var waterfall = require('async/waterfall');
 
 var root_local_dir = osdf_utils.get_osdf_root();
 var logger = osdf_utils.get_logger();
@@ -52,7 +53,7 @@ exports.init = function(emitter, working_dir_custom) {
         } else {
             logger.debug('Namespaces to scan: ' + namespaces.length);
 
-            async.each(namespaces, function(ns, cb) {
+            each(namespaces, function(ns, cb) {
                 get_ns_schemas(ns, function(err, ns_schemas) {
                     if (err) {
                         logger.error(err);
@@ -915,7 +916,7 @@ function get_ns_schemas(ns, callback) {
     var ns_schema_dir;
     var ns_aux_schema_dir;
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // Determine the directory to the schemas for this namespace.
             ns_schema_dir = path.join(working_dir, 'namespaces', ns, 'schemas');
@@ -942,7 +943,7 @@ function get_ns_schemas(ns, callback) {
 
             var schemas = {};
 
-            async.each(files, function(file, cb) {
+            each(files, function(file, cb) {
                 var file_path = path.join(ns_schema_dir, file);
 
                 fs.readFile(file_path, 'utf8', function(err, file_text) {
@@ -997,7 +998,7 @@ function get_ns_schemas(ns, callback) {
 
             var aux_schemas = {};
 
-            async.each(files, function(file, cb) {
+            each(files, function(file, cb) {
                 var file_path = path.join(ns_aux_schema_dir, file);
 
                 fs.readFile(ns_aux_schema_dir + '/' + file, 'utf8', function(err, file_text) {

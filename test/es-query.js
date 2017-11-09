@@ -1,6 +1,9 @@
 #!/usr/bin/env nodeunit
 
-var async = require('async');
+var each = require('async/each');
+var retry = require('async/retry');
+var series = require('async/series');
+var waterfall = require('async/waterfall');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -31,8 +34,20 @@ exports['test_empty_query'] = function(test) {
     });
 };
 
+// Here we test the functionality of a basic query by inserting a node with
+// a type of "example", and then querying it back out.
 exports['test_basic_query'] = function(test) {
     test.expect(8);
+
+    var test_doc = {
+        'ns': 'test',
+        'node_type': 'example',
+        'acl': { 'read': ['all'], 'write': ['all'] },
+        'linkage': {},
+        'meta': {
+            'color': 'red'
+        }
+    };
 
     var es_query = {
         'query':{
@@ -40,10 +55,40 @@ exports['test_basic_query'] = function(test) {
         }
     };
 
-    tutils.query(es_query, test_ns, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
+    waterfall([
+        function(callback) {
+            insert_nodes([test_doc], function(err, node_ids) {
+                if (err) {
+                    callback(err, null);
+                } else {
+                    callback(null);
+                }
+            });
+        },
+        function(callback) {
+            retry({ times: 10, interval: 3000 }, function(retry_cb) {
+                tutils.query(es_query, test_ns, auth, function(err, resp) {
+                    if (err) {
+                        retry_cb(err, null);
+                    } else {
+                        var data = resp['body'];
+                        var result = JSON.parse(data);
+                        if (result.hasOwnProperty('result_count') && result['result_count'] > 0) {
+                            retry_cb(null, resp);
+                        } else {
+                            retry_cb("Search still has no 'example' node available.", null);
+                        }
+                    }
+                });
+            }, function(err, resp) {
+                if (err) {
+                    callback(err, null);
+                } else {
+                    callback(null, resp);
+                }
+            });
+        },
+        function(resp, callback) {
             var data = resp['body'];
             var response = resp['response'];
 
@@ -55,7 +100,7 @@ exports['test_basic_query'] = function(test) {
 
             var result;
 
-            test.doesNotThrow( function() {
+            test.doesNotThrow(function() {
                 result = JSON.parse(data);
             }, Error, 'Data returned is valid JSON.');
 
@@ -70,12 +115,17 @@ exports['test_basic_query'] = function(test) {
                    (result['result_count'] > 0), 'Positive number of results.');
             test.ok(result !== null && result.hasOwnProperty('page') &&
                    (result['page'] > 0), 'Positive number of pages.');
-        }
 
+            callback(null);
+        }
+    ],
+    function(err, results) {
+        if (err) {
+            console.log(err);
+        }
         test.done();
     });
 };
-
 
 // Test the behavior of whether the system can decide if a user can write
 // (update/delete) a node given that node's ACL settings.
@@ -196,7 +246,7 @@ exports['test_bogus_json_object'] = function(test) {
 exports['test_paginated_query_results'] = function(test) {
     test.expect(5);
 
-    async.waterfall([function(callback) {
+    waterfall([function(callback) {
         // First, ensure we're starting with a blank slate. Delete any test
         // documents...
         wipe_test_docs(function(err) {
@@ -304,7 +354,7 @@ exports['test_query_all_pages'] = function (test) {
         }
     };
 
-    async.waterfall([function(callback) {
+    waterfall([function(callback) {
         // First, ensure we're starting with a blank slate. Delete any test
         // documents...
         wipe_test_docs(function(err) {
@@ -347,7 +397,7 @@ exports['test_query_all_pages'] = function (test) {
         });
     },
     function(node_ids, callback) {
-        async.retry({ times: 10, interval: 3000 }, function (cb, results) {
+        retry({ times: 10, interval: 3000 }, function (cb, results) {
             tutils.query(es_query, test_ns, auth, function(err, resp) {
                 if (err) {
                     cb(err);
@@ -418,16 +468,20 @@ exports['test_query_all_pages'] = function (test) {
 };
 
 function delete_nodes(node_ids, callback) {
-    async.each(node_ids,
+    each(node_ids,
         function(id, cb) {
             tutils.delete_node(id, auth, function(err, resp) {
-                var data = resp['body'];
-                var response = resp['response'];
-
-                if (response.statusCode === 204) {
-                    cb();
+                if (err) {
+                    cb(err);
                 } else {
-                    cb('Unable to delete test node!');
+                    var data = resp['body'];
+                    var response = resp['response'];
+
+                    if (response.statusCode === 204) {
+                        cb();
+                    } else {
+                        cb('Unable to delete test node!');
+                    }
                 }
             });
         },
@@ -444,18 +498,22 @@ function delete_nodes(node_ids, callback) {
 function insert_nodes(test_docs, callback) {
     var node_ids = [];
 
-    async.each(test_docs,
+    each(test_docs,
         function(test_doc, cb) {
             tutils.insert_node(test_doc, auth, function(err, resp) {
-                var data = resp['body'];
-                var response = resp['response'];
-
-                if (response.statusCode === 201) {
-                    var id = tutils.get_node_id(response);
-                    node_ids.push(id);
-                    cb();
+                if (err) {
+                    cb(err);
                 } else {
-                    cb('Unable to insert test node!');
+                    var data = resp['body'];
+                    var response = resp['response'];
+
+                    if (response.statusCode === 201) {
+                        var id = tutils.get_node_id(response);
+                        node_ids.push(id);
+                        cb();
+                    } else {
+                        cb('Unable to insert test node!');
+                    }
                 }
             });
         },
@@ -470,7 +528,7 @@ function insert_nodes(test_docs, callback) {
 }
 
 function validate_nodes(test_docs, callback) {
-    async.each(test_docs,
+    each(test_docs,
         function(test_doc, cb) {
             tutils.validate_node(test_doc, auth, function(err, resp) {
                 var data = resp['body'];
@@ -512,8 +570,8 @@ function wipe_test_docs(callback) {
 
             var ids = [];
 
-            for (var i = 0; i < result['results'].length; i++) {
-                ids.push(result['results'][i]['id']);
+            for (var idx = 0; idx < result['results'].length; idx++) {
+                ids.push(result['results'][idx]['id']);
             }
 
             delete_nodes(ids, function(err) {

@@ -1,11 +1,11 @@
 var _ = require('lodash');
-var async = require('async');
+var each = require('async/each');
 var fs = require('fs');
-var path = require('path');
 var osdf_utils = require('osdf_utils');
+var path = require('path');
 var working_dir = osdf_utils.get_working_dir();
-var logger = osdf_utils.get_logger();
 
+var logger = osdf_utils.get_logger();
 var osdf_error = osdf_utils.send_error;
 
 // This is the code that is responsible for assembling the complete list
@@ -47,7 +47,7 @@ exports.get_all_namespaces = function(request, response) {
         // array is populated without incident.
         logger.info('Found ' + files.length + ' files.');
 
-        async.each(files, function(file, callback) {
+        each(files, function(file, callback) {
             fs.stat(path.join(ns_path, file), function(err, stats) {
                 if (err) {
                     logger.error(err);

@@ -1,6 +1,6 @@
 #!/usr/bin/env nodeunit
 
-var async = require('async');
+var waterfall = require('async/waterfall');
 var utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -31,7 +31,7 @@ var restricted_node = {
 exports['out_linkage'] = function(test) {
     test.expect(16);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -151,7 +151,7 @@ exports['out_linkage'] = function(test) {
 exports['out_linkage_no_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -244,7 +244,7 @@ exports['out_linkage_no_auth'] = function(test) {
 exports['out_linkage_bad_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -341,7 +341,7 @@ exports['out_linkage_bad_auth'] = function(test) {
 exports['in_linkage'] = function(test) {
     test.expect(16);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -466,7 +466,7 @@ exports['in_linkage'] = function(test) {
 exports['in_linkage_no_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -558,7 +558,7 @@ exports['in_linkage_no_auth'] = function(test) {
 exports['in_linkage_bad_auth'] = function(test) {
     test.expect(5);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(test_node, auth, function(err, resp) {
@@ -657,7 +657,7 @@ exports['in_linkage_bad_auth'] = function(test) {
 exports['out_linkage_with_restricted'] = function(test) {
     test.expect(15);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a node
             tutils.insert_node(restricted_node, auth, function(err, resp) {
@@ -783,7 +783,7 @@ exports['out_linkage_with_restricted'] = function(test) {
 exports['in_linkage_with_restricted'] = function(test) {
     test.expect(15);
 
-    async.waterfall([
+    waterfall([
         function(callback) {
             // First we create a public node
             tutils.insert_node(test_node, auth, function(err, resp) {
