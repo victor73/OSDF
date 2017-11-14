@@ -1,3 +1,12 @@
+0.24
+  * Major version upgrade for async and elasticsearch modules.
+  * Alteration to query-handler to specify the version of the
+    elasticsearch API to use.
+  * Updated files using async to use the module 'require' calls
+    that became available with async 2.0.
+
+  -- Victor <victor73@github.com>  Thu, 09 Nov 2017 00:00:00 -0400
+
 0.23
   * Upgraded libraries: express, deep-diff, jison, nodeunit and request.
   * Minor edit to testing document.

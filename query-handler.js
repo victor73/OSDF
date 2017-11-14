@@ -37,7 +37,10 @@ exports.init = function(emitter) {
     var elasticsearch_address = config.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = config.value('elasticsearch', 'elasticsearch_port');
 
-    elastic_client = new elasticsearch.Client({ host: elasticsearch_address + ':' + elasticsearch_port });
+    elastic_client = new elasticsearch.Client({
+        apiVersion: '1.4',
+        host: elasticsearch_address + ':' + elasticsearch_port
+    });
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
     var es_opts = { index: 'osdf', type: 'osdf' };

@@ -165,7 +165,8 @@ exports.delete_node = function(request, response) {
                 delete_helper(user, node_id, response);
             }
         });
-    } catch (e) {
+    } catch (err) {
+        logger.error("Error deleting node. Reason: " + err);
         osdf_error(response, 'Unable to delete node.', 500);
     }
 };
