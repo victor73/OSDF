@@ -1,5 +1,10 @@
+// async/eachLimit - For easier asynchronous iteration over collections
+// lodash          - for generic utility functions
+// string-format   - For easier assembly of more complicated strings
+
 var _ = require('lodash');
 var eachLimit = require('async/eachLimit');
+var format = require('string-format');
 var nh = require('node-handler');
 var osdf_utils = require('osdf_utils');
 var util = require('util');
@@ -7,6 +12,8 @@ var util = require('util');
 var db = null;
 var linkage_control_map = {};
 var logger = osdf_utils.get_logger();
+
+format.extend(String.prototype);
 
 function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
     logger.debug('In areTargetNodesAllowed.');
@@ -45,10 +52,10 @@ function areTargetNodesAllowed(node_ids, allowed_target_types, callback) {
                 }
             } else {
                 var target_type = target_node['node_type'];
-                logger.debug('Target node is of type "' + target_type + '". Checking.');
+                logger.debug('Target node is of type "{}". Checking.'.format(target_type));
 
                 if (! _.includes(allowed_target_types, target_type)) {
-                    logger.info('Target type of "' + target_type + '" is not permisssible.');
+                    logger.info('Target type of "{}" is not permisssible.'.format(target_type));
                     valid = false;
                 }
                 cb();
@@ -72,11 +79,10 @@ function check(ns_control, node, edge, edgeKey, callback) {
 
     // Nothing is allowed, so return early
     if (allowed_targets.length === 0) {
-        logger.debug('No allowed targets for node type "' + node_type + '"');
+        logger.debug('No allowed targets for node type "{}"'.format(node_type));
         callback(null, valid);
     } else if (_.includes(allowed_targets, edge)) {
-        logger.debug('This node (' + node_type  + ') can link via "' + node_type +
-                     '" to any other because of a wildcard.');
+        logger.debug('This node ({}) can link to a "{}".'.format(node_type, edge));
         valid = true;
         callback(null, valid);
     } else {
@@ -104,7 +110,7 @@ exports.valid_linkage = function(node, callback) {
     var ns = node['ns'];
 
     if (! (linkage_control_map.hasOwnProperty(ns))) {
-        logger.info("Node's namespace (" + ns + ') not linkage controlled.');
+        logger.info("Node's namespace ({}) is not linkage controlled.".format(ns));
         callback(null, valid);
         return;
     }
@@ -117,7 +123,7 @@ exports.valid_linkage = function(node, callback) {
     if (ns_control.hasOwnProperty(node_type)) {
         // The incoming node is listed as a node that is controlled
         // so we need to check the nodes that we are connecting to
-        var edges = Object.keys( node['linkage'] );
+        var edges = Object.keys(node['linkage']);
 
         if (edges.length === 0) {
             logger.debug('Incoming node has no linkages.');
@@ -131,8 +137,8 @@ exports.valid_linkage = function(node, callback) {
         // mechanism to abort the eachLimit() loop.
         var trueErrorFlag = false;
 
-        eachLimit(edges, 1, function (edge, cb) {
-            logger.debug('Working on linkage named "' + edge + '"');
+        eachLimit(edges, 1, function(edge, cb) {
+            logger.debug('Working on linkage named "{}"'.format(edge));
 
             if (ns_control[node_type].hasOwnProperty(edge)) {
                 check(ns_control, node, edge, edge, function(err, result) {
@@ -153,7 +159,7 @@ exports.valid_linkage = function(node, callback) {
                 });
             } else if (ns_control[node_type].hasOwnProperty('*')) {
                 // Wildcard for edge names is present
-                logger.info('Wildcard for edges for nodes of type "' + node_type + '" detected.');
+                logger.info('Wildcard for edges for nodes of type "{}" detected.'.format(node_type));
                 check(ns_control, node, edge, '*', function(err, result) {
                     if (err) {
                         logger.error(err);
@@ -171,8 +177,9 @@ exports.valid_linkage = function(node, callback) {
                     }
                 });
             } else {
-                logger.debug('Linkage named "' + edge +
-                             '" not valid for nodes of type "' + node_type + '".');
+                logger.debug(
+                    'Linkage named "{}" not valid for nodes of type "{}".'.format(edge, node_type)
+                );
                 valid = false;
                 cb(1);
             }
@@ -185,8 +192,9 @@ exports.valid_linkage = function(node, callback) {
         });
     } else {
         // TODO: Handle * wildcard
-        logger.debug('Namespace "' + ns + '" imposes no linkage control over "' +
-                     node_type + '" nodes.');
+        logger.debug(
+            'Namespace "{}" imposes no linkage control over "{}" nodes.'.format(ns, node_type)
+        );
         callback(null, valid);
     }
 };

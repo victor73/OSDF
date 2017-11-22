@@ -73,14 +73,21 @@ exports.init = function(emitter, working_dir_custom) {
     db.exists(function(err, exists) {
         // Here we emit the error to abort the server startup process.
         if (err) {
-            var msg = sprintf('Error connecting to CouchDB database at %s:%s. ' +
-                'Check settings & credentials in %s.', couch_address, couch_port, osdf_utils.get_config());
+            var msg = sprintf(
+                'Error connecting to CouchDB database at %s:%s. ' +
+                'Check settings & credentials in %s.',
+                couch_address,
+                couch_port,
+                osdf_utils.get_config()
+            );
             emitter.emit('node_handler_aborted', msg);
         }
 
         if (! exists) {
-            emitter.emit('node_handler_aborted', "CouchDB database '" + dbname +
-                         "' doesn't exist.");
+            emitter.emit(
+                'node_handler_aborted',
+                "CouchDB database '{}' doesn't exist.".format(dbname)
+            );
         }
     });
 
@@ -166,7 +173,7 @@ exports.delete_node = function(request, response) {
             }
         });
     } catch (err) {
-        logger.error("Error deleting node. Reason: " + err);
+        logger.error('Error deleting node. Reason: ' + err);
         osdf_error(response, 'Unable to delete node.', 500);
     }
 };
@@ -1014,9 +1021,9 @@ function define_namespace_validators(namespace, define_cb) {
 
                     try {
                         validators[namespace][node_type]['schema'] = JSON.parse(data);
-                    } catch (e) {
-                        logger.error('ERROR: Unable to parse schema ' +
-                            node_type_schema + ' to JSON !!!');
+                    } catch (err) {
+                        logger.error('Unable to parse schema {} to JSON !!!'
+                            .format(node_type_schema));
                     }
                 }
                 callback();
@@ -1063,7 +1070,8 @@ function delete_helper(user, node_id, response) {
         try {
             if (err) {
                 if (err.error && err.error === 'not_found') {
-                    logger.info("User '" + user + "' attempted to delete unknown node: " + node_id);
+                    logger.info("User '{}' attempted to delete unknown node: {}."
+                        .format(user, node_id));
                     osdf_error(response, 'Unknown node.', 422);
                 } else {
                     throw err.reason;
@@ -1078,8 +1086,8 @@ function delete_helper(user, node_id, response) {
                         } else {
                             delete_history_node(node_id, function(err) {
                                 if (err) {
-                                    logger.warn('Unable to delete history of node: ' +
-                                        node_id + '. ' + err.message );
+                                    logger.warn('Unable to delete history of node: {}: {}.'
+                                        .format(node_id, err.message));
                                 } else {
                                     logger.info('Successful deletion: ' + node_id);
                                 }
@@ -1088,7 +1096,7 @@ function delete_helper(user, node_id, response) {
                         }
                     });
                 } else {
-                    logger.debug('User ' + user + ' cannot delete node ' + node_id);
+                    logger.debug('User "{}" cannot delete node '.format(user, node_id));
                     osdf_error(response, 'No ACL permissions to delete node.', 403);
                 }
             }
@@ -1127,8 +1135,8 @@ function delete_schema_helper(namespace, schema_name) {
 
     if (validators.hasOwnProperty(namespace) &&
             validators[namespace].hasOwnProperty(schema_name)) {
-        logger.debug('Deleting schema ' + schema_name + ' from ' +
-                     namespace + ' namespace.');
+        logger.debug('Deleting schema {} from {} namespace.'
+            .format(schema_name, namespace));
         delete validators[namespace][schema_name];
     } else {
         logger.error('The specified namespace or schema is not known.');
@@ -1150,7 +1158,8 @@ function delete_couch_doc(id, callback) {
 
     db.get(id, function(err, doc_data) {
         if (err) {
-            logger.error('Unable to determine revision of id ' + id + ". Can't delete.");
+            logger.error("Unable to determine revision of id {}. Can't delete."
+                .format(id));
             callback(err);
         } else {
             var doc_revision = doc_data['_rev'];
@@ -1188,7 +1197,7 @@ function has_dependent_nodes(node, callback) {
     } else {
         throw 'Invalid argument.';
     }
-    logger.debug('Checking ' + node_id + ' for dependencies.');
+    logger.debug('Checking {} for dependencies.'.format(node_id));
 
     var has_dependencies = false;
 
