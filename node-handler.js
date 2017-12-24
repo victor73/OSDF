@@ -53,11 +53,12 @@ var db;
 // CouchDB server, determine what the installed namespaces are, and create
 // the various validators for each of the node types inside each namespace.
 exports.init = function(emitter, working_dir_custom) {
-    logger.debug('In ' + path.basename(__filename) + ' init().');
+    var module_base = path.basename(__filename);
+    logger.debug('In {} init().'.format(module_base));
 
     working_dir = osdf_utils.get_working_dir();
 
-    logger.info('Creating couchdb connection. Using db: ' + dbname);
+    logger.info('Creating CouchDB connection. Using db: ' + dbname);
 
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
@@ -73,14 +74,19 @@ exports.init = function(emitter, working_dir_custom) {
     db.exists(function(err, exists) {
         // Here we emit the error to abort the server startup process.
         if (err) {
-            var msg = sprintf('Error connecting to CouchDB database at %s:%s. ' +
-                'Check settings & credentials in %s.', couch_address, couch_port, osdf_utils.get_config());
+            var msg = sprintf(
+                'Error connecting to CouchDB database at %s:%s. ' +
+                'Check settings & credentials in %s.',
+                couch_address, couch_port, osdf_utils.get_config()
+            );
             emitter.emit('node_handler_aborted', msg);
         }
 
         if (! exists) {
-            emitter.emit('node_handler_aborted', "CouchDB database '" + dbname +
-                         "' doesn't exist.");
+            emitter.emit(
+                'node_handler_aborted',
+                'CouchDB database {} does not exist.'.format(dbname)
+            );
         }
     });
 
@@ -166,14 +172,14 @@ exports.delete_node = function(request, response) {
             }
         });
     } catch (err) {
-        logger.error("Error deleting node. Reason: " + err);
+        logger.error('Error deleting node. Reason: ' + err);
         osdf_error(response, 'Unable to delete node.', 500);
     }
 };
 
 // This is the method that handles node retrieval. It is called when users HTTP
 // GET the node.
-exports.get_node = function (request, response) {
+exports.get_node = function(request, response) {
     logger.debug('In get_node.');
 
     db.get(request.params.id, function(err, node_data) {
@@ -184,7 +190,7 @@ exports.get_node = function (request, response) {
 // This is the method that handles node retrieval by version number. It is
 // called when users HTTP GET the node and supply a specific version number in
 // the url.
-exports.get_node_by_version = function (request, response) {
+exports.get_node_by_version = function(request, response) {
     logger.debug('In get_node_by_version.');
 
     var node_id = request.params.id;
@@ -251,7 +257,7 @@ exports.get_node_by_version = function (request, response) {
 
 // Retrieve the nodes that a particular node links to
 exports.get_out_linkage = function(request, response) {
-    logger.debug('In get_linkage.');
+    logger.debug('In get_out_linkage.');
 
     // Check that we actually have the id in the request...
     var node_id = null;
@@ -396,7 +402,7 @@ exports.get_in_linkage = function(request, response) {
 };
 
 // This is the method that handles node creation.
-exports.insert_node = function (request, response) {
+exports.insert_node = function(request, response) {
     logger.debug('In insert_node.');
 
     var content = request.rawBody;
@@ -457,7 +463,7 @@ exports.insert_node = function (request, response) {
                         logger.error(err);
                         callback({err: err, code: 500});
                     } else {
-                        var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                        var node_url = '{}:{}/nodes/{}'.format(base_url, port, node_id);
                         callback(null, node_url);
                     }
                 });
@@ -467,7 +473,7 @@ exports.insert_node = function (request, response) {
                 callback({err: 'Unable to save data.', code: 500});
             }
         }],
-    function (err, node_url) {
+    function(err, node_url) {
         if (err) {
             if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
                 err.hasOwnProperty('code')) {
@@ -536,8 +542,12 @@ exports.update_node = function(request, response) {
             }
         },
         function(node_data, callback) {
-            // If here, then we're okay to attempt the update
-            update_node_helper(node_id, node_data, function(err, update_result) {
+            var user = auth.get_user(request);
+
+            // If here, then the node looks okay for an update in terms of
+            // structure and validation. Now need to check permissions and
+            // execute the update, for which we have an auxiliary function.
+            update_helper(user, node_id, node_data, function(err, update_result) {
                 if (err) {
                     logger.error('Unable to update data in CouchDB.', err);
                     var msg = update_result['msg'];
@@ -650,7 +660,7 @@ exports.validate_node = function(request, response) {
 
 // This message is used to process auxiliary schema deletion events
 // that are relayed to this process from the master process by worker.js.
-exports.process_aux_schema_change = function (msg) {
+exports.process_aux_schema_change = function(msg) {
     logger.debug('In process_aux_schema_change.');
 
     var aux_schema_json;
@@ -676,7 +686,7 @@ exports.process_aux_schema_change = function (msg) {
 
 // This message is used to process schema deletion events that are relayed to
 // this process from the master process by worker.js.
-exports.process_schema_change = function (msg) {
+exports.process_schema_change = function(msg) {
     logger.debug('In process_schema_change.');
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
@@ -813,7 +823,7 @@ function validate_incoming_node(node_string, callback) {
 
             callback(null, report);
         }],
-    function (err, report) {
+    function(err, report) {
         if (err) {
             logger.error(err);
             callback(err, null);
@@ -869,8 +879,8 @@ function get_couch_doc(couchdb_id, callback) {
     });
 }
 
-function update_node_helper(node_id, node_data, callback) {
-    logger.debug('In update_node_helper.');
+function update_helper(user, node_id, node_data, callback) {
+    logger.debug('In update_helper.');
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
@@ -894,9 +904,10 @@ function update_node_helper(node_id, node_data, callback) {
             var couchdb_version = previous_node['_rev'];
             var version = parse_version(couchdb_version);
 
-            if ( node_version !== version ) {
-                var msg = 'Version provided (' + node_version + ") doesn't match " +
-                          'saved (' + version + ').';
+            if (node_version !== version) {
+                var msg = "Version provided ({}) doesn't match " +
+                          'saved ({}).';
+                msg = msg.format(node_version, version);
 
                 result['msg'] = msg;
                 result['code'] = 422;
@@ -905,6 +916,23 @@ function update_node_helper(node_id, node_data, callback) {
                 callback(msg);
             } else {
                 callback(null, previous_node, couchdb_version);
+            }
+        },
+        function(previous_node, couchdb_version, callback) {
+            // Check that the user has sufficient permissions to make
+            // edits to this node.
+            var can_write = perms.has_write_permission(user, n);
+
+            if (can_write) {
+                logger.debug('User {} has write permission to node {}.'
+                    .format(user, node_id)
+                );
+                callback(null, previous_node, couchdb_version);
+            } else {
+                var msg = 'User {} does not have write permissions for node {}.'
+                    .format(user, node_id);
+                logger.info(msg);
+                callback(msg);
             }
         },
         function(previous_node, couchdb_version, callback) {
@@ -1063,7 +1091,8 @@ function delete_helper(user, node_id, response) {
         try {
             if (err) {
                 if (err.error && err.error === 'not_found') {
-                    logger.info("User '" + user + "' attempted to delete unknown node: " + node_id);
+                    logger.info('User "{}" attempted to delete unknown node {}.'
+                        .format(user, node_id));
                     osdf_error(response, 'Unknown node.', 422);
                 } else {
                     throw err.reason;
@@ -1071,15 +1100,17 @@ function delete_helper(user, node_id, response) {
             } else {
                 var can_write = perms.has_write_permission(user, node_data);
 
-                if ( can_write ) {
+                if (can_write) {
                     delete_couch_doc(node_id, function(err) {
                         if (err) {
                             throw 'Unable to delete node ' + node_id;
                         } else {
                             delete_history_node(node_id, function(err) {
                                 if (err) {
-                                    logger.warn('Unable to delete history of node: ' +
-                                        node_id + '. ' + err.message );
+                                    logger.warn(
+                                        'Unable to delete history of node: {}: {}'
+                                            .format(err.message)
+                                    );
                                 } else {
                                     logger.info('Successful deletion: ' + node_id);
                                 }
@@ -1088,7 +1119,7 @@ function delete_helper(user, node_id, response) {
                         }
                     });
                 } else {
-                    logger.debug('User ' + user + ' cannot delete node ' + node_id);
+                    logger.debug('User {} cannot delete node {}.'.format(user, node_id));
                     osdf_error(response, 'No ACL permissions to delete node.', 403);
                 }
             }
@@ -1221,7 +1252,7 @@ function update_aux_schema_helper(namespace, name, aux_schema_json) {
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1239,7 +1270,7 @@ function insert_aux_schema_helper(namespace, name, aux_schema_json) {
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1536,11 +1567,14 @@ function node_retrieval_helper(request, response, err, data) {
         }
     } else {
         var user = auth.get_user(request);
+
         if (perms.has_read_permission(user, data)) {
             var fix = osdf_utils.fix_keys(data);
             response.jsonp(fix);
         } else {
-            logger.info('User does not have read permissions for node.');
+            logger.info('User {} does not have read permissions for node.'
+                .format(user)
+            );
             osdf_error(response, 'No read access to this node.', 403);
         }
     }
