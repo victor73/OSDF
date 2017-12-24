@@ -1,11 +1,13 @@
 #!/usr/bin/env nodeunit
 
 var events = require('events');
+var format = require('string-format');
 var sec = require('perms-handler');
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils');
 
 var logger = tutils.get_null_logger();
+format.extend(String.prototype);
 
 var sec_initialized = false;
 var test_user = 'test';
@@ -77,15 +79,16 @@ function read_tests(test) {
     test.expect(3);
 
     var has_read = sec.has_read_permission(test_user, test_node);
-    test.ok(has_read === true, "User '" + test_user + "' can read test node.");
+    test.ok(has_read === true,
+        'User "{}" can read test node.'.format(test_user));
 
     has_read = sec.has_read_permission(test_user, restricted_node);
-    test.ok(has_read === false, "User '" + test_user +
-            "' cannot read restricted test node.");
+    test.ok(has_read === false,
+        'User "{}" cannot read restricted test node.'.format(test_user));
 
     has_read = sec.has_read_permission(privileged_user, restricted_node);
-    test.ok(has_read === true, "User '" + privileged_user +
-            "' can read test node.");
+    test.ok(has_read === true,
+        'User "{}" can read test node.'.format(privileged_user));
 
     test.done();
 }
@@ -96,15 +99,16 @@ function write_tests(test) {
     test.expect(3);
 
     var has_write = sec.has_write_permission('test', test_node);
-    test.ok(has_write, "User '" + test_user + "' can write test node");
+    test.ok(has_write,
+        'User "{}" can write test node'.format(test_user));
 
     has_write = sec.has_write_permission(test_user, restricted_node);
-    test.ok(has_write === false, "User '" + test_user +
-            "' cannot write restricted node.");
+    test.ok(has_write === false,
+        'User "{}" cannot write restricted node.'.format(test_user));
 
     has_write = sec.has_write_permission(privileged_user, restricted_node);
-    test.ok(has_write === true, "User '" + privileged_user +
-            "' can write restricted node.");
+    test.ok(has_write === true,
+        'User "{}" can write restricted node.'.format(privileged_user));
 
     test.done();
 }

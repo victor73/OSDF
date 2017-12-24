@@ -921,7 +921,7 @@ function update_helper(user, node_id, node_data, callback) {
         function(previous_node, couchdb_version, callback) {
             // Check that the user has sufficient permissions to make
             // edits to this node.
-            var can_write = perms.has_write_permission(user, n);
+            var can_write = perms.has_write_permission(user, previous_node);
 
             if (can_write) {
                 logger.debug('User {} has write permission to node {}.'

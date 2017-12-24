@@ -167,7 +167,7 @@ function eval_permission(user, node, operation) {
         .format(user, operation, node['id'])
     );
 
-    if (operation !== 'read' || operation !== 'write') {
+    if (operation !== 'read' && operation !== 'write') {
         throw 'Invalid operation. Must be read or write.';
     }
 
