@@ -1,3 +1,10 @@
+0.25
+  * Upgraded commander, jsonschema and is-my-json-valid modules.
+  * Refactoring of perms-handler.js to reduce code duplication.
+  * Eslint formatting changes.
+
+  -- Victor <victor73@github.com>  Sat, 23 Dec 2017 00:00:00 -0400
+
 0.24
   * Major version upgrade for async and elasticsearch modules.
   * Alteration to query-handler to specify the version of the
