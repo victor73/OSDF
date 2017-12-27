@@ -1,9 +1,9 @@
 // async/each      - For handling async code in series
 // async/waterfall - For handling complicated async workflows
 // async/series    - For handling async code in series
-// cradle          - for interactions with CouchDB
-// lodash          - for generic utility functions
-// string-format   - For easier assembly of more complicated strings
+// cradle          - For interactions with CouchDB
+// lodash          - For generic utility functions
+// string-format   - For better string formatting abilities
 // tv4             - Used for JSON validation with JSON-Schema
 
 var _ = require('lodash');
@@ -596,7 +596,6 @@ exports.validate_node = function(request, response) {
         },
         function(node_data, callback) {
             validate_incoming_node(content, function(err, report) {
-            //validate_incoming_node(node_data, function(err, report) {
                 if (err) {
                     callback(err, null);
                 } else {
@@ -614,11 +613,13 @@ exports.validate_node = function(request, response) {
 
                 logger.info('Invalid node. First error: ', first_err);
 
+                // Assemble the full list of errors by iterating and
+                // concatenating to a string.
                 var error_text = '';
-                for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
-                    var err = report.errors[errIdx];
-                    error_text = error_text.concat( err + '\n' );
-                }
+                _.forEach(report.errors, function(err) {
+                    error_text = error_text.concat(err + '\n');
+                });
+
                 error_text = error_text.trim() + '\n';
 
                 var err_object = {
@@ -999,63 +1000,78 @@ function update_helper(user, node_id, node_data, callback) {
     });
 }
 
-function define_namespace_validators(namespace, define_cb) {
-    logger.debug('In define_namespace_validators: ' + namespace);
-    var file_idx;
+function schema_registrar(namespace, callback) {
+    logger.debug('In schema_registrar: ' + namespace);
 
-    var schema_registrar = function(callback) {
-        var schema_dir = path.join(ns2working(namespace), 'schemas');
+    var schema_dir = path.join(ns2working(namespace), 'schemas');
 
-        // Scan the working area for the namespace for JSON schema files for the node_types.
-        // Each .json file in there is basenamed with the name of the node_type.
-        fs.readdir(schema_dir, function(err, files) {
-            if (err) {
-                logger.error(err);
-                throw err;
-            }
+    // Scan the working area for the namespace for JSON schema files for the node_types.
+    // Each .json file in there is basenamed with the name of the node_type.
+    fs.readdir(schema_dir, function(err, files) {
+        if (err) {
+            logger.error(err);
+            throw err;
+        }
 
-            logger.debug('Filtering out non-json files.');
-            files = _.filter(files, function(file) {
-                return path.extname(file) === '.json';
-            });
+        logger.debug('Filtering out non-json files.');
+        files = _.filter(files, function(file) {
+            return path.extname(file) === '.json';
+        });
 
-            if (files.length === 0) {
-                validators[namespace] = {};
-                callback();
-            } else {
-                for (file_idx = 0; file_idx < files.length; file_idx++) {
-                    var node_type_schema = files[file_idx];
+        if (files.length === 0) {
+            validators[namespace] = {};
+            callback(null);
+        } else {
+            var err_flag = null;
 
-                    logger.info('Found a schema! ' + node_type_schema);
+            _.forEach(files, function(node_type_schema) {
+                logger.info('Found a schema! ' + node_type_schema);
 
-                    var node_type = path.basename(node_type_schema, '.json');
+                var node_type = path.basename(node_type_schema, '.json');
 
-                    var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
+                if (! validators.hasOwnProperty(namespace)) {
+                    validators[namespace] = {};
+                }
 
-                    if (! validators.hasOwnProperty(namespace)) {
-                        validators[namespace] = {};
-                    }
+                if (! validators[namespace].hasOwnProperty(node_type)) {
+                    validators[namespace][node_type] = {};
+                }
 
-                    if (! validators[namespace].hasOwnProperty(node_type)) {
-                        validators[namespace][node_type] = {};
+                var schema_path = path.join(schema_dir, node_type_schema);
+
+                fs.readFile(schema_path, 'utf-8', function(err, data) {
+                    if (err) {
+                        logger.error('Unable to read ' + schema_path, err);
+                        callback(err);
                     }
 
                     try {
                         validators[namespace][node_type]['schema'] = JSON.parse(data);
-                    } catch (e) {
-                        logger.error('ERROR: Unable to parse schema ' +
-                            node_type_schema + ' to JSON !!!');
+                    } catch (parse_err) {
+                        logger.error('ERROR: Unable to parse schema {} to JSON !!!'
+                            .format(node_type_schema));
+                        err_flag = parse_err;
+                        return false;
                     }
-                }
-                callback();
-            }
-        });
-    };
+                });
+            });
+
+            callback(err_flag);
+        }
+    });
+}
+
+function define_namespace_validators(namespace, define_cb) {
+    logger.debug('In define_namespace_validators: ' + namespace);
 
     series([
         function(callback) {
-            schema_registrar(function() {
-                callback(null);
+            schema_registrar(namespace, function(err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null);
+                }
             });
         },
         function(callback) {
@@ -1158,8 +1174,8 @@ function delete_schema_helper(namespace, schema_name) {
 
     if (validators.hasOwnProperty(namespace) &&
             validators[namespace].hasOwnProperty(schema_name)) {
-        logger.debug('Deleting schema ' + schema_name + ' from ' +
-                     namespace + ' namespace.');
+        logger.debug('Deleting schema {} from {} namespace.'
+            .format(schema_name, namespace));
         delete validators[namespace][schema_name];
     } else {
         logger.error('The specified namespace or schema is not known.');
@@ -1177,11 +1193,12 @@ function delete_schema_helper(namespace, schema_name) {
 //                                   argument. Null if operation was successful.
 // Returns: none
 function delete_couch_doc(id, callback) {
-    logger.debug('In delete_couch_doc.');
+    logger.debug('In delete_couch_doc: {}'.format(id));
 
     db.get(id, function(err, doc_data) {
         if (err) {
-            logger.error('Unable to determine revision of id ' + id + ". Can't delete.");
+            logger.error("Unable to determine revision of id {}. Can't delete."
+                .format(id));
             callback(err);
         } else {
             var doc_revision = doc_data['_rev'];
@@ -1392,7 +1409,8 @@ function establish_linkage_controls(callback) {
 
         fs.stat(linkage_path, function(err, stat) {
             if (err === null) {
-                logger.info('Linkage control file exists for namespace "{}".'.format(ns));
+                logger.info('Linkage control file exists for namespace "{}".'
+                    .format(ns));
 
                 fs.readFile(linkage_path, 'utf8', function(err, file_text) {
                     if (err) {
@@ -1474,11 +1492,10 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
                     }
 
                     var reference_schemas = [];
-                    var refIdx;
-                    for (refIdx = 0; refIdx < reference_ids.length; refIdx++) {
-                        var schema_file = reference_ids[refIdx] + '.json';
+                    _.forEach(reference_ids, function(reference_id) {
+                        var schema_file = reference_id + '.json';
                         reference_schemas.push(schema_file);
-                    }
+                    });
 
                     // Call ourselves and pass along the list of schemas that we have
                     // already loaded.
@@ -1507,13 +1524,13 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 }
 
 function register_aux_schemas(ns, callback) {
-    logger.debug('In register_aux_schemas.');
+    logger.debug('In register_aux_schemas: ' + ns);
 
     var validator = tv4.freshApi();
 
     register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
-            logger.error('Error in register_aux_schemas: ' + err);
+            logger.error('Error in register_aux_schemas: ', err);
             callback(err);
         } else {
             validators[ns]['val'] = validator;
@@ -1670,7 +1687,7 @@ function validate_against_schema(data) {
 
     var report = {
         valid: valid,
-        errors:  [ tv4.error ]
+        errors: [ tv4.error ]
     };
 
     return report;
