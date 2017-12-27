@@ -12,7 +12,7 @@
     "test": "test"
   },
   "dependencies": {
-    "async": "^2.0.1",
+    "async": "^2.6.0",
     "clone": "^2.1.1",
     "commander": "^2.12.2",
     "cradle": "^0.7.1",
@@ -24,7 +24,7 @@
     "jsonschema": "^1.2.2",
     "line-reader": "^0.4.0",
     "lodash": "^4.17.4",
-    "log4js": "^2.3.11",
+    "log4js": "^2.4.1",
     "morgan": "^1.9.0",
     "password-hash": "^1.2.2",
     "pw": "^0.0.4",

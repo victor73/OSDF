@@ -24,6 +24,7 @@
  */
 const debug = require('debug')('log4js:main');
 const fs = require('fs');
+const CircularJSON = require('circular-json');
 const Configuration = require('./configuration');
 const connectModule = require('./connect-logger');
 const logger = require('./logger');
@@ -31,7 +32,7 @@ const layouts = require('./layouts');
 
 let cluster;
 try {
-  cluster = require('cluster');   // eslint-disable-line global-require
+  cluster = require('cluster'); // eslint-disable-line global-require
 } catch (e) {
   debug('Clustering support disabled because require(cluster) threw an error: ', e);
 }
@@ -78,9 +79,8 @@ function setLevelForCategory(category, level) {
   debug(`setLevelForCategory: found ${categoryConfig} for ${category}`);
   if (!categoryConfig) {
     const sourceCategoryConfig = configForCategory(category);
-    debug(
-      `setLevelForCategory: no config found for category, found ${sourceCategoryConfig} for parents of ${category}`
-    );
+    debug('setLevelForCategory: no config found for category, ' +
+      `found ${sourceCategoryConfig} for parents of ${category}`);
     categoryConfig = { appenders: sourceCategoryConfig.appenders };
   }
   categoryConfig.level = level;
@@ -93,13 +93,13 @@ function serialise(logEvent) {
   // Validate that we really are in this case
   try {
     const logData = logEvent.data.map((e) => {
-      if (e && e.stack && JSON.stringify(e) === '{}') {
+      if (e && e.stack && CircularJSON.stringify(e) === '{}') {
         e = { message: e.message, stack: e.stack };
       }
       return e;
     });
     logEvent.data = logData;
-    return JSON.stringify(logEvent);
+    return CircularJSON.stringify(logEvent);
   } catch (e) {
     return serialise(new LoggingEvent(
       'log4js',
@@ -112,7 +112,7 @@ function serialise(logEvent) {
 function deserialise(serialised) {
   let event;
   try {
-    event = JSON.parse(serialised);
+    event = CircularJSON.parse(serialised);
     event.startTime = new Date(event.startTime);
     event.level = config.levels.getLevel(event.level.levelStr);
     event.data = event.data.map((e) => {
@@ -205,23 +205,24 @@ function configure(configurationFileOrObject) {
   LoggingEvent = loggerModule.LoggingEvent;
   module.exports.connectLogger = connectModule(config.levels).connectLogger;
 
+  // just in case configure is called after shutdown
+  process.removeListener('message', receiver);
+  if (cluster) {
+    cluster.removeListener('message', receiver);
+  }
   if (config.disableClustering) {
     debug('Not listening for cluster messages, because clustering disabled.');
-  } else {
+  } else if (isPM2Master()) {
     // PM2 cluster support
     // PM2 runs everything as workers - install pm2-intercom for this to work.
     // we only want one of the app instances to write logs
-    if (isPM2Master()) {
-      debug('listening for PM2 broadcast messages');
-      process.removeListener('message', receiver);
-      process.on('message', receiver);
-    } else if (cluster.isMaster) {
-      debug('listening for cluster messages');
-      cluster.removeListener('message', receiver);
-      cluster.on('message', receiver);
-    } else {
-      debug('not listening for messages, because we are not a master process');
-    }
+    debug('listening for PM2 broadcast messages');
+    process.on('message', receiver);
+  } else if (cluster.isMaster) {
+    debug('listening for cluster messages');
+    cluster.on('message', receiver);
+  } else {
+    debug('not listening for messages, because we are not a master process');
   }
 
   enabled = true;
