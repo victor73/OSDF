@@ -1,3 +1,10 @@
+0.26
+  * Upgraded async and log4js to 2.6.0 and 2.4.1 respectively.
+  * Refactoring of node-handler code to use lodash for certain
+    loops.
+
+  -- Victor <victor73@github.com> Wed, 27 Dec 2017 16:30:00 -0400
+
 0.25
   * Upgraded commander, jsonschema and is-my-json-valid modules.
   * Refactoring of perms-handler.js to reduce code duplication.
