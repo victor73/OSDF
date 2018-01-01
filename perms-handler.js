@@ -139,75 +139,16 @@ exports.init = function(emitter) {
 // Given a user and a node, determine if the user can read (retrieve)
 // the node. Returns true or false.
 exports.has_read_permission = function(user, node) {
-    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
-           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage'))) {
-        throw 'Invalid node.';
-    }
-
-    var can_read = false;
-    var read_acls = node['acl']['read'];
-
-    // Do the easiest/fastest thing first. Is 'all' in the read acl?
-    // If so, our job is done.
-    if (_.includes(read_acls, 'all')) {
-        return true;
-    }
-
-    // Okay, look at them in more detail. For that we'll need the node's
-    // namespace.
-    var namespace = node['ns'];
-
-    if (acl.hasOwnProperty(namespace)) {
-        var acl_idx;
-        for (acl_idx = 0; acl_idx < read_acls.length; acl_idx++) {
-            var read_acl = read_acls[acl_idx];
-
-            if (_.includes(acl[namespace][read_acl], user)) {
-                can_read = true;
-                break;
-            }
-        }
-    } else {
-        logger.warn('Unknown namespace: ' + namespace);
-    }
+    logger.debug('In has_read_permission.');
+    var can_read = eval_permission(user, node, 'read');
     return can_read;
 };
 
 // Given a user and a node, determine if the user can write to
 // (that is, update or delete) the node. Returns true or false.
 exports.has_write_permission = function(user, node) {
-    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
-           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage') )) {
-        throw 'Invalid node.';
-    }
-
-    var write_acls = node['acl']['write'];
-
-    // Do the easiest/fastest thing first. Is 'all' in the write acl?
-    // If so, our job is done.
-    if (_.includes(write_acls, 'all')) {
-        return true;
-    }
-
-    // Okay, look at them in more detail. For that we'll need the node's
-    // namespace.
-    var namespace = node['ns'];
-
-    var can_write = false;
-
-    if (acl.hasOwnProperty(namespace)) {
-        var acl_idx;
-        for (acl_idx = 0; acl_idx < write_acls.length; acl_idx++) {
-            var write_acl = write_acls[acl_idx];
-
-            if (_.includes(acl[namespace][write_acl], user)) {
-                can_write = true;
-                break;
-            }
-        }
-    } else {
-        logger.warn('Unknown namespace: ' + namespace);
-    }
+    logger.debug('In has_write_permission.');
+    var can_write = eval_permission(user, node, 'write');
     return can_write;
 };
 
@@ -220,3 +161,56 @@ exports.get_user_acls = function(namespace, user) {
     }
     return user_acls;
 };
+
+function eval_permission(user, node, operation) {
+    logger.debug('In eval_permission: can {} {} on {}?'
+        .format(user, operation, node['id'])
+    );
+
+    if (operation !== 'read' && operation !== 'write') {
+        throw 'Invalid operation. Must be read or write.';
+    }
+
+    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
+           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage') )) {
+        throw 'Invalid node.';
+    }
+
+    var permitted = false;
+    var node_acls = node['acl'][operation];
+
+    // Do the easiest/fastest things first. Is 'none' or 'all' in the acl?
+    // If so, our job is done. That settles it: none returns false, and 'all'
+    // returns true. Note that none is checked first, since we want none to
+    // override 'all', in the strange case of a node having both.
+    if (_.includes(node_acls, 'none')) {
+        return false;
+    }
+
+    if (_.includes(node_acls, 'all')) {
+        return true;
+    }
+
+    // Okay, look at them in more detail. For that we'll need the node's
+    // namespace.
+    var namespace = node['ns'];
+
+    if (acl.hasOwnProperty(namespace)) {
+        _.each(node_acls, function(acl_name) {
+            // Check if the acl is known to us before examining
+            // the user's membership in it.
+            if (acl[namespace].hasOwnProperty(acl_name)) {
+                if (_.includes(acl[namespace][acl_name], user)) {
+                    permitted = true;
+                    return false; // Break out of _.each()
+                }
+            } else {
+                logger.warn('Unknown {} acl: {}'.format(operation, acl_name));
+            }
+        });
+    } else {
+        logger.warn('Unknown namespace: ' + namespace);
+    }
+
+    return permitted;
+}

@@ -1,9 +1,9 @@
 // async/each      - For handling async code in series
 // async/waterfall - For handling complicated async workflows
 // async/series    - For handling async code in series
-// cradle          - for interactions with CouchDB
-// lodash          - for generic utility functions
-// string-format   - For easier assembly of more complicated strings
+// cradle          - For interactions with CouchDB
+// lodash          - For generic utility functions
+// string-format   - For better string formatting abilities
 // tv4             - Used for JSON validation with JSON-Schema
 
 var _ = require('lodash');
@@ -53,11 +53,12 @@ var db;
 // CouchDB server, determine what the installed namespaces are, and create
 // the various validators for each of the node types inside each namespace.
 exports.init = function(emitter, working_dir_custom) {
-    logger.debug('In ' + path.basename(__filename) + ' init().');
+    var module_base = path.basename(__filename);
+    logger.debug('In {} init().'.format(module_base));
 
     working_dir = osdf_utils.get_working_dir();
 
-    logger.info('Creating couchdb connection. Using db: ' + dbname);
+    logger.info('Creating CouchDB connection. Using db: ' + dbname);
 
     // Establish the connection parameters, including the application's
     // CouchDB credentials.
@@ -180,7 +181,7 @@ exports.delete_node = function(request, response) {
 
 // This is the method that handles node retrieval. It is called when users HTTP
 // GET the node.
-exports.get_node = function (request, response) {
+exports.get_node = function(request, response) {
     logger.debug('In get_node.');
 
     db.get(request.params.id, function(err, node_data) {
@@ -191,7 +192,7 @@ exports.get_node = function (request, response) {
 // This is the method that handles node retrieval by version number. It is
 // called when users HTTP GET the node and supply a specific version number in
 // the url.
-exports.get_node_by_version = function (request, response) {
+exports.get_node_by_version = function(request, response) {
     logger.debug('In get_node_by_version.');
 
     var node_id = request.params.id;
@@ -258,7 +259,7 @@ exports.get_node_by_version = function (request, response) {
 
 // Retrieve the nodes that a particular node links to
 exports.get_out_linkage = function(request, response) {
-    logger.debug('In get_linkage.');
+    logger.debug('In get_out_linkage.');
 
     // Check that we actually have the id in the request...
     var node_id = null;
@@ -403,7 +404,7 @@ exports.get_in_linkage = function(request, response) {
 };
 
 // This is the method that handles node creation.
-exports.insert_node = function (request, response) {
+exports.insert_node = function(request, response) {
     logger.debug('In insert_node.');
 
     var content = request.rawBody;
@@ -464,7 +465,7 @@ exports.insert_node = function (request, response) {
                         logger.error(err);
                         callback({err: err, code: 500});
                     } else {
-                        var node_url = base_url + ':' + port + '/nodes/' + node_id;
+                        var node_url = '{}:{}/nodes/{}'.format(base_url, port, node_id);
                         callback(null, node_url);
                     }
                 });
@@ -474,7 +475,7 @@ exports.insert_node = function (request, response) {
                 callback({err: 'Unable to save data.', code: 500});
             }
         }],
-    function (err, node_url) {
+    function(err, node_url) {
         if (err) {
             if (_.isPlainObject(err) && err.hasOwnProperty('err') &&
                 err.hasOwnProperty('code')) {
@@ -543,8 +544,12 @@ exports.update_node = function(request, response) {
             }
         },
         function(node_data, callback) {
-            // If here, then we're okay to attempt the update
-            update_node_helper(node_id, node_data, function(err, update_result) {
+            var user = auth.get_user(request);
+
+            // If here, then the node looks okay for an update in terms of
+            // structure and validation. Now need to check permissions and
+            // execute the update, for which we have an auxiliary function.
+            update_helper(user, node_id, node_data, function(err, update_result) {
                 if (err) {
                     logger.error('Unable to update data in CouchDB.', err);
                     var msg = update_result['msg'];
@@ -593,7 +598,6 @@ exports.validate_node = function(request, response) {
         },
         function(node_data, callback) {
             validate_incoming_node(content, function(err, report) {
-            //validate_incoming_node(node_data, function(err, report) {
                 if (err) {
                     callback(err, null);
                 } else {
@@ -611,11 +615,13 @@ exports.validate_node = function(request, response) {
 
                 logger.info('Invalid node. First error: ', first_err);
 
+                // Assemble the full list of errors by iterating and
+                // concatenating to a string.
                 var error_text = '';
-                for (var errIdx = 0; errIdx < report.errors.length; errIdx++) {
-                    var err = report.errors[errIdx];
-                    error_text = error_text.concat( err + '\n' );
-                }
+                _.forEach(report.errors, function(err) {
+                    error_text = error_text.concat(err + '\n');
+                });
+
                 error_text = error_text.trim() + '\n';
 
                 var err_object = {
@@ -657,7 +663,7 @@ exports.validate_node = function(request, response) {
 
 // This message is used to process auxiliary schema deletion events
 // that are relayed to this process from the master process by worker.js.
-exports.process_aux_schema_change = function (msg) {
+exports.process_aux_schema_change = function(msg) {
     logger.debug('In process_aux_schema_change.');
 
     var aux_schema_json;
@@ -683,7 +689,7 @@ exports.process_aux_schema_change = function (msg) {
 
 // This message is used to process schema deletion events that are relayed to
 // this process from the master process by worker.js.
-exports.process_schema_change = function (msg) {
+exports.process_schema_change = function(msg) {
     logger.debug('In process_schema_change.');
 
     if (msg.hasOwnProperty('cmd') && msg['cmd'] === 'schema_change') {
@@ -820,7 +826,7 @@ function validate_incoming_node(node_string, callback) {
 
             callback(null, report);
         }],
-    function (err, report) {
+    function(err, report) {
         if (err) {
             logger.error(err);
             callback(err, null);
@@ -876,8 +882,8 @@ function get_couch_doc(couchdb_id, callback) {
     });
 }
 
-function update_node_helper(node_id, node_data, callback) {
-    logger.debug('In update_node_helper.');
+function update_helper(user, node_id, node_data, callback) {
+    logger.debug('In update_helper.');
 
     var node_version = node_data.ver;
     var result = {};  // What we will send back through the callback
@@ -901,9 +907,10 @@ function update_node_helper(node_id, node_data, callback) {
             var couchdb_version = previous_node['_rev'];
             var version = parse_version(couchdb_version);
 
-            if ( node_version !== version ) {
-                var msg = 'Version provided (' + node_version + ") doesn't match " +
-                          'saved (' + version + ').';
+            if (node_version !== version) {
+                var msg = "Version provided ({}) doesn't match " +
+                          'saved ({}).';
+                msg = msg.format(node_version, version);
 
                 result['msg'] = msg;
                 result['code'] = 422;
@@ -912,6 +919,23 @@ function update_node_helper(node_id, node_data, callback) {
                 callback(msg);
             } else {
                 callback(null, previous_node, couchdb_version);
+            }
+        },
+        function(previous_node, couchdb_version, callback) {
+            // Check that the user has sufficient permissions to make
+            // edits to this node.
+            var can_write = perms.has_write_permission(user, previous_node);
+
+            if (can_write) {
+                logger.debug('User {} has write permission to node {}.'
+                    .format(user, node_id)
+                );
+                callback(null, previous_node, couchdb_version);
+            } else {
+                var msg = 'User {} does not have write permissions for node {}.'
+                    .format(user, node_id);
+                logger.info(msg);
+                callback(msg);
             }
         },
         function(previous_node, couchdb_version, callback) {
@@ -978,63 +1002,78 @@ function update_node_helper(node_id, node_data, callback) {
     });
 }
 
-function define_namespace_validators(namespace, define_cb) {
-    logger.debug('In define_namespace_validators: ' + namespace);
-    var file_idx;
+function schema_registrar(namespace, callback) {
+    logger.debug('In schema_registrar: ' + namespace);
 
-    var schema_registrar = function(callback) {
-        var schema_dir = path.join(ns2working(namespace), 'schemas');
+    var schema_dir = path.join(ns2working(namespace), 'schemas');
 
-        // Scan the working area for the namespace for JSON schema files for the node_types.
-        // Each .json file in there is basenamed with the name of the node_type.
-        fs.readdir(schema_dir, function(err, files) {
-            if (err) {
-                logger.error(err);
-                throw err;
-            }
+    // Scan the working area for the namespace for JSON schema files for the node_types.
+    // Each .json file in there is basenamed with the name of the node_type.
+    fs.readdir(schema_dir, function(err, files) {
+        if (err) {
+            logger.error(err);
+            throw err;
+        }
 
-            logger.debug('Filtering out non-json files.');
-            files = _.filter(files, function(file) {
-                return path.extname(file) === '.json';
-            });
+        logger.debug('Filtering out non-json files.');
+        files = _.filter(files, function(file) {
+            return path.extname(file) === '.json';
+        });
 
-            if (files.length === 0) {
-                validators[namespace] = {};
-                callback();
-            } else {
-                for (file_idx = 0; file_idx < files.length; file_idx++) {
-                    var node_type_schema = files[file_idx];
+        if (files.length === 0) {
+            validators[namespace] = {};
+            callback(null);
+        } else {
+            var err_flag = null;
 
-                    logger.info('Found a schema! ' + node_type_schema);
+            _.forEach(files, function(node_type_schema) {
+                logger.info('Found a schema! ' + node_type_schema);
 
-                    var node_type = path.basename(node_type_schema, '.json');
+                var node_type = path.basename(node_type_schema, '.json');
 
-                    var data = fs.readFileSync(path.join(schema_dir, node_type_schema), 'utf-8');
+                if (! validators.hasOwnProperty(namespace)) {
+                    validators[namespace] = {};
+                }
 
-                    if (! validators.hasOwnProperty(namespace)) {
-                        validators[namespace] = {};
-                    }
+                if (! validators[namespace].hasOwnProperty(node_type)) {
+                    validators[namespace][node_type] = {};
+                }
 
-                    if (! validators[namespace].hasOwnProperty(node_type)) {
-                        validators[namespace][node_type] = {};
+                var schema_path = path.join(schema_dir, node_type_schema);
+
+                fs.readFile(schema_path, 'utf-8', function(err, data) {
+                    if (err) {
+                        logger.error('Unable to read ' + schema_path, err);
+                        callback(err);
                     }
 
                     try {
                         validators[namespace][node_type]['schema'] = JSON.parse(data);
-                    } catch (err) {
-                        logger.error('Unable to parse schema {} to JSON !!!'
+                    } catch (parse_err) {
+                        logger.error('ERROR: Unable to parse schema {} to JSON !!!'
                             .format(node_type_schema));
+                        err_flag = parse_err;
+                        return false;
                     }
-                }
-                callback();
-            }
-        });
-    };
+                });
+            });
+
+            callback(err_flag);
+        }
+    });
+}
+
+function define_namespace_validators(namespace, define_cb) {
+    logger.debug('In define_namespace_validators: ' + namespace);
 
     series([
         function(callback) {
-            schema_registrar(function() {
-                callback(null);
+            schema_registrar(namespace, function(err) {
+                if (err) {
+                    callback(err);
+                } else {
+                    callback(null);
+                }
             });
         },
         function(callback) {
@@ -1070,7 +1109,7 @@ function delete_helper(user, node_id, response) {
         try {
             if (err) {
                 if (err.error && err.error === 'not_found') {
-                    logger.info("User '{}' attempted to delete unknown node: {}."
+                    logger.info('User "{}" attempted to delete unknown node {}.'
                         .format(user, node_id));
                     osdf_error(response, 'Unknown node.', 422);
                 } else {
@@ -1079,15 +1118,17 @@ function delete_helper(user, node_id, response) {
             } else {
                 var can_write = perms.has_write_permission(user, node_data);
 
-                if ( can_write ) {
+                if (can_write) {
                     delete_couch_doc(node_id, function(err) {
                         if (err) {
                             throw 'Unable to delete node ' + node_id;
                         } else {
                             delete_history_node(node_id, function(err) {
                                 if (err) {
-                                    logger.warn('Unable to delete history of node: {}: {}.'
-                                        .format(node_id, err.message));
+                                    logger.warn(
+                                        'Unable to delete history of node: {}: {}'
+                                            .format(err.message)
+                                    );
                                 } else {
                                     logger.info('Successful deletion: ' + node_id);
                                 }
@@ -1154,7 +1195,7 @@ function delete_schema_helper(namespace, schema_name) {
 //                                   argument. Null if operation was successful.
 // Returns: none
 function delete_couch_doc(id, callback) {
-    logger.debug('In delete_couch_doc.');
+    logger.debug('In delete_couch_doc: {}'.format(id));
 
     db.get(id, function(err, doc_data) {
         if (err) {
@@ -1230,7 +1271,7 @@ function update_aux_schema_helper(namespace, name, aux_schema_json) {
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1248,7 +1289,7 @@ function insert_aux_schema_helper(namespace, name, aux_schema_json) {
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function (err) {
+        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1370,7 +1411,8 @@ function establish_linkage_controls(callback) {
 
         fs.stat(linkage_path, function(err, stat) {
             if (err === null) {
-                logger.info('Linkage control file exists for namespace "{}".'.format(ns));
+                logger.info('Linkage control file exists for namespace "{}".'
+                    .format(ns));
 
                 fs.readFile(linkage_path, 'utf8', function(err, file_text) {
                     if (err) {
@@ -1452,11 +1494,10 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
                     }
 
                     var reference_schemas = [];
-                    var refIdx;
-                    for (refIdx = 0; refIdx < reference_ids.length; refIdx++) {
-                        var schema_file = reference_ids[refIdx] + '.json';
+                    _.forEach(reference_ids, function(reference_id) {
+                        var schema_file = reference_id + '.json';
                         reference_schemas.push(schema_file);
-                    }
+                    });
 
                     // Call ourselves and pass along the list of schemas that we have
                     // already loaded.
@@ -1485,13 +1526,13 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 }
 
 function register_aux_schemas(ns, callback) {
-    logger.debug('In register_aux_schemas.');
+    logger.debug('In register_aux_schemas: ' + ns);
 
     var validator = tv4.freshApi();
 
     register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
-            logger.error('Error in register_aux_schemas: ' + err);
+            logger.error('Error in register_aux_schemas: ', err);
             callback(err);
         } else {
             validators[ns]['val'] = validator;
@@ -1545,11 +1586,14 @@ function node_retrieval_helper(request, response, err, data) {
         }
     } else {
         var user = auth.get_user(request);
+
         if (perms.has_read_permission(user, data)) {
             var fix = osdf_utils.fix_keys(data);
             response.jsonp(fix);
         } else {
-            logger.info('User does not have read permissions for node.');
+            logger.info('User {} does not have read permissions for node.'
+                .format(user)
+            );
             osdf_error(response, 'No read access to this node.', 403);
         }
     }
@@ -1645,7 +1689,7 @@ function validate_against_schema(data) {
 
     var report = {
         valid: valid,
-        errors:  [ tv4.error ]
+        errors: [ tv4.error ]
     };
 
     return report;
