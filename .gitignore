@@ -1,2 +1,5 @@
+build
+node_modules
+dist
 test_config.ini
 conf/config.ini
