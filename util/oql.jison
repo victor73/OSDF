@@ -4,6 +4,10 @@
 int  "-"?([0-9]|[1-9][0-9]+)
 frac "."[0-9]+
 dotted [A-Za-z_]+("."[A-Za-z0-9_]+)+
+and [Aa][Nn][Dd]
+or  [Oo][Rr]
+true [Tt][Rr][Uu][Ee]
+false [Ff][Aa][Ll][Ss][Ee]
 
 %%
 
@@ -16,19 +20,18 @@ dotted [A-Za-z_]+("."[A-Za-z0-9_]+)+
 "["                              return "["
 "]"                              return "]"
 "&&"                             return 'AND'
+{and}                            return 'AND'
 "||"                             return 'OR'
-"AND"                            return 'AND'
-"OR"                             return 'OR'
-'>='                             return 'CMP_GREATER_EQ'
-'>'                              return 'CMP_GREATER'
-'<='                             return 'CMP_LESS_EQ'
-'<'                              return 'CMP_LESS'
+{or}                             return 'OR'
+'>='                             return 'CMP_GTE'
+'>'                              return 'CMP_GT'
+'<='                             return 'CMP_LTE'
+'<'                              return 'CMP_LT'
 "=="                             return 'EQ'
 "!="                             return 'NE'
-"true"                           return 'BOOL'
-"false"                          return 'BOOL'
-"and"                            return 'AND'
-"or"                             return 'OR'
+{true}                           return 'BOOL'
+{false}                          return 'BOOL'
+
 {dotted}                         return 'DOTTED'
 "all"                            return 'ALL'
 (\\\"|[^\[\]"])+                 return 'STRING'
@@ -40,13 +43,8 @@ dotted [A-Za-z_]+("."[A-Za-z0-9_]+)+
 /lex
 
 /* operator associations and precedence */
-
-%left '&&'
-%left 'and'
-%left 'AND'
-%left '||'
-%left  'or'
-%left  'OR'
+%left '||' 'or' 'OR'
+%left '&&' 'and' 'AND'
 %left  '<'
 %left  '>'
 %left  '<='
@@ -65,14 +63,8 @@ expressions
 
 e
     : term                      {$$ = $1;}
-    | term AND term             {$$ = [$1, '&&', $3];}
-    | term OR term              {$$ = [$1, '||', $3];}
-    | '(' e ')' AND term        {$$ = [$2, '&&', $5];}
-    | '(' e ')' OR term         {$$ = [$2, '||', $5];}
-    | term AND '(' e ')'        {$$ = [$1, '&&', $4];}
-    | term OR '(' e ')'         {$$ = [$1, '||', $4];}
-    | '(' e ')' AND '(' e ')'   {$$ = [$2, '&&', $6];}
-    | '(' e ')' OR '(' e ')'    {$$ = [$2, '||', $6];}
+    | e (AND e)?                {$$ = [$1, '&&', $3];}
+    | e (OR e)?                 {$$ = [$1, '||', $3];}
     | '(' e ')'                 {$$ = $2;}
     ;
 
@@ -90,7 +82,6 @@ search
 allsearch
     : query_text all            {$$ = [$1];}
     ;
-
 comparison
     : field comparator number   {$$ = [$1, $2, $3];}
     | number comparator field   {if ($2 === "<") { $$ = [$3, ">", $1]; }
@@ -102,10 +93,10 @@ comparison
     ;
 
 bool_check
-    : field EQ BOOL    {$$ = [$1, $2, ($3 === 'true')];}
-    | field NE BOOL    {$$ = [$1, $2, ($3 === 'true')];}
-    | BOOL EQ field    {$$ = [$3, $2, ($1 === 'true')];}
-    | BOOL NE field    {$$ = [$3, $2, ($1 === 'true')];}
+    : field EQ BOOL    {$$ = [$1, $2, ($3.toLowerCase() === 'true')];}
+    | field NE BOOL    {$$ = [$1, $2, ($3.toLowerCase() === 'true')];}
+    | BOOL EQ field    {$$ = [$3, $2, ($1.toLowerCase() === 'true')];}
+    | BOOL NE field    {$$ = [$3, $2, ($1.toLowerCase() === 'true')];}
     ;
 
 number
@@ -140,10 +131,11 @@ bool_compar
     ;
 
 comparator
-    : CMP_GREATER          {$$ = $1;}
-    | CMP_LESS             {$$ = $1;}
-    | CMP_GREATER_EQ       {$$ = $1;}
-    | CMP_LESS_EQ          {$$ = $1;}
+    : CMP_GT               {$$ = $1;}
+    | CMP_LT               {$$ = $1;}
+    | CMP_GTE              {$$ = $1;}
+    | CMP_LTE              {$$ = $1;}
     | EQ                   {$$ = $1;}
     | NE                   {$$ = $1;}
     ;
+
