@@ -60,7 +60,7 @@ CONF_FILE=$CONF_DIR/config.ini
 
 # End of the variables that can be overwritten in $DEFAULT
 
-# overwrite settings from default file
+# Overwrite settings from default file
 if [ -f "$DEFAULT" ]; then
     . "$DEFAULT"
 fi
@@ -86,9 +86,10 @@ case "$1" in
     if start-stop-daemon --test --start --pidfile "$PID_FILE" \
         --user "$OSDF_USER" --exec "$NODE" \
         >/dev/null; then
-        
+
         # Prepare environment
-        mkdir -p "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR" && chown "$OSDF_USER":"$OSDF_GROUP" "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR"
+        mkdir -p "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR" && \
+            chown "$OSDF_USER":"$OSDF_GROUP" "$LOG_DIR" "$DATA_DIR" "$WORKING_DIR"
         touch "$PID_FILE" && chown "$OSDF_USER":"$OSDF_GROUP" "$PID_FILE"
         ulimit -n 65535
 
@@ -110,7 +111,7 @@ case "$1" in
         else
             log_end_msg 0
         fi
-        
+
     else
         log_progress_msg "(already running)"
         log_end_msg 0
@@ -121,7 +122,7 @@ case "$1" in
 
     set +e
 
-    if [ -f "$PID_FILE" ]; then 
+    if [ -f "$PID_FILE" ]; then
         start-stop-daemon --stop --pidfile "$PID_FILE" \
             --user "$OSDF_USER" --signal TERM --retry=5 >/dev/null
         if [ $? -eq 1 ]; then
