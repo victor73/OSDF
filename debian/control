@@ -1,8 +1,8 @@
 Source: osdf
 Section: devel
-Priority: extra
+Priority: optional
 Maintainer: Victor <victor73@github.com>
-Build-Depends: dh-systemd (>= 1.14), debhelper (>= 8.0.0)
+Build-Depends: dh-systemd, debhelper (>=9.20160115)
 Standards-Version: 3.9.7
 Homepage: http://github.com/victor73/OSDF
 #Vcs-Git: git://git.debian.org/collab-maint/osdf.git
@@ -10,7 +10,7 @@ Homepage: http://github.com/victor73/OSDF
 
 Package: osdf
 Architecture: any
-Depends: ${misc:Depends}, openssl, adduser (>= 3.11), nodejs (>= 4.4.0)
+Depends: ${misc:Depends}, lsb-base, openssl, adduser (>= 3.11), nodejs (>= 6.0.0)
 Suggests: couchdb (>= 1.6.0), elasticsearch (>= 1.4)
 Description: RESTful API for storing and retrieving scientific data.
  OSDF is a server that is used to provide a RESTful HTTP API for
