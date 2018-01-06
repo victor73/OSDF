@@ -1,18 +1,29 @@
-0.26
+0.27.0
+  * Improvements to OQL to allow for multiple boolean expressions
+    by encoding boolean operator precedence.
+  * Replaced ant based build.xml with gulpfile and using gulp
+    for package building and other tasks such as test invocation.
+  * Relying on package.json and package-lock.json files. No longer
+    tracking contents of node_modules in version control.
+  * Updated deb packaging related files.
+
+  -- Victor <victor73@github.com> Sat, 06 Jan 2018 16:30:00 -0400
+
+0.26.0
   * Upgraded async and log4js to 2.6.0 and 2.4.1 respectively.
   * Refactoring of node-handler code to use lodash for certain
     loops.
 
   -- Victor <victor73@github.com> Wed, 27 Dec 2017 16:30:00 -0400
 
-0.25
+0.25.0
   * Upgraded commander, jsonschema and is-my-json-valid modules.
   * Refactoring of perms-handler.js to reduce code duplication.
   * Eslint formatting changes.
 
   -- Victor <victor73@github.com>  Sat, 23 Dec 2017 00:00:00 -0400
 
-0.24
+0.24.0
   * Major version upgrade for async and elasticsearch modules.
   * Alteration to query-handler to specify the version of the
     elasticsearch API to use.
@@ -21,14 +32,14 @@
 
   -- Victor <victor73@github.com>  Thu, 09 Nov 2017 00:00:00 -0400
 
-0.23
+0.23.0
   * Upgraded libraries: express, deep-diff, jison, nodeunit and request.
   * Minor edit to testing document.
   * Introduction of an .editorconfig file.
 
   -- Victor <victor73@github.com>  Fri, 03 Nov 2017 00:00:00 -0400
 
-0.22
+0.22.0
   * Formatting and linting changes from switch to eslint.
   * Using string-format for simplifying log messages in some places.
   * Upgrades of various modules such as lodash, log4js, clone, async and others.
@@ -37,7 +48,7 @@
 
   -- Victor <victor73@github.com>  Wed, 25 Oct 2017 00:00:00 -0400
 
-0.21
+0.21.0
   * Improved reliability of some nodeunit test scripts
   * Improved configurability of the test scripts with use
     of configuration file in the search path
@@ -51,38 +62,38 @@
 
   -- Victor <victor73@github.com>  Fri, 03 Jun 2016 00:00:00 -0400
 
-0.20
+0.20.0
   * Removal of the elasticsearch plugin in the postinst.
   * Aborting server startup if the user db file is missing or unreadable.
 
   -- Victor <victor73@github.com>  Sun, 29 May 2016 00:00:00 -0400
 
-0.19
+0.19.0
   * Upgraded river plugin.
   * Upgraded modules. Resolved conflicts.
   * Replaced FileLineReader with line-reader.
 
   -- Victor <victor73@github.com>  Sat, 07 May 2016 00:00:00 -0400
 
-0.18
+0.18.0
   * Added support for CA chain of trust handling when using htttps.
   * Improved error handling and logging when starting up.
 
   -- Victor <victor73@github.com>  Tue, 08 Mar 2016 00:00:00 -0400
 
-0.17
+0.17.0
   * Upgraded lodash, log4js, is-my-json-valid, and morgan.
   * Refactoring of test_utils code and the test scripts for
     better error handling.
 
   -- Victor <victor73@github.com>  Thu, 03 Mar 2016 00:00:00 -0400
 
-0.16
+0.16.0
   * Fixed deprecated lodash calls in node_handler.js.
 
   -- Victor <victor73@github.com>  Tue, 23 Feb 2016 00:00:00 -0400
 
-0.15
+0.15.0
   * Added support and configuration options to allow OSDF
     to run with SSL encryption.
   * Improved behavior of server startup when bind_address or
@@ -90,28 +101,28 @@
 
   -- Victor <victor73@github.com>  Mon, 15 Feb 2016 00:00:00 -0400
 
-0.14
+0.14.0
   * Fixed bug with contains() under certain node deletion
     situations. Replaced calls with lodash's includes().
   * Updated request, async and elasticsearch libraries.
 
   -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
 
-0.13
+0.13.0
   * Upgraded elasticsearch, deep-diff, and commander libraries.
   * Changes for compatibility with node 4.2.1.
   * Improved query test script cleanup.
 
   -- Victor <victor73@github.com>  Thu, 22 Oct 2015 00:00:00 -0400
 
-0.12
+0.12.0
   * Upgraded tv4, request and log4js.
   * Fixed bug with pagination of query results past page 2.
   * New test script for the query functionality.
 
   -- Victor <victor73@github.com>  Thu, 08 Oct 2015 00:00:00 -0400
 
-0.11
+0.11.0
   * Fixed issue with query results pagination.
   * Improved OQL parser and compiler to suppport inverted searches.
 
@@ -128,12 +139,12 @@
 
   -- Victor <victor73@github.com>  Tue, 15 Sep 2015 00:00:00 -0400
 
-0.10
+0.10.0
   * Upgraded to latest versions of tv4, request, lodash
 
   -- Victor <victor73@github.com>  Tue, 01 Sep 2015 00:00:00 -0400
 
-0.9
+0.9.0
   * Upgraded to latest versions of async, express, request, tv4,
     commander.
   * Added support for a simplified query language, called OQL.
@@ -141,7 +152,7 @@
 
   -- Victor <victor73@github.com>  Thu, 09 Jul 2015 00:00:00 -0400
 
-0.8
+0.8.0
   * Added linkage.json file detection and usage for imposing controls
     on the linkages between nodes.
   * Additional nodeunit tests for linkage control testing.
@@ -152,7 +163,7 @@
 
   -- Victor <victor73@github.com>  Tue, 02 Jun 2015 00:00:00 -0400
 
-0.7
+0.7.0
   * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
   * Added new route and method for node validation. Only performs validation
     and reporting of any errors.
@@ -165,31 +176,31 @@
 
   -- Victor <victor73@github.com>  Thu, 22 Jan 2015 00:00:00 -0400
 
-0.6
+0.6.0
   * Updated debian rules file to deal with new dh_installinit usage
   * Switched from elastical to the official nodejs elasticsearch library
   * Elasticsearch queries with aggregations supported
 
   -- Victor <victor73@github.com>  Thu, 06 Nov 2014 00:00:00 -0400
 
-0.5
+0.5.0
   * Upgraded modules (express, cradle, elastical, etc) to latest versions
   * Some fixes to test suite
   * Changes to code to deal with Express 4
   * Added configurable CORS support
-  * Switched from underscore to lowdash
+  * Switched from underscore to lodash
   * Improved startup via upstart
 
   -- Victor <victor73@github.com>  Sun, 20 Jul 2014 00:00:00 -0400
 
-0.4
+0.4.0
   * Replaced flow.js with async.js in base code as well as tests
   * New test for handling of bad version numbers during node updates
   * Improved CORS configurability
 
   -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
-0.3
+0.3.0
   * Updated code to deal with changes in node.js 0.10.x
   * Updated node modules to latest versions: express, connect, etc...
   * Implemented methods to deal with JSON-Schema management (primary and
@@ -199,7 +210,7 @@
 
   -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
-0.2
+0.2.0
   * Debian/Ubuntu package containing utility scripts from bin
   * RPM package now depending on the elasticsearch-plugin-river-couchdb
     while the DEB package executes the ElasticSearch 'plugin' utility for
@@ -214,7 +225,7 @@
 
   -- Victor <victor73@github.com>  Fri, 26 Oct 2012 22:54:30 -0400
 
-0.1
+0.1.0
   * Initial release
 
   -- Victor <victor73@github.com>  Wed, 06 Jun 2012 16:51:47 -0400

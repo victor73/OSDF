@@ -1,4 +1,16 @@
-osdf (0.26-1) unstable; urgency=low
+osdf (0.27.0-1) unstable; urgency=low
+
+  * Improvements to OQL to allow for multiple boolean expressions
+    by encoding boolean operator precedence.
+  * Replaced ant based build.xml with gulpfile and using gulp
+    for package building and other tasks such as test invocation.
+  * Relying on package.json and package-lock.json files. No longer
+    tracking contents of node_modules in version control.
+  * Updated deb packaging related files.
+
+ -- Victor <victor73@github.com>  Sat, 06 Jan 2018 12:00:00 -0400
+
+osdf (0.26.0-1) unstable; urgency=low
 
   * Upgraded async and log4js to 2.6.0 and 2.4.1 respectively.
   * Refactoring of node-handler code to use lodash for certain
@@ -6,7 +18,7 @@ osdf (0.26-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Wed, 27 Dec 2017 16:30:00 -0400
 
-osdf (0.25-1) unstable; urgency=low
+osdf (0.25.0-1) unstable; urgency=low
 
   * Upgraded commander, jsonschema and is-my-json-valid modules.
   * Refactoring of perms-handler.js to reduce code duplication.
@@ -14,7 +26,7 @@ osdf (0.25-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Sat, 23 Dec 2017 12:00:00 -0400
 
-osdf (0.24-1) unstable; urgency=low
+osdf (0.24.0-1) unstable; urgency=low
 
   * Major version upgrade for async and elasticsearch modules.
   * Alteration to query-handler to specify the version of the
@@ -24,7 +36,7 @@ osdf (0.24-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 09 Nov 2017 12:00:00 -0400
 
-osdf (0.23-1) unstable; urgency=low
+osdf (0.23.0-1) unstable; urgency=low
 
   * Upgraded libraries: express, deep-diff, jison, nodeunit and request.
   * Minor edit to testing document.
@@ -32,7 +44,7 @@ osdf (0.23-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Fri, 03 Nov 2017 12:00:00 -0400
 
-osdf (0.22-1) unstable; urgency=low
+osdf (0.22.0-1) unstable; urgency=low
 
   * Formatting and linting changes from switch to eslint.
   * Using string-format for simplifying log messages in some places.
@@ -42,7 +54,7 @@ osdf (0.22-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Wed, 25 Oct 2017 12:00:00 -0400
 
-osdf (0.21-1) unstable; urgency=low
+osdf (0.21.0-1) unstable; urgency=low
 
   * Improved reliability of some nodeunit test scripts
   * Improved configurability of the test scripts with use
@@ -64,19 +76,19 @@ osdf (0.20.1-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Sun, 29 May 2016 12:00:00 -0400
 
-osdf (0.20-2) unstable; urgency=low
+osdf (0.20.0-2) unstable; urgency=low
 
   * Removal of the elasticsearch plugin in the postinst.
 
  -- Victor <victor73@github.com>  Sun, 29 May 2016 00:00:00 -0400
 
-osdf (0.20-1) unstable; urgency=low
+osdf (0.20.0-1) unstable; urgency=low
 
   * Aborting server startup if the user db file is missing or unreadable.
 
  -- Victor <victor73@github.com>  Sat, 28 May 2016 00:00:00 -0400
 
-osdf (0.19-1) unstable; urgency=low
+osdf (0.19.0-1) unstable; urgency=low
 
   * Upgraded river plugin.
   * Upgraded modules. Resolved conflicts.
@@ -84,7 +96,7 @@ osdf (0.19-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Sat, 07 May 2016 00:00:00 -0400
 
-osdf (0.18-2) unstable; urgency=low
+osdf (0.18.0-2) unstable; urgency=low
 
   * Turned elasticsearch and couchdb dependencies into suggestions
     as an administrator or developer may choose to run them on
@@ -92,14 +104,14 @@ osdf (0.18-2) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Sat, 19 Mar 2016 00:00:00 -0400
 
-osdf (0.18-1) unstable; urgency=low
+osdf (0.18.0-1) unstable; urgency=low
 
   * Added support for CA chain of trust handling when using htttps.
   * Improved error handling and logging when starting up.
 
  -- Victor <victor73@github.com>  Tue, 08 Mar 2016 00:00:00 -0400
 
-osdf (0.17-1) unstable; urgency=low
+osdf (0.17.0-1) unstable; urgency=low
 
   * Upgraded lodash, log4js, is-my-json-valid, and morgan.
   * Refactoring of test_utils code and the test scripts for
@@ -107,13 +119,13 @@ osdf (0.17-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 03 Mar 2016 00:00:00 -0400
 
-osdf (0.16-1) unstable; urgency=low
+osdf (0.16.0-1) unstable; urgency=low
 
   * Fixed deprecated lodash calls in node_handler.js.
 
  -- Victor <victor73@github.com>  Tue, 23 Feb 2016 00:00:00 -0400
 
-osdf (0.15-1) unstable; urgency=low
+osdf (0.15.0-1) unstable; urgency=low
 
   * Added support and configuration options to allow OSDF
     to run with SSL encryption.
@@ -122,7 +134,7 @@ osdf (0.15-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Mon, 15 Feb 2016 00:00:00 -0400
 
-osdf (0.14-1) unstable; urgency=low
+osdf (0.14.0-1) unstable; urgency=low
 
   * Fixed bug with contains() under certain node deletion
     situations. Replaced calls with lodash's includes().
@@ -130,7 +142,7 @@ osdf (0.14-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Fri, 20 Nov 2015 00:00:00 -0400
 
-osdf (0.13-1) unstable; urgency=low
+osdf (0.13.0-1) unstable; urgency=low
 
   * Upgraded elasticsearch, deep-diff, and commander libraries.
   * Changes for compatibility with node 4.2.1.
@@ -138,7 +150,7 @@ osdf (0.13-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 22 Oct 2015 00:00:00 -0400
 
-osdf (0.12-1) unstable; urgency=low
+osdf (0.12.0-1) unstable; urgency=low
 
   * Upgraded tv4, request and log4js.
   * Fixed bug with pagination of query results past page 2.
@@ -146,7 +158,7 @@ osdf (0.12-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 08 Oct 2015 00:00:00 -0400
 
-osdf (0.11-1) unstable; urgency=low
+osdf (0.11.0-1) unstable; urgency=low
 
   * Fixed issue with query results pagination.
   * Improved OQL parser and compiler to suppport inverted searches.
@@ -166,13 +178,13 @@ osdf (0.10.1-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Tue, 15 Sep 2015 00:00:00 -0400
 
-osdf (0.10-1) unstable; urgency=low
+osdf (0.10.0-1) unstable; urgency=low
 
   * Upgraded to latest versions of tv4, request, lodash.
 
  -- Victor <victor73@github.com>  Tue, 01 Sep 2015 00:00:00 -0400
 
-osdf (0.9-1) unstable; urgency=low
+osdf (0.9.0-1) unstable; urgency=low
 
   * Upgraded to latest versions of async, express, request, tv4,
     commander.
@@ -181,7 +193,7 @@ osdf (0.9-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 09 Jul 2015 00:00:00 -0400
 
-osdf (0.8-1) unstable; urgency=low
+osdf (0.8.0-1) unstable; urgency=low
 
   * Added linkage.json file detection and usage for imposing controls
     on the linkages between nodes.
@@ -193,7 +205,7 @@ osdf (0.8-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Tue, 02 Jun 2015 00:00:00 -0400
 
-osdf (0.7-1) unstable; urgency=low
+osdf (0.7.0-1) unstable; urgency=low
 
   * Dropped JSV and replaced with tv4 to provide support for JSON-Schema v4
   * Added new route and method for node validation. Only performs validation
@@ -207,7 +219,7 @@ osdf (0.7-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 13 Nov 2014 00:00:00 -0400
 
-osdf (0.6-1) unstable; urgency=low
+osdf (0.6.0-1) unstable; urgency=low
 
   * Updated debian rules file to deal with new dh_installinit usage
   * Switched from elastical to the official nodejs elasticsearch library
@@ -215,7 +227,7 @@ osdf (0.6-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Thu, 06 Nov 2014 00:00:00 -0400
 
-osdf (0.5-1) unstable; urgency=low
+osdf (0.5.0-1) unstable; urgency=low
 
   * Upgraded modules (express, cradle, elastical, etc) to latest versions
   * Some fixes to test suite
@@ -224,7 +236,7 @@ osdf (0.5-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Sun, 20 Jul 2014 00:00:00 -0400
 
-osdf (0.4-1) unstable; urgency=low
+osdf (0.4.0-1) unstable; urgency=low
 
   * Replaced flow.js with async.js in base code as well as tests
   * New test for handling of bad version numbers during node updates
@@ -232,7 +244,7 @@ osdf (0.4-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
-osdf (0.3-1) unstable; urgency=low
+osdf (0.3.0-1) unstable; urgency=low
 
   * Updated code to deal with changes in node.js 0.10.x
   * Updated node modules to latest versions: express, connect, etc...
@@ -243,13 +255,13 @@ osdf (0.3-1) unstable; urgency=low
 
  -- Victor <victor73@github.com>  Wed, 10 Jul 2013 10:35:00 -0400
 
-osdf (0.2-1) unstable; urgency=low
+osdf (0.2.0-1) unstable; urgency=low
 
   * New version
 
  -- Victor <victor73@github.com>  Fri, 26 Oct 2012 22:54:30 -0400
 
-osdf (0.1-1) unstable; urgency=low
+osdf (0.1.0-1) unstable; urgency=low
 
   * Initial release
 
