@@ -96,7 +96,18 @@ gulp.task('clean', function() {
         .pipe(clean());
 });
 
-gulp.task('build', ['version'], function() {
+// Compile the jison based parser.
+gulp.task('oql_parser', function() {
+    gulp.src('./util/oql.jison')
+        .pipe(shell(['./node_modules/.bin/jison <%= file.path %> -o oql_jison_parser.js']));
+});
+
+gulp.task('deps', ['oql_parser'], function() {
+    gulp.src('')
+        .pipe(shell(['npm install']));
+});
+
+gulp.task('build', ['version', 'deps'], function() {
     return gulp.src(sources, {'base': '.'})
         .pipe(gulp.dest('build/' + title));
 });
@@ -115,12 +126,42 @@ gulp.task('gzip', ['tar'], function() {
         .pipe(gulp.dest('build'));
 });
 
+gulp.task('bump_package_files', ['version'], function(cb) {
+    var filename = './package.json';
+
+    fs.readFile(filename, 'utf-8', function(err, data) {
+        var parsed = JSON.parse(data);
+        parsed.version = version;
+
+        if (! semver.valid(parsed.version)) {
+            cb('Invalid version ' + version);
+            return;
+        }
+
+        fs.writeFile(filename, JSON.stringify(parsed, null, 4), function(err) {
+            if (err) {
+                cb(err);
+            } else {
+                cb();
+            }
+        });
+    });
+});
+
+gulp.task('latest_changes', function(cb) {
+    get_changelog(function(err, lines) {
+        console.log(lines.join('\n'));
+        cb();
+    });
+});
+
 gulp.task('deb_orig_tarball', ['gzip'], function() {
     return gulp.src('build/{}.tar.gz'.format(title))
         .pipe(rename('osdf_{}.orig.tar.gz'.format(version)))
         .pipe(gulp.dest('build'));
 });
 
+// Create the deb package file.
 gulp.task('deb', ['deb_orig_tarball'], function(callback) {
     var debuild = 'debuild -us -uc --lintian-opts ' +
                   '--suppress-tags bad-distribution-in-changes-file';
@@ -134,41 +175,6 @@ gulp.task('deb', ['deb_orig_tarball'], function(callback) {
             console.log(stderr);
         }
         callback(err);
-    });
-});
-
-gulp.task('bump_package_files', ['version'], function(cb) {
-    var fs = require('fs');
-    var filenames = ['./package.json', 'package-lock.json'];
-
-    async.each(filenames, function(filename, callback) {
-        fs.readFile(filename, 'utf-8', function(err, data) {
-            var parsed = JSON.parse(data);
-            parsed.version = version;
-
-            if (! semver.valid(parsed.version)) {
-                callback('Invalid version ' + version);
-                return;
-            }
-
-            fs.writeFile(filename, JSON.stringify(parsed, null, 4), function(err) {
-                if (err) {
-                    callback(err);
-                } else {
-                    console.log('Finished ' + filename);
-                    callback();
-                }
-            });
-        });
-    }, function(err) {
-        cb(err);
-    });
-});
-
-gulp.task('changes', function(cb) {
-    get_changelog(function(err, lines) {
-        console.log(lines.join('\n'));
-        cb();
     });
 });
 
