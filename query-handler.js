@@ -45,7 +45,7 @@ exports.init = function(emitter) {
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
     var es_opts = { index: 'osdf', type: 'osdf' };
 
-    elastic_client.indices.existsType(es_opts, function (err, result) {
+    elastic_client.indices.existsType(es_opts, function(err, result) {
         if (err) {
             var err_msg = 'Unable to determine if ElasticSearch CouchDB river exists.';
             logger.error(err_msg);
