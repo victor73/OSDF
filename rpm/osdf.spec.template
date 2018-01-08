@@ -2,21 +2,22 @@
 %define Name @name@
 %define lcName @lc_name@
 %define _prefix /usr/lib/%{lcName}
+%define _npm npm
 
 Summary: %{Name} - REST API for storing and retrieving scientific data.
 Name: %{lcName}
 Version: @version@
-Release: 3
+Release: 1
 License: GPL
 Group: System Environment/Daemons
-URL: http://sourceforge.net/projects/%{lcName}/
-Source: http://prdownloads.sourceforge.net/%{Name}/%{lcName}-%{version}.tar.gz
+URL: https://github.com/victor73/%{Name}/
+Source: https://github.com/victor73/%{Name}/archive/v%{version}.tar.gz
 Packager: @packager@
 
-Requires: nodejs >= 0.8
-Requires: elasticsearch >= 0.18.0
-Requires: elasticsearch-plugin-river-couchdb >= 1.1.0
-Requires: couchdb >= 1.0
+Requires: nodejs >= 6.0.0
+Requires: elasticsearch >= 1.6.0
+Requires: elasticsearch-plugin-river-couchdb >= 1.3.0
+Requires: couchdb >= 1.6.0
 Requires: openssl
 
 Requires(pre):  /usr/sbin/useradd /usr/sbin/groupadd chkconfig initscripts 
@@ -36,6 +37,7 @@ Node.js framework.
 %setup -n %{lcName}-%{version}
 
 %build
+%_npm install
 
 %clean                                                                                 
 [ "${RPM_BUILD_ROOT}" != "/" ] && %__rm -rf ${RPM_BUILD_ROOT}
@@ -43,13 +45,13 @@ Node.js framework.
 %pre
 # Create the group
 if ! /usr/bin/getent group %{lcName} >/dev/null; then
-        /usr/sbin/groupadd -r %{lcName}
+    /usr/sbin/groupadd -r %{lcName}
 fi
 
 # Create the user
 if ! /usr/bin/getent passwd %{lcName} >/dev/null; then
-        /usr/sbin/useradd -r -g %{lcName} -d "%{_prefix}" \
-            -s /sbin/nologin -c "%{Name}" %{lcName}
+    /usr/sbin/useradd -r -g %{lcName} -d "%{_prefix}" \
+        -s /sbin/nologin -c "%{Name}" %{lcName}
 fi
 
 
