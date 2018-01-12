@@ -171,11 +171,6 @@ function eval_permission(user, node, operation) {
         throw 'Invalid operation. Must be read or write.';
     }
 
-    if (! (node.hasOwnProperty('ns') && node.hasOwnProperty('node_type') &&
-           node.hasOwnProperty('acl') && node.hasOwnProperty('linkage') )) {
-        throw 'Invalid node.';
-    }
-
     var permitted = false;
     var node_acls = node['acl'][operation];
 

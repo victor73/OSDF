@@ -45,6 +45,7 @@ var osdf_error = osdf_utils.send_error;
 // An array to hold the namespaces.
 var namespaces = [];
 var validators = {};
+var base_schema;
 var working_dir;
 var db;
 
@@ -93,6 +94,21 @@ exports.init = function(emitter, working_dir_custom) {
     });
 
     waterfall([
+        function(callback) {
+            // Load the base schema for nodes. This is used in the validation process.
+            var base_schema_path = path.join(osdf_utils.get_osdf_root(), 'lib/node.json');
+
+            fs.readFile(base_schema_path, 'utf8', function(err, schema_text) {
+                if (err) {
+                    var msg = 'Unable to read base schema from {}: {}'
+                        .format(base_schema_path, err);
+                    callback(msg, null);
+                } else {
+                    base_schema = JSON.parse(schema_text);
+                    callback(null);
+                }
+            });
+        },
         function(callback) {
             // The linkage controller needs its own ability to interact with
             // CouchDB, to validate nodes, so we give it the connection we
@@ -718,7 +734,7 @@ function validate_incoming_node(node_string, callback) {
     if (typeof node_string === 'string') {
         try {
             node = JSON.parse(node_string);
-        } catch (e) {
+        } catch (parse_error) {
             msg = 'Unable to parse content into JSON.';
             logger.debug(msg);
             callback(msg, null);
@@ -726,23 +742,12 @@ function validate_incoming_node(node_string, callback) {
         }
     }
 
-    // Do a rudimentary check for whether the JSON document has the required keys.
-    if (! node.ns || ! node.acl || ! node.node_type || ! node.meta || ! node.linkage ) {
-        msg = 'Node JSON does not possess the correct structure.';
-        logger.debug(msg);
-        callback(msg, null);
-        return;
-    }
+    // Do a rudimentary check with json-schema for whether the JSON document
+    // has the required structure/keys.
+    var base_valid = tv4.validate(node, base_schema);
 
-    if (! (node.acl.hasOwnProperty('read') && node.acl['read'] instanceof Array)) {
-        msg = "Node acl object doesn't have a correctly defined 'read' key.";
-        logger.debug(msg);
-        callback(msg, null);
-        return;
-    }
-
-    if (! (node.acl.hasOwnProperty('write') && node.acl['write'] instanceof Array)) {
-        msg = "Node acl object doesn't have a correctly defined 'write' key.";
+    if (! base_valid ) {
+        msg = 'Node JSON does not possess the correct structure: ' + tv4.error.dataPath;
         logger.debug(msg);
         callback(msg, null);
         return;
@@ -1082,7 +1087,7 @@ function define_namespace_validators(namespace, define_cb) {
                     callback(err);
                 } else {
                     logger.info('Finished registering auxiliary schemas for ' +
-                        'namespace "{}".'.format(namespace));
+                                'namespace "{}".'.format(namespace));
                     callback(null);
                 }
             });
@@ -1127,7 +1132,7 @@ function delete_helper(user, node_id, response) {
                                 if (err) {
                                     logger.warn(
                                         'Unable to delete history of node: {}: {}'
-                                            .format(err.message)
+                                            .format(node_id, err.message)
                                     );
                                 } else {
                                     logger.info('Successful deletion: ' + node_id);
@@ -1141,8 +1146,8 @@ function delete_helper(user, node_id, response) {
                     osdf_error(response, 'No ACL permissions to delete node.', 403);
                 }
             }
-        } catch (e) {
-            logger.warn('Failed deletion.', e);
+        } catch (err) {
+            logger.warn('Failed deletion.', err);
             response.status(500).send('');
         }
     });
@@ -1271,6 +1276,7 @@ function update_aux_schema_helper(namespace, name, aux_schema_json) {
 
     if (validators.hasOwnProperty(namespace)) {
         var tv4 = validators[namespace]['val'];
+
         load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
@@ -1321,11 +1327,11 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
 
     fs.readFile(schema, 'utf-8', function(err, data) {
         if (err) {
-            logger.error('Missing or invalid schema found for ' + schema );
+            logger.error('Missing or invalid schema found for ' + schema);
             callback(err);
         } else {
-            logger.debug('Registering schema "{}" with id "{}".'.
-                format(schema, basename));
+            logger.debug('Registering schema "{}" with id "{}".'
+              .format(schema, basename));
             tv4.addSchema(basename, JSON.parse(data));
             callback(null);
         }
@@ -1333,7 +1339,8 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
 }
 
 function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, callback) {
-    logger.debug('In load_aux_schema_into_validator_from_json. Aux schema name: ' + name);
+    logger.debug('In load_aux_schema_into_validator_from_json. ' +
+                 'Aux schema name: ' + name);
 
     var json_type = typeof(aux_schema_json);
 
@@ -1468,7 +1475,7 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 
         fs.stat(schema_src, function(err, stats) {
             if (err) {
-                logger.debug('Error examining ' + schema_src + ': ', err);
+                logger.debug('Error examining {}: {}.'.format(schema_src, err));
                 cb(err);
             }
 
@@ -1552,6 +1559,7 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
                 if (err) {
                     logger.error(err);
                     callback(err);
+                    return;
                 }
 
                 logger.debug('Filtering out non-json files.');
@@ -1559,7 +1567,8 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
                     return path.extname(file) === '.json';
                 });
 
-                logger.info('Acceptable aux schema file count: ' + acceptable_files.length);
+                logger.info('Acceptable aux schema file count: ' +
+                            acceptable_files.length);
                 callback(null, acceptable_files);
             });
         },
@@ -1674,25 +1683,6 @@ function save_history(node_id, node_data, callback) {
     } catch (err) {
         callback(err);
     }
-}
-
-function validate_against_schema(data) {
-    logger.debug('In validate_against_schema.');
-
-    // TODO: More validation
-    var ns = data.ns;
-    var node_type = data.node_type;
-
-    var tv4 = validators[ns]['val'];
-    var schema = validators[ns][node_type]['schema'];
-    var valid = tv4.validate(data, schema);
-
-    var report = {
-        valid: valid,
-        errors: [ tv4.error ]
-    };
-
-    return report;
 }
 
 function successful_validation_report(report) {

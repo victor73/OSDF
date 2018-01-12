@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "description": "OSDF nodes must adhere to this structure.",
+  "properties": {
+    "acl": {
+      "description": "The node's permissions information.",
+      "type": "object",
+      "properties": {
+        "read": {
+          "description": "List of groups that can read the node.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "write": {
+          "description": "List of groups that can write/modify/delete the node.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "read",
+        "write"
+      ]
+    },
+    "id": {
+      "description": "The node ID. Omitted when a node is first inserted, so technically optional.",
+      "type": "string"
+    },
+    "linkage": {
+      "description": "The nodes that the node links to.",
+      "type": "object"
+    },
+    "meta": {
+      "description": "The node data. The specific structure of this is controlled by the node type's schema.",
+      "type": "object"
+    },
+    "node_type": {
+      "description": "What kind of node this is.",
+      "type": "string"
+    },
+    "ns": {
+      "description": "What namespace that the node belongs to.",
+      "type": "string"
+    },
+    "ver": {
+      "description": "The node's version. Omitted when a node is first inserted, so technically optional.",
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "acl",
+    "linkage",
+    "meta",
+    "node_type",
+    "ns"
+  ]
+}
