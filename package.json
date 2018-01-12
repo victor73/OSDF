@@ -1,6 +1,6 @@
 {
     "name": "osdf",
-    "version": "0.27.0",
+    "version": "0.28.0",
     "description": "Open Science Data Framework",
     "main": "osdf.js",
     "bin": {
@@ -14,7 +14,7 @@
     "dependencies": {
         "async": "^2.6.0",
         "clone": "^2.1.1",
-        "commander": "^2.12.2",
+        "commander": "^2.13.0",
         "cradle": "^0.7.1",
         "deep-diff": "^0.3.8",
         "elasticsearch": "^12.1.3",
