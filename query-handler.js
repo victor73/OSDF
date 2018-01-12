@@ -1,11 +1,17 @@
+// auth            - For obtaining the user information from the request
+// elasticsearch   - For communication with an elasticsearch server string formatting abilities
+// string-format   - For better string formatting abilities
+
 var _ = require('lodash');
 var auth = require('auth_enforcer');
 var elasticsearch = require('elasticsearch');
-var jison = require('jison');
+var format = require('string-format');
 var osdf_utils = require('osdf_utils');
 var path = require('path');
-var sprintf = require('sprintf').sprintf;
+var perms_handler = require('perms-handler');
 var util = require('util');
+
+format.extend(String.prototype);
 
 var es_river_name = 'osdf';
 var config = require('config');
@@ -24,7 +30,7 @@ var oql2es;
 // ElasticSearch server and determine if the OSDF river (listening for
 // changes from CouchDB changes feed) is available.
 exports.init = function(emitter) {
-    logger.debug('In ' + path.basename(__filename) + ' init().');
+    logger.debug('In {} init().'.format(path.basename(__filename)));
 
     // Load configuration parameters
     config.load(osdf_utils.get_config());
@@ -43,7 +49,7 @@ exports.init = function(emitter) {
     });
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
-    var es_opts = { index: 'osdf', type: 'osdf' };
+    var es_opts = {index: 'osdf', type: 'osdf'};
 
     elastic_client.indices.existsType(es_opts, function(err, result) {
         if (err) {
@@ -53,15 +59,16 @@ exports.init = function(emitter) {
         }
 
         if (result === true) {
-            logger.debug('Connected to ElasticSearch at ' +
-                        elasticsearch_address + ':' + elasticsearch_port);
+            logger.debug('Connected to ElasticSearch at {}:{}.'
+                .format(elasticsearch_address,elasticsearch_port));
 
             // Emit an event to notify of successful initialization.
             emitter.emit('query_handler_initialized');
 
         } else {
-            emitter.emit('query_handler_aborted', "ElasticSearch CouchDB river '" +
-                es_river_name + "' doesn't seem to exist.");
+            emitter.emit('query_handler_aborted',
+                'ElasticSearch CouchDB river "{}" does not seem to exist.'
+                    .format(es_river_name));
         }
     });
 };
@@ -71,7 +78,6 @@ exports.init = function(emitter) {
 exports.perform_oql = function(request, response) {
     logger.debug('In perform_oql');
 
-    var perms_handler = require('perms-handler');
     var user = auth.get_user(request);
     var namespace = request.params.ns;
 
@@ -105,8 +111,8 @@ exports.perform_oql = function(request, response) {
     if (requested_page) {
         // Calculate the first result number to return for the top of this page
         elastic_query['from'] = (requested_page - 1) * page_size;
-        logger.debug('User requested page ' + requested_page +
-                     " so setting elastic_query['from'] to " + elastic_query['from']);
+        logger.debug('User requested page {} so setting "from" to {}.'
+            .format(requested_page, elastic_query['from']));
     }
 
     elastic_query['size'] = page_size;
@@ -117,10 +123,9 @@ exports.perform_oql = function(request, response) {
 
 // This method handles querying elasticsearch with the elasticsearch
 // QueryDSL (JSON).
-exports.perform_query = function (request, response) {
+exports.perform_query = function(request, response) {
     logger.debug('In perform_query');
 
-    var perms_handler = require('perms-handler');
     var user = auth.get_user(request);
     var namespace = request.params.ns;
 
@@ -179,8 +184,8 @@ exports.perform_query = function (request, response) {
     if (requested_page) {
         // Calculate the first result number to return for the top of this page
         elastic_query['from'] = (requested_page - 1) * page_size;
-        logger.debug('User requested page ' + requested_page +
-                     " so setting elastic_query['from'] to " + elastic_query['from']);
+        logger.debug('User requested page {} so setting "from" to {}.'
+            .format(requested_page, elastic_query['from']));
     } else if (user_query['from']) {
         // If user specified from (begin index for pagination)
         elastic_query['from'] = user_query['from'];
@@ -204,11 +209,11 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
     logger.debug('Submitting elastic_query:\n' + util.inspect(es_query, true, null));
 
     try {
-        var search_opts = { index: 'osdf', body: es_query };
+        var search_opts = {index: 'osdf', body: es_query};
 
         // `err` is an Error, or `null` on success.
         // `results` is an object containing the search results.
-        elastic_client.search(search_opts, function (err, results) {
+        elastic_client.search(search_opts, function(err, results) {
             if (err) {
                 logger.error('Error running query. ' + err);
                 osdf_error(response, err, 500);
@@ -238,9 +243,8 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
 
                 format_query_results(results, requested_page);
 
-                logger.info('Returning ' + results.result_count +
-                            ' of ' + results.search_result_total +
-                            ' search results; page ' + results.page);
+                logger.info('Returning {} of {} search results; page {}.'
+                    .format(results.result_count, results.search_result_total, results.page));
 
                 if (partial_result) {
                     response.set('X-OSDF-Query-ResultSet', next_page_url);
@@ -250,9 +254,9 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
                 }
             }
         });
-    } catch (e) {
-        logger.error('Error running query. ' + e);
-        osdf_error(response, 'Error running query: ' + e, 500);
+    } catch (err) {
+        logger.error('Error running query. ' + err);
+        osdf_error(response, 'Error running query: ' + err, 500);
         return;
     }
 }
@@ -260,15 +264,15 @@ function do_es_query(namespace, es_query, requested_page, request, response) {
 function build_empty_filtered_query(namespace, user_acls) {
     // Return a skeletal query filtered on namespace and read acl
     var elastic_query = {
-        'query' : {
-            'filtered' : {
-                'filter' : {
-                    'and' : [
+        query: {
+            filtered: {
+                filter: {
+                    and: [
                         {
-                            term : { 'ns' : namespace }
+                            term: {'ns': namespace}
                         },
                         {
-                            terms : { 'acl.read' : user_acls }
+                            terms: {'acl.read': user_acls}
                         }
                     ]
                 }
@@ -280,14 +284,16 @@ function build_empty_filtered_query(namespace, user_acls) {
 }
 
 function format_query_results(results, requested_page) {
+    logger.debug('In format_query_results.');
+
     if (results['hits'].hasOwnProperty('total')) {
         results['search_result_total'] = results['hits']['total'];
     } else {
         results['search_result_total'] = 0;
     }
 
-    // Convert hits from couchdb format to OSDF format
-    results.results = _.map(results.hits.hits, function (hit) {
+    // Convert hits from CouchDB format to OSDF format
+    results.results = _.map(results.hits.hits, function(hit) {
         return osdf_utils.fix_keys(hit._source);
     });
 
