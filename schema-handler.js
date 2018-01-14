@@ -279,7 +279,7 @@ exports.insert_aux_schema = function(request, response) {
 
 // This is the code that implements schema insertion for when users wish
 // to create NEW schemas.
-exports.insert_schema = function (request, response) {
+exports.insert_schema = function(request, response) {
     logger.debug('In insert_schema.');
 
     // Get the namespace and the schema data (JSON) that has been provided.
@@ -413,7 +413,7 @@ exports.insert_schema = function (request, response) {
 
    TODO: Check the namespace ACL for permission to delete
  */
-exports.delete_schema = function (request, response) {
+exports.delete_schema = function(request, response) {
     logger.debug('In delete_schema.');
 
     // The namespace the schema belongs to
@@ -812,9 +812,9 @@ function delete_aux_schema_helper(namespace, aux_schema_name) {
 
         // We have to check if the schema file exists because it might have
         // already been deleted by another worker.
-        fs.exists(aux_schema_path, function (exists) {
+        fs.exists(aux_schema_path, function(exists) {
             if (exists) {
-                fs.unlink(aux_schema_path, function (err) {
+                fs.unlink(aux_schema_path, function(err) {
                     if (err) {
                         throw err;
                     } else {
@@ -852,9 +852,9 @@ function delete_schema_helper(namespace, schema_name) {
 
         // We have to check if the schema file exists because it might have
         // already been deleted by another worker.
-        fs.exists(schema_path, function (exists) {
+        fs.exists(schema_path, function(exists) {
             if (exists) {
-                fs.unlink(schema_path, function (err) {
+                fs.unlink(schema_path, function(err) {
                     if (err) {
                         throw err;
                     } else {

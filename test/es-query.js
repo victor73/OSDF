@@ -343,7 +343,7 @@ exports['test_paginated_query_results'] = function(test) {
     });
 };
 
-exports['test_query_all_pages'] = function (test) {
+exports['test_query_all_pages'] = function(test) {
     test.expect(4);
 
     var es_query = {
@@ -386,18 +386,18 @@ exports['test_query_all_pages'] = function (test) {
     },
     function(test_docs, callback) {
         // validate all the test docs
-        validate_nodes(test_docs, function (err) {
+        validate_nodes(test_docs, function(err) {
             callback(err, test_docs);
         });
     },
     function(test_docs, callback) {
         // Nodes are valid, insert them...
-        insert_nodes(test_docs, function (err, node_ids) {
+        insert_nodes(test_docs, function(err, node_ids) {
             callback(err, node_ids);
         });
     },
     function(node_ids, callback) {
-        retry({ times: 10, interval: 3000 }, function (cb, results) {
+        retry({times: 10, interval: 3000}, function(cb, results) {
             tutils.query(es_query, test_ns, auth, function(err, resp) {
                 if (err) {
                     cb(err);
@@ -409,7 +409,7 @@ exports['test_query_all_pages'] = function (test) {
                     if (node_ids.length === total) {
                         // Okay, everything has been inserted and the ES data
                         // has gotten all the data an indexed it...
-                        cb(null, { total: total });
+                        cb(null, {total: total});
                     } else {
                         console.log("Counts don't match yet... Pausing a bit.");
                         cb("Counts don't yet match...", null);
@@ -417,7 +417,7 @@ exports['test_query_all_pages'] = function (test) {
                 }
             });
         },
-        function (err, results) {
+        function(err, results) {
             if (err) {
                 callback(err);
             } else {

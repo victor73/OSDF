@@ -687,7 +687,7 @@ exports['update_wildcard_node_wildcard_linkage_wildcard_target'] = function(test
 //       "connected_to": [ "target", "target2" ]
 //    }
 //
-exports['update_multi_linkage_multi_target_valid'] = function (test) {
+exports['update_multi_linkage_multi_target_valid'] = function(test) {
     test.expect(2);
 
     waterfall([

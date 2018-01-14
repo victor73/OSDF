@@ -116,7 +116,7 @@ exports['retrieve_all'] = function(test) {
 // Test retrieval of the collection of auxiliary schemas with a missing
 // authentication token. We should not provide it if no authentication has been
 // provided. The user/caller should get an HTTP 403 status code.
-exports['retrieve_all_no_auth'] = function (test) {
+exports['retrieve_all_no_auth'] = function(test) {
     test.expect(2);
 
     // Note the 'null' for where the auth token would normally be provided.
@@ -166,7 +166,7 @@ exports['retrieve_all_bad_auth'] = function(test) {
 // Test basic retrieval of an auxiliary schema. The approach is to first insert an auxiliary
 // schema, then retrieve it. We also make an attempt To cleanup by deleting the auxiliary
 // schema at the conclusion of the test.
-exports['basic_retrieve'] = function (test) {
+exports['basic_retrieve'] = function(test) {
     test.expect(5);
 
     var aux_schema_name = osdf_utils.random_string(8);

@@ -57,7 +57,7 @@ exports.get_all_namespaces = function(request, response) {
                 if (stats.isDirectory()) {
                     var ns_dir = file;
                     var info_file = path.join(ns_path, ns_dir, 'info.json');
-                    fs.readFile(info_file, function (err, file_text) {
+                    fs.readFile(info_file, function(err, file_text) {
                         if (err) {
                             logger.error(err);
                             callback(err);

@@ -45,7 +45,7 @@ function initialize(working_path) {
     query_handler.init(eventEmitter);
     schema_handler.init(eventEmitter, working_path);
 
-    fs.watchFile(osdf_utils.get_config(), function (curr, prev) {
+    fs.watchFile(osdf_utils.get_config(), function(curr, prev) {
         if (curr.mtime.getTime() !== prev.mtime.getTime()) {
             logger.info('Detected that the configuration has been updated.');
             info_handler.update();
@@ -212,7 +212,7 @@ function listen_for_init_completion(config) {
 
     // Allow each handler to abort the launch if there is a configuration
     // problem somewhere. For example, maybe CouchDB or ElasticSearch are down.
-    _.each(handlers, function (handler) {
+    _.each(handlers, function(handler) {
         eventEmitter.on(handler + '_handler_initialized', function(message) {
             examine_handlers();
         });
