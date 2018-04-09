@@ -103,7 +103,7 @@ function determine_worker_count(config) {
     }
 
     if (workers <= 0) {
-        logger.warn("Detected worker count of zero. Using CPU count.");
+        logger.warn('Detected worker count of zero. Using CPU count.');
         workers = cpu_count;
     }
 

@@ -183,7 +183,7 @@ exports.valid_linkage = function(node, callback) {
                 valid = false;
                 cb(1);
             }
-        }, function (err) {
+        }, function(err) {
             if (trueErrorFlag === true) {
                 callback(err, valid);
             } else {

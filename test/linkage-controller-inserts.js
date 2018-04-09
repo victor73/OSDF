@@ -63,10 +63,9 @@ exports['insert_all_links_disallowed'] = function(test) {
                 'Correct status for insertion with illegal linkage.');
 
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
-                'OSDF reports an error message in the right header.');
+                'OSDF reports an error message in the correct header.');
 
-            test.ok(response.headers.hasOwnProperty('x-osdf-error') &&
-                response.headers['x-osdf-error'].search(/linkage/), -1,
+            test.notEqual(response.headers['x-osdf-error'].search(/linkage/), -1,
                 "Error message makes mention of 'linkage'");
 
             // If the node still got inserted somehow, we make sure we remove it
@@ -152,8 +151,8 @@ exports['insert_one_allowance_invalid_link'] = function(test) {
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
                 'OSDF reports an error message in the right header.');
 
-            test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                -1, "Error message makes mention of 'linkage'");
+            test.notEqual(response.headers['x-osdf-error'].search(/linkage/), -1,
+                "Error message makes mention of 'linkage'");
 
             // If the node got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {
@@ -642,8 +641,8 @@ exports['insert_multi_linkage_multi_target_invalid'] = function(test) {
             test.ok(response.headers.hasOwnProperty('x-osdf-error'),
                 'OSDF reports an error message in the right header.');
 
-            test.notEqual(response.headers['x-osdf-error'].search(/linkage/),
-                -1, "Error message makes mention of 'linkage'");
+            test.notEqual(response.headers['x-osdf-error'].search(/linkage/), -1,
+                "Error message makes mention of 'linkage'");
 
             // If the node still got inserted somehow, we make sure we remove it
             if (response.headers.hasOwnProperty('location')) {

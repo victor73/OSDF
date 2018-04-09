@@ -4,7 +4,7 @@ var query_handler = require('query-handler');
 var ns_handler = require('namespace-handler');
 var schema_handler = require('schema-handler');
 
-exports.set_routes = function (app) {
+exports.set_routes = function(app) {
     // Node handler functions
     app.get('/nodes/:id', node_handler.get_node);
     app.get('/nodes/:id/ver/:ver', node_handler.get_node_by_version);

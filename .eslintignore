@@ -1,0 +1,11 @@
+*.md
+LICENSE
+oql_jison_parser.js
+package.json
+package-lock.json
+test_config.ini
+/bin/couchdb/linkage*.js
+/build/**
+/dist/**
+/docs/**
+/lib/inireader/**

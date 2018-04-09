@@ -1331,7 +1331,7 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
             callback(err);
         } else {
             logger.debug('Registering schema "{}" with id "{}".'
-              .format(schema, basename));
+                .format(schema, basename));
             tv4.addSchema(basename, JSON.parse(data));
             callback(null);
         }
