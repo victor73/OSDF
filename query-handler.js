@@ -43,10 +43,16 @@ exports.init = function(emitter) {
     var elasticsearch_address = config.value('elasticsearch', 'elasticsearch_address');
     var elasticsearch_port = config.value('elasticsearch', 'elasticsearch_port');
 
-    elastic_client = new elasticsearch.Client({
-        apiVersion: '1.4',
-        host: elasticsearch_address + ':' + elasticsearch_port
-    });
+    try {
+        elastic_client = new elasticsearch.Client({
+            apiVersion: '1.7',
+            host: elasticsearch_address + ':' + elasticsearch_port
+        });
+    } catch (es_err) {
+        logger.error('Aborting query-handler.js initialization.', es_err);
+        emitter.emit('query_handler_aborted', es_err);
+        return;
+    }
 
     // Abort the server start-up if ElasticSearch or the index we need isn't there.
     var es_opts = {index: 'osdf', type: 'osdf'};

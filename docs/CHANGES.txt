@@ -1,3 +1,11 @@
+0.30.0
+  * Upgraded elasticsearch library to 13.x series and modified
+    query-handler.js for compatibility.
+  * Updated deep-dif, lodash, express, string-format, and gulp-clean
+    libraries, among others.
+
+  -- Victor <victor73@github.com> Tue, 15 May 2018 12:00:00 -0400
+
 0.29.0
   * Increased the max length of schema name to 64.
   * Updated libraries: commander, lodash, log4js, and is-my-json-valid.
