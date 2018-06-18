@@ -1,4 +1,4 @@
-#!/usr/bin/env nmdeunit
+#!/usr/bin/env nodeunit
 
 var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils.js');
