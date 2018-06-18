@@ -1,3 +1,13 @@
+osdf (0.31.0-1) unstable; urgency=low
+
+  * Specific test for invalid linkage structure and improvement of checks on
+    node structure.
+  * Base JSON-Schema improved with more precision about string patterns and
+    structure of linkage blocks.
+  * Organized routes a little more clearly.
+
+ -- Victor <victor73@github.com>  Mon, 18 Jun 2018 10:00:00 -0400
+
 osdf (0.30.0-1) unstable; urgency=low
 
   * Upgraded elasticsearch library to 13.x series and modified

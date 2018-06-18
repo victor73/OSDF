@@ -1,3 +1,12 @@
+0.31.0
+  * Specific test for invalid linkage structure and improvement of checks on
+    node structure.
+  * Base JSON-Schema improved with more precision about string patterns and
+    structure of linkage blocks.
+  * Organized routes a little more clearly.
+
+  -- Victor <victor73@github.com> Mon, 18 Jun 2018 10:00:00 -0400
+
 0.30.0
   * Upgraded elasticsearch library to 13.x series and modified
     query-handler.js for compatibility.
@@ -10,7 +19,7 @@
   * Increased the max length of schema name to 64.
   * Updated libraries: commander, lodash, log4js, and is-my-json-valid.
 
-  -- Victor <victor73@github.com> Mon, 09 Apr 2018 15:00:00 -0400
+  -- Victor <victor73@github.com>  Mon, 09 Apr 2018 15:00:00 -0400
 
 0.28.0
   * Using JSON-Schema for node structure test.
@@ -18,7 +27,7 @@
   * New tests for node structure on insertion.
   * Updated commander library.
 
-  -- Victor <victor73@github.com> Fri, 12 Jan 2018 13:00:00 -0400
+  -- Victor <victor73@github.com>  Fri, 12 Jan 2018 13:00:00 -0400
 
 0.27.0
   * Improvements to OQL to allow for multiple boolean expressions
@@ -29,14 +38,14 @@
     tracking contents of node_modules in version control.
   * Updated deb packaging related files.
 
-  -- Victor <victor73@github.com> Sat, 06 Jan 2018 16:30:00 -0400
+  -- Victor <victor73@github.com>  Sat, 06 Jan 2018 16:30:00 -0400
 
 0.26.0
   * Upgraded async and log4js to 2.6.0 and 2.4.1 respectively.
   * Refactoring of node-handler code to use lodash for certain
     loops.
 
-  -- Victor <victor73@github.com> Wed, 27 Dec 2017 16:30:00 -0400
+  -- Victor <victor73@github.com>  Wed, 27 Dec 2017 16:30:00 -0400
 
 0.25.0
   * Upgraded commander, jsonschema and is-my-json-valid modules.
