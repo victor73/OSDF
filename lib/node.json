@@ -10,7 +10,10 @@
           "description": "List of groups that can read the node.",
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
           },
           "uniqueItems": true
         },
@@ -18,7 +21,10 @@
           "description": "List of groups that can write/modify/delete the node.",
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "pattern": "^[a-z0-9_]+$"
           },
           "uniqueItems": true
         }
@@ -35,7 +41,21 @@
     },
     "linkage": {
       "description": "The nodes that the node links to.",
-      "type": "object"
+      "type": "object",
+      "patternProperties": {
+          "^[a-zA-Z0-9_]{3,32}$": {
+              "description": "The name of the edge that that connects the nodes.",
+              "type": "array",
+              "items": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 32,
+                  "pattern": "^[a-zA-Z0-9_]+$"
+              },
+              "uniqueItems": true
+          }
+      },
+      "additionalProperties": false
     },
     "meta": {
       "description": "The node data. The specific structure of this is controlled by the node type's schema.",
@@ -43,11 +63,16 @@
     },
     "node_type": {
       "description": "What kind of node this is.",
-      "type": "string"
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 32
     },
     "ns": {
-      "description": "What namespace that the node belongs to.",
-      "type": "string"
+      "description": "What namespace does the node belong to.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 32,
+      "pattern": "^[a-z0-9]+$"
     },
     "ver": {
       "description": "The node's version. Omitted when a node is first inserted, so technically optional.",

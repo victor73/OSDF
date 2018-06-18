@@ -96,7 +96,13 @@ exports.init = function(emitter, working_dir_custom) {
     waterfall([
         function(callback) {
             // Load the base schema for nodes. This is used in the validation process.
-            var base_schema_path = path.join(osdf_utils.get_osdf_root(), 'lib/node.json');
+            var base_schema_path = path.join(
+                osdf_utils.get_osdf_root(),
+                'lib',
+                'node.json'
+            );
+
+            logger.info('Loading base node json-schema, node.json.');
 
             fs.readFile(base_schema_path, 'utf8', function(err, schema_text) {
                 if (err) {
@@ -605,11 +611,17 @@ exports.validate_node = function(request, response) {
 
     waterfall([
         function(callback) {
+            var e = false;
             try {
                 var node_data = JSON.parse(content);
-                callback(null, node_data);
             } catch (err) {
+                e = true;
+            }
+
+            if (e) {
                 callback({err: 'Invalid JSON provided.', code: 422 });
+            } else {
+                callback(null, node_data);
             }
         },
         function(node_data, callback) {
@@ -744,12 +756,27 @@ function validate_incoming_node(node_string, callback) {
 
     // Do a rudimentary check with json-schema for whether the JSON document
     // has the required structure/keys.
-    var base_valid = tv4.validate(node, base_schema);
+    var base_result = tv4.validateMultiple(node, base_schema);
 
-    if (! base_valid ) {
-        msg = 'Node JSON does not possess the correct structure: ' + tv4.error.dataPath;
-        logger.debug(msg);
-        callback(msg, null);
+    if (! base_result.valid) {
+        var errors = [];
+        _.each(base_result.errors, function(validation_error) {
+            var err_msg = '{} on path {}'.format(
+                validation_error.message,
+                validation_error.dataPath
+            );
+            errors.push(err_msg);
+        });
+
+        logger.debug('Node JSON does not possess the correct structure.');
+
+        var report = {
+            valid: false,
+            errors: errors
+        };
+
+        callback(null, report);
+
         return;
     }
 

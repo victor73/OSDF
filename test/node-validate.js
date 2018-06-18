@@ -148,7 +148,7 @@ exports['validation_with_unknown_namespace'] = function(test) {
     var bad_node = test_node;
 
     // Overwrite the namespace with a randomly generated one.
-    bad_node.ns = osdf_utils.random_string(8);
+    bad_node.ns = osdf_utils.random_string(8).toLowerCase();
 
     tutils.validate_node(bad_node, auth, function(err, resp) {
         if (err) {
@@ -224,13 +224,15 @@ exports['validation_with_valid_linkage'] = function(test) {
     });
 };
 
-exports['validation_with_invalid_linkage'] = function(test) {
+// Test the validation mechanism with a link to a node that does
+// not exist (xxxxx). This should result in a 422 error code.
+exports['validation_with_non_existent_link'] = function(test) {
     test.expect(3);
 
     var test_node = {
         ns: 'test2',
         acl: { 'read': ['all'], 'write': ['all'] },
-        linkage: { related_to: [ 'XXXXXX' ]},
+        linkage: { related_to: [ 'xxxxx' ]},
         node_type: 'example',
         meta: {}
     };
@@ -243,7 +245,7 @@ exports['validation_with_invalid_linkage'] = function(test) {
             var response = resp['response'];
 
             test.equal(response.statusCode, 422,
-                'Correct status for node with valid linkages.');
+                'Correct status for node with non-existent link node.');
 
             test.ok(data !== '', 'Validation results returned.');
 
@@ -255,3 +257,38 @@ exports['validation_with_invalid_linkage'] = function(test) {
     });
 };
 
+// Test the validation mechanism with a linkage block
+// that has an incorrect structure. In this case, the linkage
+// name (related_to), is pointing to string, instead of an
+// array of strings.
+exports['validation_with_invalid_linkage'] = function(test) {
+    test.expect(3);
+
+    var test_node = {
+        ns: 'test2',
+        acl: { 'read': ['all'], 'write': ['all'] },
+        // Wrong structure
+        linkage: { related_to: '1234XXXXX'},
+        node_type: 'example',
+        meta: {}
+    };
+
+    tutils.validate_node(test_node, auth, function(err, resp) {
+        if (err) {
+            console.log(err);
+        } else {
+            var data = resp['body'];
+            var response = resp['response'];
+
+            test.equal(response.statusCode, 422,
+                'Correct status for node with invalid linkage.');
+
+            test.ok(data !== '', 'Validation results returned.');
+
+            test.ok(data.search('linkage') !== -1,
+                'Validation output mentioned linkage.');
+        }
+
+        test.done();
+    });
+};
