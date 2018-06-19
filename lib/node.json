@@ -43,12 +43,12 @@
       "description": "The nodes that the node links to.",
       "type": "object",
       "patternProperties": {
-          "^[a-zA-Z0-9_]{3,32}$": {
+          "^[a-zA-Z0-9_]{2,32}$": {
               "description": "The name of the edge that that connects the nodes.",
               "type": "array",
               "items": {
                   "type": "string",
-                  "minLength": 2,
+                  "minLength": 3,
                   "maxLength": 32,
                   "pattern": "^[a-zA-Z0-9_]+$"
               },

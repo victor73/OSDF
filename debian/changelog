@@ -1,9 +1,15 @@
+osdf (0.31.2-1) unstable; urgency=low
+
+  * Correction to master node json-schema file.
+
+ -- Victor <victor73@github.com>  Tue, 19 Jun 2018 14:00:00 -0400
+
 osdf (0.31.1-1) unstable; urgency=low
 
   * Tweak to allow for 2 character long linkage names, instead of the
     minimum length of 3.
 
- -- Victor <victor73@github.com>  Tue, 19 Jun 2018 11:00:00 -040
+ -- Victor <victor73@github.com>  Tue, 19 Jun 2018 11:00:00 -0400
 
 osdf (0.31.0-1) unstable; urgency=low
 

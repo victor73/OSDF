@@ -1,6 +1,6 @@
 {
     "name": "osdf",
-    "version": "0.31.1",
+    "version": "0.31.2",
     "description": "Open Science Data Framework",
     "main": "osdf.js",
     "bin": {
