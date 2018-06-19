@@ -1,3 +1,9 @@
+0.31.1
+  * Tweak to allow for 2 character long linkage names, instead of the
+    minimum length of 3.
+
+  -- Victor <victor73@github.com> Tue, 19 Jun 2018 11:00:00 -0400
+
 0.31.0
   * Specific test for invalid linkage structure and improvement of checks on
     node structure.
