@@ -32,16 +32,18 @@ exports.set_routes = function(app) {
     app.get('/namespaces/:ns', ns_handler.get_namespace);
 
     // Schema handler functions
+    // NOTE: The order matters a great deal here because of precedence,
+    // so care is needed with modifications.
     app.get('/namespaces/:ns/schemas', schema_handler.get_all_schemas);
-    app.get('/namespaces/:ns/schemas/:schema', schema_handler.get_schema);
-    app.post('/namespaces/:ns/schemas', schema_handler.insert_schema);
-    app.put('/namespaces/:ns/schemas/:schema', schema_handler.update_schema);
-    app.delete('/namespaces/:ns/schemas/:schema', schema_handler.delete_schema);
-
-    // Auxiliary Schema functions
     app.get('/namespaces/:ns/schemas/aux', schema_handler.get_all_aux_schemas);
+    app.get('/namespaces/:ns/schemas/:schema', schema_handler.get_schema);
     app.get('/namespaces/:ns/schemas/aux/:aux', schema_handler.get_aux_schema);
+    app.post('/namespaces/:ns/schemas', schema_handler.insert_schema);
     app.post('/namespaces/:ns/schemas/aux', schema_handler.insert_aux_schema);
+
+    app.put('/namespaces/:ns/schemas/:schema', schema_handler.update_schema);
     app.put('/namespaces/:ns/schemas/aux/:aux', schema_handler.update_aux_schema);
+
+    app.delete('/namespaces/:ns/schemas/:schema', schema_handler.delete_schema);
     app.delete('/namespaces/:ns/schemas/aux/:aux', schema_handler.delete_aux_schema);
 };
