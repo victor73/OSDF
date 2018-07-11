@@ -1,5 +1,4 @@
-#!/usr/bin/env nodeunit
-
+var assert = require('chai').assert;
 var osdf_utils = require('../lib/osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -26,269 +25,255 @@ var test_node_with_schema = {
     }
 };
 
-exports['basic_validation_no_schema_control'] = function(test) {
-    test.expect(2);
+describe('node-validate', function() {
+    it('basic_validation_no_schema_control', function(done) {
+        tutils.validate_node(test_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 200,
+                    'Correct status for validation.');
 
-            test.equal(response.statusCode, 200,
-                'Correct status for validation.');
+                assert.strictEqual(data, '',
+                    'No content returned on a good node validation.');
 
-            test.ok(data === '',
-                'No content returned on a good node validation.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-exports['basic_validation_with_schema_control'] = function(test) {
-    test.expect(2);
+    it('basic_validation_with_schema_control', function(done) {
+        tutils.validate_node(test_node_with_schema, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node_with_schema, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 200,
+                    'Correct status for validation.');
 
-            test.equal(response.statusCode, 200,
-                'Correct status for validation.');
+                assert.strictEqual(data, '',
+                    'No content returned on a good node validation.');
 
-            test.ok(data === '',
-                'No content returned on a good node validation.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-exports['basic_validation_with_invalid_node'] = function(test) {
-    test.expect(3);
 
-    var invalid_node = test_node_with_schema;
-    delete invalid_node['meta']['color'];
+    it('basic_validation_with_invalid_node', function(done) {
+        var invalid_node = test_node_with_schema;
+        delete invalid_node['meta']['color'];
 
-    tutils.validate_node(invalid_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+        tutils.validate_node(invalid_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.equal(response.statusCode, 422,
-                'Correct status for invalid node.');
+                assert.equal(response.statusCode, 422,
+                    'Correct status for invalid node.');
 
-            test.ok(data !== '', 'Content returned on a bad node validation.');
+                assert.ok(data !== '',
+                    'Content returned on a bad node validation.');
 
-            // Message should say something about 'color' being missing...
-            test.ok(data.indexOf('color') !== -1,
-                'Error message mentioned missing property.');
-        }
+                // Message should say something about 'color' being missing...
+                assert.isOk(data.indexOf('color') !== -1,
+                    'Error message mentioned missing property.');
 
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Attempt a node validation without providing an authentication token.
-exports['basic_validation_no_auth'] = function(test) {
-    test.expect(2);
+    // Attempt a node validation without providing an authentication token.
+    it('basic_validation_no_auth', function(done) {
+        tutils.validate_node(test_node, null, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node, null, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 403,
+                    'Correct status for unauthorized validation.');
 
-            test.equal(response.statusCode, 403,
-                'Correct status for unauthorized validation.');
+                assert.strictEqual(data, '',
+                    'No content returned on a unauthorized node validation.');
 
-            test.ok(data === '',
-                'No content returned on a unauthorized node validation.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Attempt a node validation with an invalid authentication token.
-exports['basic_validation_bad_auth'] = function(test) {
-    test.expect(2);
+    // Attempt a node validation with an invalid authentication token.
+    it('basic_validation_bad_auth', function(done) {
+        // First we create a node
+        tutils.validate_node(test_node, bad_auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    // First we create a node
-    tutils.validate_node(test_node, bad_auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 403,
+                    'Correct status for unauthorized validation.');
 
-            test.equal(response.statusCode, 403,
-                'Correct status for unauthorized validation.');
+                assert.strictEqual(data, '',
+                    'No content returned on a unauthorized node validation.');
 
-            test.ok(data === '',
-                'No content returned on a unauthorized node validation.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Test what happens when we attempt to validate a node with
-// an unknown namespace. We should get an error.
-exports['validation_with_unknown_namespace'] = function(test) {
-    test.expect(2);
+    // Test what happens when we attempt to validate a node with
+    // an unknown namespace. We should get an error.
+    it('validation_with_unknown_namespace', function(done) {
+        var bad_node = test_node;
 
-    var bad_node = test_node;
+        // Overwrite the namespace with a randomly generated one.
+        bad_node.ns = osdf_utils.random_string(8).toLowerCase();
 
-    // Overwrite the namespace with a randomly generated one.
-    bad_node.ns = osdf_utils.random_string(8).toLowerCase();
+        tutils.validate_node(bad_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(bad_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 422,
+                    'Correct status for node with bad namespace.');
 
-            test.equal(response.statusCode, 422,
-                'Correct status for node with bad namespace.');
+                assert.isOk(data !== '',
+                    'Content is returned on bad node validation.');
 
-            test.ok(data !== '', 'Content is returned on bad node validation.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Test what happens when we attempt to validate a node with an unknown
-// namespace AND without an authorization token.  We should get an HTTP 403
-// (Forbidden) error.
-exports['validation_with_unknown_namespace_no_auth'] = function(test) {
-    test.expect(2);
+    // Test what happens when we attempt to validate a node with an unknown
+    // namespace AND without an authorization token.  We should get an HTTP 403
+    // (Forbidden) error.
+    it('validation_with_unknown_namespace_no_auth', function(done) {
+        var bad_node = test_node;
 
-    var bad_node = test_node;
+        // Overwrite the namespace with a randomly generated one.
+        bad_node.ns = osdf_utils.random_string(8);
 
-    // Overwrite the namespace with a randomly generated one.
-    bad_node.ns = osdf_utils.random_string(8);
+        tutils.validate_node(bad_node, null, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(bad_node, null, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 403,
+                    'Correct status for node with bad namespace, no auth.');
 
-            test.equal(response.statusCode, 403,
-                'Correct status for node with bad namespace, no auth.');
+                assert.strictEqual(data, '',
+                    'No content returned on bad node validation with no authentication.');
 
-            test.ok(data === '', 'No content returned on bad node ' +
-                'validation with no authentication.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-exports['validation_with_valid_linkage'] = function(test) {
-    test.expect(2);
+    it('validation_with_valid_linkage', function(done) {
+        var test_node = {
+            ns: 'test2',
+            acl: { 'read': ['all'], 'write': ['all'] },
+            linkage: {},
+            node_type: 'target',
+            meta: { color: 'red' }
+        };
 
-    var test_node = {
-        ns: 'test2',
-        acl: { 'read': ['all'], 'write': ['all'] },
-        linkage: {},
-        node_type: 'target',
-        meta: { color: 'red' }
-    };
+        tutils.validate_node(test_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 200,
+                    'Correct status for node with valid linkages.');
 
-            test.equal(response.statusCode, 200,
-                'Correct status for node with valid linkages.');
+                assert.strictEqual(data, '', 'No Content returned.');
 
-            test.ok(data === '', 'No Content returned.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Test the validation mechanism with a link to a node that does
-// not exist (xxxxx). This should result in a 422 error code.
-exports['validation_with_non_existent_link'] = function(test) {
-    test.expect(3);
+    // Test the validation mechanism with a link to a node that does
+    // not exist (xxxxx). This should result in a 422 error code.
+    it('validation_with_non_existent_link', function(done) {
+        var test_node = {
+            ns: 'test2',
+            acl: { 'read': ['all'], 'write': ['all'] },
+            linkage: { related_to: [ 'xxxxx' ]},
+            node_type: 'example',
+            meta: {}
+        };
 
-    var test_node = {
-        ns: 'test2',
-        acl: { 'read': ['all'], 'write': ['all'] },
-        linkage: { related_to: [ 'xxxxx' ]},
-        node_type: 'example',
-        meta: {}
-    };
+        tutils.validate_node(test_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 422,
+                    'Correct status for node with non-existent link node.');
 
-            test.equal(response.statusCode, 422,
-                'Correct status for node with non-existent link node.');
+                assert.isOk(data !== '', 'Validation results returned.');
 
-            test.ok(data !== '', 'Validation results returned.');
+                assert.isOk(data.search('linkage') !== -1,
+                    'Validation output mentioned linkage.');
 
-            test.ok(data.search('linkage') !== -1,
-                'Validation output mentioned linkage.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
 
-// Test the validation mechanism with a linkage block
-// that has an incorrect structure. In this case, the linkage
-// name (related_to), is pointing to string, instead of an
-// array of strings.
-exports['validation_with_invalid_linkage'] = function(test) {
-    test.expect(3);
+    // Test the validation mechanism with a linkage block
+    // that has an incorrect structure. In this case, the linkage
+    // name (related_to), is pointing to string, instead of an
+    // array of strings.
+    it('validation_with_invalid_linkage', function(done) {
+        var test_node = {
+            ns: 'test2',
+            acl: { 'read': ['all'], 'write': ['all'] },
+            // Wrong structure
+            linkage: { related_to: '1234XXXXX'},
+            node_type: 'example',
+            meta: {}
+        };
 
-    var test_node = {
-        ns: 'test2',
-        acl: { 'read': ['all'], 'write': ['all'] },
-        // Wrong structure
-        linkage: { related_to: '1234XXXXX'},
-        node_type: 'example',
-        meta: {}
-    };
+        tutils.validate_node(test_node, auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-    tutils.validate_node(test_node, auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.equal(response.statusCode, 422,
+                    'Correct status for node with invalid linkage.');
 
-            test.equal(response.statusCode, 422,
-                'Correct status for node with invalid linkage.');
+                assert.isOk(data !== '', 'Validation results returned.');
 
-            test.ok(data !== '', 'Validation results returned.');
+                assert.isOk(data.search('linkage') !== -1,
+                    'Validation output mentioned linkage.');
 
-            test.ok(data.search('linkage') !== -1,
-                'Validation output mentioned linkage.');
-        }
-
-        test.done();
+                done();
+            }
+        });
     });
-};
+});
+

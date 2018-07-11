@@ -1,477 +1,334 @@
-#!/usr/bin/env nodeunit
-
+var assert = require('chai').assert;
 var diff = require('deep-diff').diff;
 var oql2es = require('oql_compiler');
 
 var tutils = require('./lib/test_utils');
 var logger = tutils.get_null_logger();
 
-exports.BasicSearch = function(test) {
-    var tree = [
-        'text',
-        'type'
-    ];
+describe('oql_compiler', function() {
+    it('BasicSearch', function(done) {
+        var tree = [
+            'text',
+            'type'
+        ];
 
-    var expected = {'query':{'filtered':{'filter':[{'term':{'type':'text'}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'term':{'type':'text'}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonInteger = function(test) {
-    var tree = [ 'type', '<', 3 ];
+    it('BasicComparisonInteger', function(done) {
+        var tree = [ 'type', '<', 3 ];
 
-    var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'lt':3}}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'lt':3}}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNegativeInteger = function(test) {
-    var tree = [ 'type', '>', -3 ];
+    it('BasicComparisonNegativeInteger', function(done) {
+        var tree = [ 'type', '>', -3 ];
 
-    var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'gt': -3}}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'gt': -3}}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonFloat = function(test) {
-    var tree = [ 'type', '>=', 3.14 ];
+    it('BasicComparisonFloat', function(done) {
+        var tree = [ 'type', '>=', 3.14 ];
 
-    var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'gte':3.14}}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'range':{'type':{'gte':3.14}}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNegativeFloat = function(test) {
-    var tree = [ 'type', '==', -3.14 ];
+    it('BasicComparisonNegativeFloat', function(done) {
+        var tree = [ 'type', '==', -3.14 ];
 
-    var expected = {'query':{'filtered':{'filter':[{'term':{'type':-3.14}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'term':{'type':-3.14}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonEQTrue = function(test) {
-    var tree = [ 'type', '==', true ];
+    it('BasicComparisonEQTrue', function(done) {
+        var tree = [ 'type', '==', true ];
 
-    var expected = {'query':{'filtered':{'filter':[{'term':{'type':true}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'term':{'type':true}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonEQTrueInverted = function(test) {
-    var tree = [ true, '==', 'type' ];
+    it('BasicComparisonEQTrueInverted', function(done) {
+        var tree = [ true, '==', 'type' ];
 
-    var expected = {'query':{'filtered':{'filter':[{'term':{'type':true}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'term':{'type':true}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonEQFalse = function(test) {
-    var tree = [ 'type', '==', false ];
+    it('BasicComparisonEQFalse', function(done) {
+        var tree = [ 'type', '==', false ];
 
-    var expected = {'query':{'filtered':{'filter':[{'term':{'type':false}}]}}};
+        var expected = {'query':{'filtered':{'filter':[{'term':{'type':false}}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
 
-exports.BasicComparisonEQFalseInverted = function(test) {
-    var tree = [ false, '==', 'type' ];
+    it('BasicComparisonEQFalseInverted', function(done) {
+        var tree = [ false, '==', 'type' ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'term':{'type':false}}
-    ]}}};
+        var expected = {'query':{'filtered':{'filter':[
+            {'term':{'type':false}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNETrue = function(test) {
-    var tree = [ 'type', '!=', true ];
+    it('BasicComparisonNETrue', function(done) {
+        var tree = [ 'type', '!=', true ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'must_not':{'term':{'type':true}}}}
-    ]}}};
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'must_not':{'term':{'type':true}}}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNETrueInverted = function(test) {
-    var tree = [ true, '!=', 'type' ];
+    it('BasicComparisonNETrueInverted', function(done) {
+        var tree = [ true, '!=', 'type' ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'must_not':{'term':{'type':true}}}}
-    ]}}};
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'must_not':{'term':{'type':true}}}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNEFalse = function(test) {
-    var tree = [ 'type', '!=', false ];
+    it('BasicComparisonNEFalse', function(done) {
+        var tree = [ 'type', '!=', false ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'must_not':{'term':{'type':false}}}}
-    ]}}};
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'must_not':{'term':{'type':false}}}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.BasicComparisonNEFalseInverted = function(test) {
-    var tree = [ false, '!=', 'type' ];
+    it('BasicComparisonNEFalseInverted', function(done) {
+        var tree = [ false, '!=', 'type' ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'must_not':{'term':{'type':false}}}}
-    ]}}};
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'must_not':{'term':{'type':false}}}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.AndTwoSearches = function(test) {
-    var tree = [ [ 'text1', 'field1' ], '&&', [ 'text2', 'field2' ] ];
+    it('AndTwoSearches', function(done) {
+        var tree = [ [ 'text1', 'field1' ], '&&', [ 'text2', 'field2' ] ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {
-            'bool':{'must':[
+        var expected = {'query':{'filtered':{'filter':[
+            {
+                'bool':{'must':[
+                    {'term':{'field1':'text1'}},
+                    {'term':{'field2':'text2'}}
+                ]}
+            }
+        ]}}};
+
+        performTest(done, tree, expected);
+    });
+
+    it('OrTwoSearches', function(done) {
+        var tree = [ [ 'text1', 'field1' ], '||', [ 'text2', 'field2' ] ];
+
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'should':[
                 {'term':{'field1':'text1'}},
                 {'term':{'field2':'text2'}}
-            ]}
-        }
-    ]}}};
+            ]}}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.OrTwoSearches = function(test) {
-    var tree = [ [ 'text1', 'field1' ], '||', [ 'text2', 'field2' ] ];
+    it('NestedAndSearches', function(done) {
+        var tree = [
+            [ '832586', 'rand_subj_id' ],
+            '&&',
+            [ [ 'subject', 'node_type' ], '&&', [ 'male', 'sex' ] ]
+        ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'should':[
-            {'term':{'field1':'text1'}},
-            {'term':{'field2':'text2'}}
-        ]}}
-    ]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedAndSearches = function(test) {
-    var tree = [
-        [ '832586', 'rand_subj_id' ],
-        '&&',
-        [ [ 'subject', 'node_type' ], '&&', [ 'male', 'sex' ] ]
-    ];
-
-    var expected = {'query':{'filtered':{'filter':[{'bool':{
-        'must':[
-            {'term':{'rand_subj_id':'832586'}},
-            {'bool':{
-                'must':[
-                    {'term':{'node_type':'subject'}},
-                    {'term':{'sex':'male'}}
-                ]
-            }}
-        ]
-    }}]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedOrSearches = function(test) {
-    var tree = [
-        [ '832586', 'rand_subj_id' ],
-        '||',
-        [ [ 'subject', 'node_type' ], '||', [ 'male', 'sex' ] ]
-    ];
-
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{
-            'should':[
-                { 'term':{'rand_subj_id':'832586'} },
-                { 'bool':{
-                    'should':[
+        var expected = {'query':{'filtered':{'filter':[{'bool':{
+            'must':[
+                {'term':{'rand_subj_id':'832586'}},
+                {'bool':{
+                    'must':[
                         {'term':{'node_type':'subject'}},
                         {'term':{'sex':'male'}}
-                    ]}
-                }
-            ]
-        }}
-    ]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedWithFloatLTEComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
-          [
-            'subject',
-            'node_type'
-          ],
-          '&&',
-          [
-            'male',
-            'sex'
-          ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '<=',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
-
-    var expected = { 'query': { 'filtered': { 'filter': [{
-        'bool': { 'should': [
-            {
-                'bool': {
-                    'must': [
-                        { 'term': { 'rand_subj_id': '832586' } },
-                        {
-                            'bool': {
-                                'must': [
-                                    { 'term': { 'node_type': 'subject' } },
-                                    { 'term': { 'sex': 'male' } }
-                                ]
-                            }
-                        }
                     ]
-                }
-            },
-            { 'range': { 'ver': { 'lte': 0.2 } } }
-        ]}
-    }]}}};
+                }}
+            ]
+        }}]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.NestedWithFloatLTComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
-          [
-            'subject',
-            'node_type'
-          ],
-          '&&',
-          [
-            'male',
-            'sex'
-          ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '<',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
+    it('NestedOrSearches', function(done) {
+        var tree = [
+            [ '832586', 'rand_subj_id' ],
+            '||',
+            [ [ 'subject', 'node_type' ], '||', [ 'male', 'sex' ] ]
+        ];
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'should':[{'bool':{'must':[
-            {'term':{'rand_subj_id':'832586'}},
-            {'bool':{'must':[
-                {'term':{'node_type':'subject'}},
-                {'term':{'sex':'male'}}
-            ]}}
-        ]}},
-        {'range':{'ver':{'lt':0.2}}}
-        ]}}
-    ]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedWithFloatGTEComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
-          [
-            'subject',
-            'node_type'
-          ],
-          '&&',
-          [
-            'male',
-            'sex'
-          ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '>=',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
-
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{'should':[
-            {'bool':{'must':[
-                {'term':{'rand_subj_id':'832586'}},
-                {'bool':{'must':[
-                    {'term':{'node_type':'subject'}},
-                    {'term':{'sex':'male'}}
-                ]}}
-            ]}},
-            {'range':{'ver':{'gte':0.2}}}
-        ]}}
-    ]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedWithFloatGTComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
-          [
-            'subject',
-            'node_type'
-          ],
-          '&&',
-          [
-            'male',
-            'sex'
-          ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '>',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
-
-    var expected = { 'query':{'filtered':{'filter':[
-        {'bool':{'should':[
-            {'bool':{'must':[
-                {'term':{'rand_subj_id':'832586'}},
-                {'bool':{'must':[
-                    {'term':{'node_type':'subject'}},
-                    {'term':{'sex':'male'}}
-                ]}}
-            ]}},
-            {'range':{'ver':{'gt':0.2}}}
-        ]}}
-    ]}}};
-
-    performTest(test, tree, expected);
-};
-
-exports.NestedWithFloatEQComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
-          [
-            'subject',
-            'node_type'
-          ],
-          '&&',
-          [
-            'male',
-            'sex'
-          ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '==',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
-
-    var expected = {'query':{'filtered':{'filter':[{'bool':{
-        'should':[
+        var expected = {'query':{'filtered':{'filter':[
             {'bool':{
-                'must':[
-                    {'term':{'rand_subj_id':'832586'}},
-                    {'bool':{
-                        'must':[
+                'should':[
+                    { 'term':{'rand_subj_id':'832586'} },
+                    { 'bool':{
+                        'should':[
                             {'term':{'node_type':'subject'}},
                             {'term':{'sex':'male'}}
-                        ]
-                    }}
+                        ]}
+                    }
                 ]
-            }},
-            {'term':{'ver':0.2}}
-        ]
-    }}]}}};
+            }}
+        ]}}};
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-exports.NestedWithFloatNEComparison = function(test) {
-    /* eslint-disable indent */
-    var tree = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+    it('NestedWithFloatLTEComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '<=',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '!=',
-        0.2
-      ]
-    ];
-    /* eslint-enable indent */
+        ];
+        /* eslint-enable indent */
 
-    var expected = {'query':{'filtered':{'filter':[
-        {'bool':{
-            'should':[
+        var expected = { 'query': { 'filtered': { 'filter': [{
+            'bool': { 'should': [
+                {
+                    'bool': {
+                        'must': [
+                            { 'term': { 'rand_subj_id': '832586' } },
+                            {
+                                'bool': {
+                                    'must': [
+                                        { 'term': { 'node_type': 'subject' } },
+                                        { 'term': { 'sex': 'male' } }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                { 'range': { 'ver': { 'lte': 0.2 } } }
+            ]}
+        }]}}};
+
+        performTest(done, tree, expected);
+    });
+
+    it('NestedWithFloatLTComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
+          [
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
+          ],
+          '||',
+          [
+            'ver',
+            '<',
+            0.2
+          ]
+        ];
+        /* eslint-enable indent */
+
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'should':[{'bool':{'must':[
+                {'term':{'rand_subj_id':'832586'}},
+                {'bool':{'must':[
+                    {'term':{'node_type':'subject'}},
+                    {'term':{'sex':'male'}}
+                ]}}
+            ]}},
+            {'range':{'ver':{'lt':0.2}}}
+            ]}}
+        ]}}};
+
+        performTest(done, tree, expected);
+    });
+
+    it('NestedWithFloatGTEComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
+          [
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
+          ],
+          '||',
+          [
+            'ver',
+            '>=',
+            0.2
+          ]
+        ];
+        /* eslint-enable indent */
+
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{'should':[
                 {'bool':{'must':[
                     {'term':{'rand_subj_id':'832586'}},
                     {'bool':{'must':[
@@ -479,87 +336,229 @@ exports.NestedWithFloatNEComparison = function(test) {
                         {'term':{'sex':'male'}}
                     ]}}
                 ]}},
-                {'bool':{'must_not':{'term':{'ver':0.2}}}}
+                {'range':{'ver':{'gte':0.2}}}
+            ]}}
+        ]}}};
+
+        performTest(done, tree, expected);
+    });
+
+    it('NestedWithFloatGTComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
+          [
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
             ]
-        }}
-    ]}}};
+          ],
+          '||',
+          [
+            'ver',
+            '>',
+            0.2
+          ]
+        ];
+        /* eslint-enable indent */
 
-    performTest(test, tree, expected);
-};
+        var expected = { 'query':{'filtered':{'filter':[
+            {'bool':{'should':[
+                {'bool':{'must':[
+                    {'term':{'rand_subj_id':'832586'}},
+                    {'bool':{'must':[
+                        {'term':{'node_type':'subject'}},
+                        {'term':{'sex':'male'}}
+                    ]}}
+                ]}},
+                {'range':{'ver':{'gt':0.2}}}
+            ]}}
+        ]}}};
 
-exports.DottedFieldSearch = function(test) {
-    var tree = [
-        'text',
-        'abc.efg'
-    ];
+        performTest(done, tree, expected);
+    });
 
-    var expected = {
-        'query':{ 'filtered': {
-            'filter':[{'term':{'abc.efg':'text'}}]}
-        }
-    };
+    it('NestedWithFloatEQComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
+          [
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
+          ],
+          '||',
+          [
+            'ver',
+            '==',
+            0.2
+          ]
+        ];
+        /* eslint-enable indent */
 
-    performTest(test, tree, expected);
-};
+        var expected = {'query':{'filtered':{'filter':[{'bool':{
+            'should':[
+                {'bool':{
+                    'must':[
+                        {'term':{'rand_subj_id':'832586'}},
+                        {'bool':{
+                            'must':[
+                                {'term':{'node_type':'subject'}},
+                                {'term':{'sex':'male'}}
+                            ]
+                        }}
+                    ]
+                }},
+                {'term':{'ver':0.2}}
+            ]
+        }}]}}};
 
-exports.SpaceInSearchText = function(test) {
-    var tree = [
-        'spaced text',
-        'abc'
-    ];
+        performTest(done, tree, expected);
+    });
 
-    var expected = {
-        'query':{'filtered':{
-            'filter':[{'term':{'abc':'spaced text'}}]}
-        }
-    };
+    it('NestedWithFloatNEComparison', function(done) {
+        /* eslint-disable indent */
+        var tree = [
+          [
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
+          ],
+          '||',
+          [
+            'ver',
+            '!=',
+            0.2
+          ]
+        ];
+        /* eslint-enable indent */
 
-    performTest(test, tree, expected);
-};
+        var expected = {'query':{'filtered':{'filter':[
+            {'bool':{
+                'should':[
+                    {'bool':{'must':[
+                        {'term':{'rand_subj_id':'832586'}},
+                        {'bool':{'must':[
+                            {'term':{'node_type':'subject'}},
+                            {'term':{'sex':'male'}}
+                        ]}}
+                    ]}},
+                    {'bool':{'must_not':{'term':{'ver':0.2}}}}
+                ]
+            }}
+        ]}}};
 
-exports.MultiSpacesInSearchTextPreserved = function(test) {
-    var tree = [
-        'spaced   text',
-        'abc'
-    ];
+        performTest(done, tree, expected);
+    });
 
-    var expected = {
-        'query':{
-            'filtered':{
-                'filter':[{'term':{'abc':'spaced   text'}}]
+    it('DottedFieldSearch', function(done) {
+        var tree = [
+            'text',
+            'abc.efg'
+        ];
+
+        var expected = {
+            'query':{ 'filtered': {
+                'filter':[{'term':{'abc.efg':'text'}}]}
             }
-        }
-    };
+        };
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
+    it('SpaceInSearchText', function(done) {
+        var tree = [
+            'spaced text',
+            'abc'
+        ];
 
-exports.DottedFieldWithMultiSpaceText = function(test) {
-    var tree = [
-        'spaced   text',
-        'abc.def.ghi'
-    ];
-
-    var expected = {
-        'query':{
-            'filtered':{
-                'filter':[{'term':{'abc.def.ghi':'spaced   text'}}]
+        var expected = {
+            'query':{'filtered':{
+                'filter':[{'term':{'abc':'spaced text'}}]}
             }
-        }
-    };
+        };
 
-    performTest(test, tree, expected);
-};
+        performTest(done, tree, expected);
+    });
 
-function performTest(test, tree, expected) {
-    test.expect(1);
+    it('MultiSpacesInSearchTextPreserved', function(done) {
+        var tree = [
+            'spaced   text',
+            'abc'
+        ];
 
+        var expected = {
+            'query':{
+                'filtered':{
+                    'filter':[{'term':{'abc':'spaced   text'}}]
+                }
+            }
+        };
+
+        performTest(done, tree, expected);
+    });
+
+
+    it('DottedFieldWithMultiSpaceText', function(done) {
+        var tree = [
+            'spaced   text',
+            'abc.def.ghi'
+        ];
+
+        var expected = {
+            'query':{
+                'filtered':{
+                    'filter':[{'term':{'abc.def.ghi':'spaced   text'}}]
+                }
+            }
+        };
+
+        performTest(done, tree, expected);
+    });
+});
+
+function performTest(done, tree, expected) {
     var result = oql2es.compile(tree);
 
     var differences = diff(result, expected);
 
-    test.ok(differences === undefined, 'Compiler produced expected output.');
+    assert.isUndefined(differences, undefined, 'Compiler produced expected output.');
 
-    test.done();
+    done();
 }

@@ -1,5 +1,4 @@
-#!/usr/bin/env nodeunit
-
+var assert = require('chai').assert;
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 
@@ -10,128 +9,124 @@ var bad_auth = tutils.get_invalid_auth();
 // Test whether we can retrieve OSDF instance infomration, and whether
 // the data that is returend coforms to the API specification for thing
 // such as the right keys being present, populated, and in the right format.
-exports['retrieve_info'] = function(test) {
-    test.expect(33);
+describe('osdf-info', function() {
+    it('retrieve_info', function(done) {
+        tutils.retrieve_info(auth, function(err, resp) {
+            if (err) {
+                done(err);
+            }
 
-    tutils.retrieve_info(auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-            test.done();
-            return;
-        }
-
-        var data = resp['body'];
-        var response = resp['response'];
-
-        test.equal(response.statusCode, 200, 'Correct status for info request.');
-
-        test.ok(response.headers['content-type'].indexOf('application/json') != -1,
-            'Correct content type.');
-
-        var info;
-        try {
-            info = JSON.parse(data);
-            test.ok('Content returned is valid JSON.');
-        } catch (e) {
-            test.fail('Content returned is invalid JSON.');
-        }
-
-        test.ok('api_version' in info,
-            "Info data structure had key for 'api_version'.");
-        test.ok(typeof info.api_version == 'string');
-        test.ok(info.api_version.length > 0);
-
-        test.ok('title' in info, "Info data structure had key for 'title'." );
-        test.ok(typeof info.title == 'string');
-        test.ok(info.title.length > 0);
-
-        test.ok('description' in info,
-            "Info data structure had key for 'description'.");
-        test.ok(typeof info.description == 'string');
-        test.ok(info.description.length > 0);
-        test.ok(info.description.length <= 512,
-            'Description does not exceed 512 characters.');
-
-        test.ok('admin_contact_email1' in info);
-        test.ok(typeof info.admin_contact_email1 == 'string');
-        test.ok(info.admin_contact_email1.length > 0);
-        test.ok(tutils.isRFC822ValidEmail(info.admin_contact_email1),
-            'Admin email 1 conforms to RFC822.');
-
-        test.ok('admin_contact_email2' in info);
-        test.ok(typeof info.admin_contact_email2 == 'string');
-        test.ok(info.admin_contact_email2.length > 0);
-        test.ok(tutils.isRFC822ValidEmail(info.admin_contact_email2),
-            'Admin email 2 conforms to RFC822.');
-
-        test.ok('technical_contact1' in info);
-        test.ok(typeof info.technical_contact1 == 'string');
-        test.ok(info.technical_contact1.length > 0);
-
-        test.ok('technical_contact2' in info);
-        test.ok(typeof info.technical_contact2 == 'string');
-        test.ok(info.technical_contact2.length > 0);
-
-        // Comments can be empty strings, so there are no checks on the length
-        // being greater than 0. However, they must be <= 128 characters in
-        // length.
-        test.ok('comment1' in info);
-        test.ok(typeof info.comment1 == 'string');
-        test.ok(info.comment1.length <= 128,
-            'Comment1 does not exceed 128 characters.');
-
-        test.ok('comment2' in info);
-        test.ok(typeof info.comment2 == 'string');
-        test.ok(info.comment2.length <= 128,
-            'Comment2 does not exceed 128 characters.');
-
-        test.done();
-    });
-};
-
-// Test whether we can retreive OSDF instance information without
-// an authorization key.
-exports['retrieve_info_no_auth'] = function(test) {
-    test.expect(2);
-
-    tutils.retrieve_info(null, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
             var data = resp['body'];
             var response = resp['response'];
 
-            test.equal(response.statusCode, 403,
-                'Correct status for info request with no auth token.');
+            assert.equal(response.statusCode, 200, 'Correct status for info request.');
 
-            test.ok(data === '',
-                'No content returned for info request with no auth.');
-        }
-        test.done();
+            assert.notEqual(
+                response.headers['content-type'].indexOf('application/json'),
+                -1, 'Correct content type.'
+            );
+
+            var info;
+            assert.doesNotThrow(function() {
+                info = JSON.parse(data);
+            }, 'Content returned is valid JSON.');
+
+            assert.hasAllKeys(info, [
+                'api_version', 'title', 'description', 'admin_contact_email1',
+                'admin_contact_email2', 'technical_contact1', 'technical_contact2',
+                'comment1', 'comment2'
+            ], 'Return has all required keys.');
+
+            assert.isString(info.api_version, 'api_version is a string');
+            assert.isOk(info.api_version.length > 0, 'api_version has length > 0');
+
+            assert.isString(info.title, 'title is a string');
+            assert.isOk(info.title.length > 0, 'title has length > 0');
+
+            assert.isString(info.description, 'description is a string');
+            assert.isOk(info.description.length > 0, 'description has length > 0');
+            assert.isOk(info.description.length <= 512,
+                'Description does not exceed 512 characters.');
+
+            assert.isString(info.admin_contact_email1,
+                'admin_contact_email1 is a string');
+            assert.isOk(info.admin_contact_email1.length > 0,
+                'admin_contact_email1 has length > 0');
+            assert.isOk(tutils.isRFC822ValidEmail(info.admin_contact_email1),
+                'Admin email 1 conforms to RFC822.');
+
+            assert.isString(info.admin_contact_email2,
+                'admin_contact_email2 is a string');
+            assert.isOk(info.admin_contact_email2.length > 0,
+                'admin_contact_email2 has length > 0');
+            assert.isOk(tutils.isRFC822ValidEmail(info.admin_contact_email2),
+                'Admin email 2 conforms to RFC822.');
+
+            assert.isString(info.technical_contact1,
+                'technical_contact1 is a string');
+            assert.isOk(info.technical_contact1.length > 0,
+                'technical_contact1 has length > 0');
+
+            assert.isString(info.technical_contact2,
+                'technical_contact2 is a string');
+            assert.isOk(info.technical_contact2.length > 0,
+                'technical_contact2 has length > 0');
+
+            // Comments can be empty strings, so there are no checks on the length
+            // being greater than 0. However, they must be <= 128 characters in
+            // length.
+            assert.isString(info.comment1, 'comment1 is a string');
+            assert.isAtMost(info.comment1.length, 128,
+                'comment1 does not exceed 128 characters.');
+
+            assert.isString(info.comment1, 'comment2 is a string');
+            assert.isAtMost(info.comment2.length, 128,
+                'comment2 does not exceed 128 characters.');
+
+            done();
+        });
     });
-};
 
+    // Test whether we can retreive OSDF instance information without
+    // an authorization key.
+    it('retrieve_info_no_auth', function(done) {
+        tutils.retrieve_info(null, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
 
-// Test whether we can retreive OSDF instance information without
-// an authorization key.
-exports['retrieve_info_bad_auth'] = function(test) {
-    test.expect(2);
+                assert.equal(response.statusCode, 403,
+                    'Correct status for info request with no auth token.');
 
-    tutils.retrieve_info( bad_auth, function(err, resp) {
-        if (err) {
-            console.log(err);
-        } else {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.ok(data === '',
+                    'No content returned for info request with no auth.');
+            }
 
-            test.equal(response.statusCode, 403,
-                'Correct status for info request with a bad ' +
-                'auth token.');
-
-            test.ok(data === '',
-                'No content returned for info request with bad auth.');
-        }
-
-        test.done();
+            done();
+        });
     });
-};
+
+    // Test whether we can retreive OSDF instance information without
+    // an authorization key.
+    it['retrieve_info_bad_auth'] = function(done) {
+        tutils.retrieve_info(bad_auth, function(err, resp) {
+            if (err) {
+                done(err);
+            } else {
+                var data = resp['body'];
+                var response = resp['response'];
+
+                assert.equal(response.statusCode, 403,
+                    'Correct status for info request with a bad ' +
+                    'auth token.');
+
+                assert.ok(data === '',
+                    'No content returned for info request with bad auth.');
+            }
+
+            done();
+        });
+    };
+});

@@ -1,5 +1,4 @@
-#!/usr/bin/env nodeunit
-
+var assert = require('chai').assert;
 var events = require('events');
 var format = require('string-format');
 var sec = require('perms-handler');
@@ -29,86 +28,85 @@ var restricted_node = {
     meta: {}
 };
 
-// Test the behavior of whether the system can decide if a user can read
-// a node given that node's ACL settings.
-exports['test_read_perms'] = function(test) {
-    logger.debug('In test_read_perms.');
-
-    if (sec_initialized) {
-        // Already initialized, so we can skip initialization.
-        read_tests(test);
-    } else {
-        // If we had a test.setup() function, we would do this there,
-        // but we don't.
-        var eventEmitter = new events.EventEmitter();
-
-        eventEmitter.on('perms_handler_initialized', function(message) {
-            sec_initialized = true;
-            read_tests(test);
-        });
-
-        sec.init(eventEmitter);
-    }
-};
-
-// Test the behavior of whether the system can decide if a user can write
-// (update/delete) a node given that node's ACL settings.
-exports['test_write_perms'] = function(test) {
-    logger.debug('In test_read_perms.');
-
-    if (sec_initialized) {
-        // Already initialized, so we can skip initialization.
-        write_tests(test);
-    } else {
-        // If we had a test.setup() function, we would do this there,
-        // but we don't.
-        var eventEmitter = new events.EventEmitter();
-
-        eventEmitter.on('perms_handler_initialized', function(message) {
-            sec_initialized = true;
-            write_tests(test);
-        });
-
-        sec.init(eventEmitter);
-    }
-};
-
-function read_tests(test) {
+function read_tests(done) {
     logger.debug('In read_tests.');
 
-    test.expect(3);
-
     var has_read = sec.has_read_permission(test_user, test_node);
-    test.ok(has_read === true,
+    assert.isTrue(has_read,
         'User "{}" can read test node.'.format(test_user));
 
     has_read = sec.has_read_permission(test_user, restricted_node);
-    test.ok(has_read === false,
+    assert.isFalse(has_read,
         'User "{}" cannot read restricted test node.'.format(test_user));
 
     has_read = sec.has_read_permission(privileged_user, restricted_node);
-    test.ok(has_read === true,
+    assert.isTrue(has_read,
         'User "{}" can read test node.'.format(privileged_user));
 
-    test.done();
+    done();
 }
 
-function write_tests(test) {
+function write_tests(done) {
     logger.debug('In write_tests.');
 
-    test.expect(3);
-
     var has_write = sec.has_write_permission('test', test_node);
-    test.ok(has_write,
+    assert.isTrue(has_write,
         'User "{}" can write test node'.format(test_user));
 
     has_write = sec.has_write_permission(test_user, restricted_node);
-    test.ok(has_write === false,
+    assert.isFalse(has_write,
         'User "{}" cannot write restricted node.'.format(test_user));
 
     has_write = sec.has_write_permission(privileged_user, restricted_node);
-    test.ok(has_write === true,
+    assert.isTrue(has_write,
         'User "{}" can write restricted node.'.format(privileged_user));
 
-    test.done();
+    done();
 }
+
+describe('permissions', function() {
+    // Test the behavior of whether the system can decide if a user can read
+    // a node given that node's ACL settings.
+    it('read_perms', function(done) {
+        logger.debug('In read_perms.');
+
+        if (sec_initialized) {
+            // Already initialized, so we can skip initialization.
+            read_tests(done);
+        } else {
+            // If we had a test.setup() function, we would do this there,
+            // but we don't.
+            var eventEmitter = new events.EventEmitter();
+
+            eventEmitter.on('perms_handler_initialized', function(message) {
+                sec_initialized = true;
+                read_tests(done);
+            });
+
+            sec.init(eventEmitter);
+        }
+    });
+
+    // Test the behavior of whether the system can decide if a user can write
+    // (update/delete) a node given that node's ACL settings.
+    it('write_perms', function(done) {
+        logger.debug('In write_perms.');
+
+        if (sec_initialized) {
+            // Already initialized, so we can skip initialization.
+            write_tests(done);
+        } else {
+            // If we had a test.setup() function, we would do this there,
+            // but we don't.
+            var eventEmitter = new events.EventEmitter();
+
+            eventEmitter.on('perms_handler_initialized', function(message) {
+                sec_initialized = true;
+                write_tests(done);
+            });
+
+            sec.init(eventEmitter);
+        }
+    });
+});
+

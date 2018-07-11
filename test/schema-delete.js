@@ -1,5 +1,4 @@
-#!/usr/bin/env nodeunit
-
+var assert = require('chai').assert;
 var osdf_utils = require('osdf_utils');
 var tutils = require('./lib/test_utils.js');
 var waterfall = require('async/waterfall');
@@ -25,319 +24,325 @@ var test_schema = {
     ]
 };
 
-// Test basic retrieval of a schema. The approach is to first insert a schema, then
-// retrieve it to check that it's htere, then delete it, then attempt to retrieve it
-// again and verify that it's gone.
-exports['delete_schema'] = function(test) {
-    test.expect(9);
+describe('schema-delete', function() {
 
-    var schema_name = osdf_utils.random_string(8);
+    // Test basic retrieval of a schema. The approach is to first insert a
+    // schema, then retrieve it to check that it's htere, then delete it, then
+    // attempt to retrieve it again and verify that it's gone.
+    it('delete_schema', function(done) {
+        var schema_name = osdf_utils.random_string(8);
 
-    waterfall([
-        function(callback) {
-            // First we insert a schema
-            var schema_doc = {
-                name: schema_name,
-                schema: test_schema
-            };
+        waterfall([
+            function(callback) {
+                // First we insert a schema
+                var schema_doc = {
+                    name: schema_name,
+                    schema: test_schema
+                };
 
-            tutils.insert_schema(test_ns, schema_doc, auth_header,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
+                tutils.insert_schema(test_ns, schema_doc, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
                     }
-                }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.equal(response.statusCode, 201,
-                'Correct status for insertion.');
-            test.equal(data.length, 0,
-                'No content returned on a schema insertion.');
+                assert.equal(response.statusCode, 201,
+                    'Correct status for insertion.');
+                assert.equal(data.length, 0,
+                    'No content returned on a schema insertion.');
 
-            // then try to retrieve it
-            tutils.retrieve_schema(test_ns, schema_name, auth_header,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
+                // then try to retrieve it
+                tutils.retrieve_schema(test_ns, schema_name, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
                     }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
+
+                assert.equal(response.statusCode, 200,
+                    'Correct status for schema retrieval.');
+
+                assert.isAbove(data.length, 0, 'Data returned.');
+
+                var schema_data = null;
+                try {
+                    schema_data = JSON.parse(data);
+                } catch (err) {
+                    // ignored
                 }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.isNotNull(schema_data, 'Data returned was valid JSON.');
 
-            test.equal(response.statusCode, 200,
-                'Correct status for schema retrieval.');
+                // Perform cleanup by removing what we just inserted and
+                // retrieved.
+                tutils.delete_schema(test_ns, schema_name, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
+                    }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.ok(data.length > 0, 'Data returned.');
+                assert.equal(response.statusCode, 204,
+                    'Schema deletion yielded correct status code.');
 
-            var schema_data;
-            try {
-                schema_data = JSON.parse(data);
-            } catch (err) {
-                // ignored
+                assert.equal(data.length, 0, 'No data returned on deletion.');
+
+                // Now try to retrieve the schema again. It should not be
+                // available any longer...
+                tutils.retrieve_schema(test_ns, schema_name, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
+                    }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
+
+                assert.equal(response.statusCode, 404,
+                    'Schema retrieval yielded 404.');
+
+                assert.equal(data.length, 0,
+                    'No data returned on retrieval of deleted schema.');
+
+                callback(null);
+            }],
+        function(err, results) {
+            if (err) {
+                done(err);
+            } else {
+                done();
             }
-            test.ok(typeof schema_data !== 'undefined' && schema_data !== null,
-                'Data returned was valid JSON.');
-
-            // Perform cleanup by removing what we just inserted and retrieved.
-            tutils.delete_schema(test_ns, schema_name, auth_header, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, resp);
-                }
-            });
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
-
-            test.equal(response.statusCode, 204,
-                'Schema deletion yielded correct status code.');
-
-            test.equal(data.length, 0, 'No data returned on deletion.');
-
-            // Now try to retrieve the schema again. It should not be
-            // available any longer...
-            tutils.retrieve_schema(test_ns, schema_name, auth_header, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, resp);
-                }
-            });
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
-
-            test.equal(response.statusCode, 404,
-                'Schema retrieval yielded 404.');
-
-            test.equal(data.length, 0,
-                'No data returned on retrieval of deleted schema.');
-
-            callback(null);
-        }],
-    function(err, results) {
-        if (err) {
-            console.log(err);
-        }
-        test.done();
+        });
     });
-};
 
-// Attempt a retreival with no authentication credentials.
-// Insert a schema, then retrieve, then delete it with no authentication,
-// then cleanup.
-exports['delete_schema_no_auth'] = function(test) {
-    test.expect(7);
+    // Attempt a retreival with no authentication credentials.
+    // Insert a schema, then retrieve, then delete it with no authentication,
+    // then clean up.
+    it('delete_schema_no_auth', function(done) {
+        var schema_name = osdf_utils.random_string(8);
 
-    var schema_name = osdf_utils.random_string(8);
+        waterfall([
+            function(callback) {
+                // First we insert a schema
+                var schema_doc = {
+                    name: schema_name,
+                    schema: test_schema
+                };
 
-    waterfall([
-        function(callback) {
-            // First we insert a schema
-            var schema_doc = {
-                name: schema_name,
-                schema: test_schema
-            };
+                tutils.insert_schema(test_ns, schema_doc, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
+                    }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            tutils.insert_schema(test_ns, schema_doc, auth_header,
-                function(err, resp) {
+                assert.equal(response.statusCode, 201,
+                    'Correct status for insertion.');
+                assert.strictEqual(data, '',
+                    'No content returned on a schema insertion.');
+
+                // then try to retrieve it
+                tutils.retrieve_schema(test_ns, schema_name, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
+                    }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
+
+                assert.equal(response.statusCode, 200,
+                    'Correct status for schema retrieval.');
+
+                assert.isAbove(data.length, 0, 'Data returned.');
+
+                var schema_data = null;
+                try {
+                    schema_data = JSON.parse(data);
+                } catch (err) {
+                    // ignored
+                }
+                assert.isNotNull(schema_data, 'Data returned was valid JSON.');
+
+                // Attempt to delete without providing credentials
+                tutils.delete_schema(test_ns, schema_name, null, function(err, resp) {
                     if (err) {
                         callback(err, null);
                     } else {
                         callback(null, resp);
                     }
-                }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                });
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.equal(response.statusCode, 201,
-                'Correct status for insertion.');
-            test.ok(data === '', 'No content returned on a schema insertion.');
+                assert.equal(response.statusCode, 403,
+                    'Schema deletion without credentials yielded ' +
+                    'correct status code.');
 
-            // then try to retrieve it
-            tutils.retrieve_schema(test_ns, schema_name, auth_header,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
+                assert.equal(data.length, 0, 'No data returned on deletion.');
+
+                // Perform cleanup
+                tutils.delete_schema(test_ns, schema_name, auth_header,
+                    function(err) {
+                        if (err) {
+                            console.log('Problem deleting the test schema ' +
+                                        'during cleanup.', err);
+                        }
                     }
-                }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                );
 
-            test.equal(response.statusCode, 200,
-                'Correct status for schema retrieval.');
-
-            test.ok(data.length > 0, 'Data returned.');
-
-            var schema_data;
-            try {
-                schema_data = JSON.parse(data);
-            } catch (err) {
-                // ignored
+                callback(null);
+            }],
+        function(err, results) {
+            if (err) {
+                done(err);
+            } else {
+                done();
             }
-            test.ok(typeof schema_data !== 'undefined' && schema_data !== null,
-                'Data returned was valid JSON.');
-
-            // Attempt to delete without providing credentials
-            tutils.delete_schema(test_ns, schema_name, null, function(err, resp) {
-                if (err) {
-                    callback(err, null);
-                } else {
-                    callback(null, resp);
-                }
-            });
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
-
-            test.equal(response.statusCode, 403,
-                'Schema deletion without credentials yielded ' +
-                'correct status code.');
-
-            test.equal(data.length, 0, 'No data returned on deletion.');
-
-            // Perform cleanup
-            tutils.delete_schema(test_ns, schema_name, auth_header,
-                function(err) {
-                    if (err) {
-                        console.log('Problem deleting the test schema during ' +
-                                    'cleanup.', err);
-                    }
-                }
-            );
-
-            callback(null);
-        }],
-    function(err, results) {
-        if (err) {
-            console.log(err);
-        }
-        test.done();
+        });
     });
-};
 
-// Attempt a retreival with bad/invalid authentication credentials provided.
-// Insert a node, then retrieve it with invalid authentication, then cleanup.
-exports['delete_schema_bad_auth'] = function(test) {
-    test.expect(7);
+    // Attempt a retreival with bad/invalid authentication credentials provided.
+    // Insert a node, then retrieve it with invalid authentication, then
+    // clean up.
+    it('delete_schema_bad_auth', function(done) {
+        var schema_name = osdf_utils.random_string(8);
 
-    var schema_name = osdf_utils.random_string(8);
+        waterfall([
+            function(callback) {
+                // First we insert a schema
+                var schema_doc = {
+                    name: schema_name,
+                    schema: test_schema
+                };
 
-    waterfall([
-        function(callback) {
-            // First we insert a schema
-            var schema_doc = {
-                name: schema_name,
-                schema: test_schema
-            };
-
-            tutils.insert_schema(test_ns, schema_doc, auth_header,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
+                tutils.insert_schema(test_ns, schema_doc, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
                     }
-                }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.equal(response.statusCode, 201,
-                'Correct status for insertion.');
-            test.ok(data === '', 'No content returned on a schema insertion.');
+                assert.equal(response.statusCode, 201,
+                    'Correct status for insertion.');
+                assert.strictEqual(data, '',
+                    'No content returned on a schema insertion.');
 
-            // then try to retrieve it
-            tutils.retrieve_schema(test_ns, schema_name, auth_header,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
+                // then try to retrieve it
+                tutils.retrieve_schema(test_ns, schema_name, auth_header,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
                     }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
+
+                assert.equal(response.statusCode, 200,
+                    'Correct status for schema retrieval.');
+
+                assert.isAbove(data.length, 0, 'Data returned.');
+
+                var schema_data = null;
+                try {
+                    schema_data = JSON.parse(data);
+                } catch (err) {
+                    // ignored
                 }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
+                assert.isNotNull(schema_data, 'Data returned was valid JSON.');
 
-            test.equal(response.statusCode, 200,
-                'Correct status for schema retrieval.');
+                // Attempt to delete the inserted schema with invalid credentials.
+                tutils.delete_schema(test_ns, schema_name, bad_auth,
+                    function(err, resp) {
+                        if (err) {
+                            callback(err, null);
+                        } else {
+                            callback(null, resp);
+                        }
+                    }
+                );
+            },
+            function(resp, callback) {
+                var data = resp['body'];
+                var response = resp['response'];
 
-            test.ok(data.length > 0, 'Data returned.');
+                assert.equal(response.statusCode, 403,
+                    'Schema deletion without credentials yielded correct ' +
+                    'status code.');
 
-            var schema_data;
-            try {
-                schema_data = JSON.parse(data);
-            } catch (err) {
-                // ignored
+                assert.equal(data.length, 0, 'No data returned on deletion.');
+
+                // Perform cleanup
+                tutils.delete_schema(test_ns, schema_name, auth_header,
+                    function(err) {
+                        if (err) {
+                            console.log('Problem deleting the test schema during ' +
+                                        'cleanup.', err);
+                        }
+                    }
+                );
+
+                callback(null);
+            }],
+        function(err, results) {
+            if (err) {
+                done(err);
+            } else {
+                done();
             }
-            test.ok(typeof schema_data !== 'undefined' && schema_data !== null,
-                'Data returned was valid JSON.');
-
-            // Attempt to delete the inserted schema with invalid credentials.
-            tutils.delete_schema(test_ns, schema_name, bad_auth,
-                function(err, resp) {
-                    if (err) {
-                        callback(err, null);
-                    } else {
-                        callback(null, resp);
-                    }
-                }
-            );
-        },
-        function(resp, callback) {
-            var data = resp['body'];
-            var response = resp['response'];
-
-            test.equal(response.statusCode, 403,
-                'Schema deletion without credentials yielded correct ' +
-                'status code.');
-
-            test.equal(data.length, 0, 'No data returned on deletion.');
-
-            // Perform cleanup
-            tutils.delete_schema(test_ns, schema_name, auth_header,
-                function(err) {
-                    if (err) {
-                        console.log('Problem deleting the test schema during ' +
-                                    'cleanup.', err);
-                    }
-                }
-            );
-
-            callback(null);
-        }],
-    function(err, results) {
-        if (err) {
-            console.log(err);
-        }
-        test.done();
+        });
     });
-};
+});
+
