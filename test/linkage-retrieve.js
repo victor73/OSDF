@@ -47,7 +47,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -92,25 +92,28 @@ describe('linkage-retrieve', function() {
                 assert.isAbove(data.length, 0, 'Data returned.');
 
                 var report_data = null;
+
                 try {
                     report_data = JSON.parse(data);
                 } catch (err) {
                     callback(err);
                 }
 
-                assert.isNotNull(report_data, 'Node data has valid json.')
+                assert.isNotNull(report_data,
+                    'Node data has valid json.');
                 assert.isOk(report_data.hasOwnProperty('result_count'),
                     'Report data has the result count.');
                 assert.isNumber(report_data['result_count'],
                     'Result count is of the right type.');
                 assert.equal(report_data['result_count'], 1,
                     'Result count is correct.');
-                assert.isOk(report_data.hasOwnProperty('page'),
+                assert.property(report_data, 'page',
                     'Report data has the page number.');
-                assert.isNumber(treport_data['page'],
+                assert.isNumber(report_data['page'],
                     'Page number is of the right type.');
-                assert.equal(report_data['page'], 1, 'Page number is correct.');
-                assert.isOk('results' in report_data,
+                assert.equal(report_data['page'], 1,
+                    'Page number is correct.');
+                assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
                 assert.isObject(report_data['results'],
                     'Results in report is an object.');
@@ -163,7 +166,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -204,7 +207,7 @@ describe('linkage-retrieve', function() {
                 var data = resp['body'];
                 var response = resp['response'];
 
-                test.equal(response.statusCode, 403,
+                assert.equal(response.statusCode, 403,
                     'Correct status for node outbound linkage with no auth.');
 
                 assert.strictEqual(data, '', 'No data returned.');
@@ -238,7 +241,7 @@ describe('linkage-retrieve', function() {
 
     // Check whether we are able to obtain outbound linkages using an invalid
     // authentication token.
-    in('out_linkage_bad_auth', function(done) {
+    it('out_linkage_bad_auth', function(done) {
         waterfall([
             function(callback) {
                 // First we create a node
@@ -257,7 +260,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -335,7 +338,7 @@ describe('linkage-retrieve', function() {
     // insert two linked nodes, then retrieve the linked nodes's inbound links to
     // see if we obtain the linking node. We also make an attempt To cleanup by
     // deleting the nodes at the conclusion of the test.
-    in('in_linkage', function(done) {
+    it('in_linkage', function(done) {
         waterfall([
             function(callback) {
                 // First we create a node
@@ -354,7 +357,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -405,24 +408,24 @@ describe('linkage-retrieve', function() {
                     callback(err);
                     return;
                 }
+
                 assert.isNotNull(report_data,
                     'Report data returned was valid JSON.');
-
-                assert.isOk(report_data.hasOwnProperty('result_count'),
+                assert.property(report_data, 'result_count',
                     'Report data has the result count.');
                 assert.isNumber(report_data['result_count'],
                     'Result count is of the right type.');
                 assert.equals(report_data['result_count'], 1,
                     'Result count is correct.');
 
-                assert.isOk(report_data.hasOwnProperty('page'),
+                assert.property(report_data, 'page',
                     'Report data has the page number.');
-                test.isNumber(report_data['page'],
+                assert.isNumber(report_data['page'],
                     'Page number is of the right type.');
                 assert.equal(report_data['page'], 1,
                     'Page number is correct.');
 
-                assert.isOk(report_data.hasOwnProperty('results'),
+                assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
                 assert.isObject(report_data['results'],
                     'Results in report is an object.');
@@ -460,7 +463,7 @@ describe('linkage-retrieve', function() {
 
     // Check whether we are able to obtain inbound linkages without using an
     // authentication token.
-    in('in_linkage_no_auth', function(done) {
+    it('in_linkage_no_auth', function(done) {
         waterfall([
             function(callback) {
                 // First we create a node
@@ -479,7 +482,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -552,7 +555,7 @@ describe('linkage-retrieve', function() {
 
     // Check whether we are able to obtain inbound linkages without using an
     // authentication token.
-    in('in_linkage_bad_auth', function(done) {
+    it('in_linkage_bad_auth', function(done) {
         waterfall([
             function(callback) {
                 // First we create a node
@@ -571,7 +574,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -651,7 +654,7 @@ describe('linkage-retrieve', function() {
     // otherwise we'd be leaking information. We test the behavior by creating a
     // restricted node, and then linking it from a public node. We then request
     // the public node's outlinks. We shouldn't get any.
-    in('out_linkage_with_restricted', function(done) {
+    it('out_linkage_with_restricted', function(done) {
         waterfall([
             function(callback) {
                 // First we create a node
@@ -670,7 +673,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -715,6 +718,7 @@ describe('linkage-retrieve', function() {
                 assert.isAbove(data.length, 0, 'Data returned.');
 
                 var report_data = null;
+
                 try {
                     report_data = JSON.parse(data);
                 } catch (e) {
@@ -722,22 +726,21 @@ describe('linkage-retrieve', function() {
                     return;
                 }
 
-                assert.isNotNull(report_data, 'Valid JSON data.');
-                assert.isOk(report_data.hasOwnProperty('result_count'),
+                assert.isNotNull(report_data,
+                    'Valid JSON data.');
+                assert.property(report_data, 'result_count',
                     'Report data has the result count.');
                 assert.isNumber(report_data['result_count'],
                     'Result count is of the right type.');
                 assert.equal(report_data['result_count'], 0,
                     'Result count is correct.');
-
-                assert.isOk(report_data.hasOwnProperty('page'),
+                assert.property(report_data, 'page',
                     'Report data has the page number.');
                 assert.isNumber(report_data['page'],
                     'Page number is of the right type.');
                 assert.equal(report_data['page'], 1,
                     'Page number is correct.');
-
-                assert.isOk('results' in report_data,
+                assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
                 assert.isObject(report_data['results'],
                     'Results in report is an object.');
@@ -777,7 +780,7 @@ describe('linkage-retrieve', function() {
     // be leaking information.  We test the behavior by creating a public node,
     // and then linking to it from a restricted node. We then request the public
     // node's inlinks. We shouldn't get any.
-    in('in_linkage_with_restricted', function(done) {
+    it('in_linkage_with_restricted', function(done) {
         waterfall([
             function(callback) {
                 // First we create a public node
@@ -796,7 +799,7 @@ describe('linkage-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.isOk('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new node.');
 
                 assert.strictEqual(data, '',
@@ -841,6 +844,7 @@ describe('linkage-retrieve', function() {
                 assert.isAbove(data.length, 0, 'Data returned.');
 
                 var report_data = null;
+
                 try {
                     report_data = JSON.parse(data);
                 } catch (err) {
@@ -850,21 +854,19 @@ describe('linkage-retrieve', function() {
 
                 assert.isNotNull(report_data,
                     'Report data returned was valid JSON.');
-                assert.isOk(report_data.hasOwnProperty('result_count'),
+                assert.property(report_data, 'result_count',
                     'Report data has the result count.');
                 assert.isNumber(report_data['result_count'],
                     'Result count is of the right type.');
                 assert.equal(report_data['result_count'], 0,
                     'Result count is correct.');
-
-                assert.isOk(report_data.hasOwnProperty('page'),
+                assert.property(report_data, 'page',
                     'Report data has the page number.');
                 assert.isNumber(report_data['page'],
                     'Page number is of the right type.');
                 assert.equal(report_data['page'], 1,
                     'Page number is correct.');
-
-                assert.isOk(report_data.hasOwnProperty('results'),
+                assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
                 assert.isObject(report_data['results'],
                     'Results in report is an object.');

@@ -124,7 +124,7 @@ describe('schema-insert', function() {
                 assert.equal(response.statusCode, 422,
                     'Correct status for insertion.');
 
-                assert.ok(data, '',
+                assert.strictEqual(data, '',
                     'No content returned on a schema insertion.');
 
                 // then try to retrieve it
@@ -145,7 +145,7 @@ describe('schema-insert', function() {
                 assert.equal(response.statusCode, 404,
                     'Schema retrieval yielded correct status code.');
 
-                assert.ok(data.length, 0, 'No data returned on retrieval.');
+                assert.equal(data.length, 0, 'No data returned on retrieval.');
 
                 // If for whatever reason, the schema actually made it into the
                 // server we try to remove it so that the test doesn't leave
@@ -220,7 +220,7 @@ describe('schema-insert', function() {
                     'Insertion of a schema with an existing name did ' +
                     'not succeed.');
 
-                assert.ok(data.length, 0,
+                assert.equal(data.length, 0,
                     'No data returned on subsequent insertion.');
 
                 // Cleanup by removing the schema that we inserted.
@@ -281,7 +281,7 @@ describe('schema-insert', function() {
                 var schema_utils = require('schema_utils.js');
                 var refs = schema_utils.extractRefNames(test_schema_modified);
 
-                assert.ok(Array.isArray(refs),
+                assert.isArray(refs,
                     'Got an array of references to test.');
 
                 assert.equal(refs.length, 1,

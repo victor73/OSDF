@@ -74,7 +74,7 @@ describe('permissions', function() {
             // Already initialized, so we can skip initialization.
             read_tests(done);
         } else {
-            // If we had a test.setup() function, we would do this there,
+            // If we had a setup() function, we would do this there,
             // but we don't.
             var eventEmitter = new events.EventEmitter();
 
@@ -96,7 +96,7 @@ describe('permissions', function() {
             // Already initialized, so we can skip initialization.
             write_tests(done);
         } else {
-            // If we had a test.setup() function, we would do this there,
+            // If we had a setup() function, we would do this there,
             // but we don't.
             var eventEmitter = new events.EventEmitter();
 

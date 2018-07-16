@@ -318,9 +318,10 @@ describe('node-retrieve', function() {
                     'Updated node has the same id as original.');
                 assert.isOk('ver' in updated,
                     'Updated node has a version.');
+
                 var updated_version = updated['ver'];
 
-                test.notEqual(updated_version, version,
+                assert.notEqual(updated_version, version,
                     'Updated node and original have different versions.');
 
                 assert.isOk(

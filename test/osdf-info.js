@@ -26,10 +26,15 @@ describe('osdf-info', function() {
                 -1, 'Correct content type.'
             );
 
-            var info;
-            assert.doesNotThrow(function() {
+            var info = null;
+
+            try {
                 info = JSON.parse(data);
-            }, 'Content returned is valid JSON.');
+            } catch (err) {
+                // ignored
+            }
+
+            assert.isNotNull(info, 'Content returned is valid JSON.');
 
             assert.hasAllKeys(info, [
                 'api_version', 'title', 'description', 'admin_contact_email1',
@@ -37,36 +42,37 @@ describe('osdf-info', function() {
                 'comment1', 'comment2'
             ], 'Return has all required keys.');
 
-            assert.isString(info.api_version, 'api_version is a string');
-            assert.isOk(info.api_version.length > 0, 'api_version has length > 0');
+            assert.isString(info.api_version,
+                'api_version is a string');
+            assert.isAbove(info.api_version.length, 0,
+                'api_version has length > 0');
 
             assert.isString(info.title, 'title is a string');
             assert.isOk(info.title.length > 0, 'title has length > 0');
 
             assert.isString(info.description, 'description is a string');
-            assert.isOk(info.description.length > 0, 'description has length > 0');
-            assert.isOk(info.description.length <= 512,
+            assert.isAbove(info.description.length, 0, 'description has length > 0');
+            assert.isAtMost(info.description.length, 512,
                 'Description does not exceed 512 characters.');
 
             assert.isString(info.admin_contact_email1,
                 'admin_contact_email1 is a string');
-            assert.isOk(info.admin_contact_email1.length > 0,
+            assert.isAbove(info.admin_contact_email1.length, 0,
                 'admin_contact_email1 has length > 0');
             assert.isOk(tutils.isRFC822ValidEmail(info.admin_contact_email1),
                 'Admin email 1 conforms to RFC822.');
 
             assert.isString(info.admin_contact_email2,
                 'admin_contact_email2 is a string');
-            assert.isOk(info.admin_contact_email2.length > 0,
+            assert.isAbove(info.admin_contact_email2.length, 0,
                 'admin_contact_email2 has length > 0');
             assert.isOk(tutils.isRFC822ValidEmail(info.admin_contact_email2),
                 'Admin email 2 conforms to RFC822.');
 
             assert.isString(info.technical_contact1,
                 'technical_contact1 is a string');
-            assert.isOk(info.technical_contact1.length > 0,
+            assert.isAbove(info.technical_contact1.length, 0,
                 'technical_contact1 has length > 0');
-
             assert.isString(info.technical_contact2,
                 'technical_contact2 is a string');
             assert.isOk(info.technical_contact2.length > 0,
@@ -100,11 +106,11 @@ describe('osdf-info', function() {
                 assert.equal(response.statusCode, 403,
                     'Correct status for info request with no auth token.');
 
-                assert.ok(data === '',
+                assert.strictEqual(data, '',
                     'No content returned for info request with no auth.');
-            }
 
-            done();
+                done();
+            }
         });
     });
 
@@ -122,11 +128,11 @@ describe('osdf-info', function() {
                     'Correct status for info request with a bad ' +
                     'auth token.');
 
-                assert.ok(data === '',
+                assert.strictEqual(data, '',
                     'No content returned for info request with bad auth.');
-            }
 
-            done();
+                done();
+            }
         });
     };
 });

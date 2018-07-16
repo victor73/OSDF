@@ -272,7 +272,7 @@ describe('schema-retrieve', function() {
                 assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
 
-                assert.ok('location' in response.headers,
+                assert.property(response.headers, 'location',
                     'Response header contains location of new schema.');
 
                 assert.strictEqual(data, '',
