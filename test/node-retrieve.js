@@ -81,7 +81,7 @@ describe('node-retrieve', function() {
 
                 assert.isNotNull(node_data, 'Data returned was valid JSON.');
                 assert.hasAllKeys(node_data,
-                    ['id', 'ver', 'meta', 'linkage', 'acl', 'node_type'],
+                    ['acl', 'id', 'linkage', 'meta', 'node_type', 'ns', 'ver'],
                     'Node data has the required keys.');
 
                 // Perform cleanup by removing what we just inserted and
@@ -360,7 +360,7 @@ describe('node-retrieve', function() {
 
                 assert.isNotNull(node_data, 'Data returned was valid JSON.');
                 assert.hasAllKeys(node_data,
-                    ['id', 'ver', 'meta', 'linkage', 'acl', 'node_type'],
+                    ['acl', 'id', 'linkage', 'meta', 'node_type', 'ns', 'ver'],
                     'Node data has the required keys.');
 
                 // Also test that the version we requested is the version we got
@@ -622,7 +622,7 @@ describe('node-retrieve', function() {
 
                 assert.isNotNull(node_data, 'Data returned was valid JSON.');
                 assert.hasAllKeys(node_data,
-                    ['id', 'ver', 'meta', 'linkage', 'acl', 'node_type'],
+                    ['acl', 'id', 'linkage', 'meta', 'node_type', 'ns', 'ver'],
                     'Node data has required keys.'
                 );
 

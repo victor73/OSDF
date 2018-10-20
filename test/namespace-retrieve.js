@@ -63,7 +63,7 @@ describe('namespace-retrieve', function() {
                     "Type of 'result_count' key is correct.");
                 assert.isOk(namespaces_json.hasOwnProperty('results'),
                     "Data contained 'results' key.");
-                assert.isObject(namespaces_json.results,
+                assert.isArray(namespaces_json.results,
                     "Type of 'results' key is correct.");
 
                 callback(null);
@@ -344,7 +344,7 @@ describe('namespace-retrieve', function() {
     // Test the behavior of the system for when a user requests an non-existent
     // namespace.  The approach here is to generate a random namespace to use
     // for the request.
-    in('retrieve_invalid_namespace', function(done) {
+    it('retrieve_invalid_namespace', function(done) {
         // Generate a random string for our 'invalid' namespace that we're going
         // to request.
         var invalid_namespace = osdf_utils.random_string(8);

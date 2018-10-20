@@ -392,14 +392,14 @@ describe('node-delete', function() {
                 var data = resp['body'];
                 var response = resp['response'];
 
-                asssert.equal(response.statusCode, 201,
+                assert.equal(response.statusCode, 201,
                     'Correct status for insertion.');
-                asssert.isOk('location' in response.headers,
+                assert.isOk('location' in response.headers,
                     'Response header contains location of new node.');
 
                 var parent_node_id = tutils.get_node_id(response);
 
-                assert.isStrictEqual(data, '',
+                assert.strictEqual(data, '',
                     'No content returned on a node insertion.');
 
                 // Make a new node that's connected to the previous one.

@@ -32,7 +32,7 @@ describe('aux-schema-delete', function() {
     // auxiliary schema, verify that the insertion was successful by retrieving it,
     // then delete it, and checking to see if another retrieval attempt does not
     // get any data.
-    it('delete_aux_schema', function(test) {
+    it('delete_aux_schema', function(done) {
         var aux_schema_name = osdf_utils.random_string(8);
 
         waterfall([

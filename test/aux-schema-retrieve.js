@@ -78,7 +78,7 @@ describe('aux-schema-retrieve', function() {
                 assert.equal(response.statusCode, 200,
                     'Correct status for retrieval of all aux schemas.');
 
-                assert.equal(data.length, 0, 'Data returned.');
+                assert.isAbove(data.length, 0, 'Data returned.');
 
                 var schema_collection_data;
                 try {

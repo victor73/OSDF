@@ -79,7 +79,7 @@ describe('node-validate', function() {
                 assert.equal(response.statusCode, 422,
                     'Correct status for invalid node.');
 
-                assert.strictNotEqual(data, '',
+                assert.notStrictEqual(data, '',
                     'Content returned on a bad node validation.');
 
                 // Message should say something about 'color' being missing...

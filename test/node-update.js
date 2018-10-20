@@ -351,7 +351,7 @@ describe('node-update', function() {
                 assert.equal(retrieved.node_type, 'example',
                     'Updated node was modified.');
 
-                assert.strictNotEqual(retrieved['ver'], initial_version,
+                assert.notStrictEqual(retrieved['ver'], initial_version,
                     'Module version changed.');
 
                 // Try to clean up by deleting the node.

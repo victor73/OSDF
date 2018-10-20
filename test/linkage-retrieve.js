@@ -115,8 +115,8 @@ describe('linkage-retrieve', function() {
                     'Page number is correct.');
                 assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
-                assert.isObject(report_data['results'],
-                    'Results in report is an object.');
+                assert.isArray(report_data['results'],
+                    'Results in report is an array.');
                 assert.equal(report_data['results'].length, 1,
                     'Correct number of entries in the results array.');
                 assert.equal(report_data['results'][0]['id'], node_id1,
@@ -415,7 +415,7 @@ describe('linkage-retrieve', function() {
                     'Report data has the result count.');
                 assert.isNumber(report_data['result_count'],
                     'Result count is of the right type.');
-                assert.equals(report_data['result_count'], 1,
+                assert.equal(report_data['result_count'], 1,
                     'Result count is correct.');
 
                 assert.property(report_data, 'page',
@@ -427,9 +427,9 @@ describe('linkage-retrieve', function() {
 
                 assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
-                assert.isObject(report_data['results'],
-                    'Results in report is an object.');
-                assert.equals(report_data['results'].length, 1,
+                assert.isArray(report_data['results'],
+                    'Results in report is an array.');
+                assert.equal(report_data['results'].length, 1,
                     'Correct number of entries in the results array.');
                 assert.equal(report_data['results'][0]['id'], node_id2,
                     'Retrieved linkage points to correct node.');
@@ -742,8 +742,8 @@ describe('linkage-retrieve', function() {
                     'Page number is correct.');
                 assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
-                assert.isObject(report_data['results'],
-                    'Results in report is an object.');
+                assert.isArray(report_data['results'],
+                    'Results in report is an array.');
                 assert.equal(report_data['results'].length, 0,
                     'Correct number of entries in the results array.');
 
@@ -868,8 +868,8 @@ describe('linkage-retrieve', function() {
                     'Page number is correct.');
                 assert.property(report_data, 'results',
                     "Report data has the 'results' key.");
-                assert.isObject(report_data['results'],
-                    'Results in report is an object.');
+                assert.isArray(report_data['results'],
+                    'Results in report is an array.');
                 assert.equal(report_data['results'].length, 0,
                     'Correct number of entries in the results array.');
 

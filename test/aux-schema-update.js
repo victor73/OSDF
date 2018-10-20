@@ -350,7 +350,7 @@ describe('aux-schema-update', function() {
                 assert.isAbove(data.length, 0,
                     'Data returned on auxiliary schema retrieval.');
 
-                assert.strictNotEqual(data, bad_data,
+                assert.notStrictEqual(data, bad_data,
                     'Bad data did not make it into the server.');
 
                 // If for whatever reason, the auxiliary schema actually made it
