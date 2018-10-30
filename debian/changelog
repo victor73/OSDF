@@ -1,16 +1,22 @@
+osdf (0.34.0-2) unstable; urgency=low
+
+  * Fixed formatting of changelog.
+
+ -- Victor <victor73@github.com>  Tue, 30 Oct 2018 10:00:00 -0400
+
 osdf (0.34.0-1) unstable; urgency=low
 
   * Update of dependencies: commander, express, lodash, string-format and semver.
   * Locked version numbers down for greater reproducibility.
 
- -- Victor <victor73@github.com> Sat, 20 Oct 2018 12:00:00 -0400
+ -- Victor <victor73@github.com>  Sat, 20 Oct 2018 12:00:00 -0400
 
 osdf (0.33.0-1) unstable; urgency=low
 
   * Update of various dependencies in package.json such as commander, async,
     gulp-rename, is-my-json-valid, semver and log4js.
 
- -- Victor <victor73@github.com> Sun, 09 Sep 2018 18:00:00 -0400
+ -- Victor <victor73@github.com>  Sun, 09 Sep 2018 18:00:00 -0400
 
 osdf (0.32.0-1) unstable; urgency=low
 
