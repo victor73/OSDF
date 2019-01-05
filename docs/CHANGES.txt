@@ -1,3 +1,11 @@
+0.35.0
+  * Improved startup behavior when import of worker.js fails due to a bad
+    NODE_PATH.
+  * Dealt with deprecation of Buffer() warning in osdf.js.
+  * Updated library dependencies and locked down versions.
+
+  -- Victor <victor73@github.com> Fri, 04 Jan 2019 12:00:00 -0400
+
 0.34.0
   * Update of dependencies: commander, express, lodash, string-format
     and semver.

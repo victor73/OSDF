@@ -1,3 +1,12 @@
+osdf (0.35.0-1) unstable; urgency=low
+
+  * Improved startup behavior when import of worker.js fails due to a bad
+    NODE_PATH.
+  * Dealt with deprecation of Buffer() warning in osdf.js.
+  * Updated library dependencies and locked down versions.
+
+ -- Victor <victor73@github.com>  Fri, 04 Jan 2019 12:00:00 -0400
+
 osdf (0.34.0-2) unstable; urgency=low
 
   * Fixed formatting of changelog.
