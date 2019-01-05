@@ -1,3 +1,10 @@
+osdf (0.33.0-1) unstable; urgency=low
+
+  * Update of various dependencies in package.json such as commander, async,
+    gulp-rename, is-my-json-valid, semver and log4js.
+
+ -- Victor <victor73@github.com> Sun, 09 Sep 2018 18:00:00 -0400
+
 osdf (0.32.0-1) unstable; urgency=low
 
   * Allowing 64 character long node_type names.
