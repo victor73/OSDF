@@ -1,672 +1,670 @@
-#!/usr/bin/env nodeunit
-
 /*eslint indent: 0*/
 
+var assert = require('chai').assert;
 var diff = require('deep-diff').diff;
 var parser = require('oql_compiler');
 
 var tutils = require('./lib/test_utils');
 var logger = tutils.get_null_logger();
 
-exports.BasicSearch = function(test) {
-    var query = '"text"[type]';
+describe('oql-parser', function() {
+    it('basic_search', function(done) {
+        var query = '"text"[type]';
 
-    var expected = [
-            'text',
-            'type'
-            ];
+        var expected = [
+                'text',
+                'type'
+                ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonInteger = function(test) {
-    var query = '[type] == 3';
+    it('basic_comparison_integer', function(done) {
+        var query = '[type] == 3';
 
-    var expected = ['type', '==', 3];
+        var expected = ['type', '==', 3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonIntegerInverted = function(test) {
-    var query = '3 == [type]';
+    it('basic_comparison_integer_inverted', function(done) {
+        var query = '3 == [type]';
 
-    var expected = ['type', '==', 3];
+        var expected = ['type', '==', 3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonLTInteger = function(test) {
-    var query = '[type] < 3';
+    it('basic_comparison_lt_integer', function(done) {
+        var query = '[type] < 3';
 
-    var expected = ['type', '<', 3];
+        var expected = ['type', '<', 3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonLTIntegerInverted = function(test) {
-    var query = '3 < [type]';
+    it('basic_comparison_lt_integer_inverted', function(done) {
+        var query = '3 < [type]';
 
-    var expected = ['type', '>', 3];
+        var expected = ['type', '>', 3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTNegativeInteger = function(test) {
-    var query = '[type] > -3';
+    it('basic_comparison_gt_negative_integer', function(done) {
+        var query = '[type] > -3';
 
-    var expected = ['type', '>', -3];
+        var expected = ['type', '>', -3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTNegativeIntegerInverted = function(test) {
-    var query = '-3 > [type]';
+    it('basic_comparison_gt_negative_integer_inverted', function(done) {
+        var query = '-3 > [type]';
 
-    var expected = ['type', '<', -3];
+        var expected = ['type', '<', -3];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTEFloat = function(test) {
-    var query = '[type] >= 3.14';
+    it('basic_comparison_gte_float', function(done) {
+        var query = '[type] >= 3.14';
 
-    var expected = ['type', '>=', 3.14];
+        var expected = ['type', '>=', 3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTEFloatInverted = function(test) {
-    var query = '3.14 >= [type]';
+    it('basic_comparison_gte_float_inverted', function(done) {
+        var query = '3.14 >= [type]';
 
-    var expected = ['type', '<=', 3.14];
+        var expected = ['type', '<=', 3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNegativeFloat = function(test) {
-    var query = '[type] == -3.14';
+    it('basic_comparison_negative_float', function(done) {
+        var query = '[type] == -3.14';
 
-    var expected = ['type', '==', -3.14];
+        var expected = ['type', '==', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNegativeFloatInverted = function(test) {
-    var query = '-3.14 == [type]';
+    it('basic_comparison_negative_float_inverted', function(done) {
+        var query = '-3.14 == [type]';
 
-    var expected = ['type', '==', -3.14];
+        var expected = ['type', '==', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTENegativeFloat = function(test) {
-    var query = '[type] >= -3.14';
+    it('basic_comparison_gte_negative_float', function(done) {
+        var query = '[type] >= -3.14';
 
-    var expected = ['type', '>=', -3.14];
+        var expected = ['type', '>=', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonGTENegativeFloatInverted = function(test) {
-    var query = '-3.14 >= [type]';
+    it('basic_comparison_gte_negative_float_inverted', function(done) {
+        var query = '-3.14 >= [type]';
 
-    var expected = ['type', '<=', -3.14];
+        var expected = ['type', '<=', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonLTENegativeFloat = function(test) {
-    var query = '[type] <= -3.14';
+    it('basic_comparison_lte_negative_float', function(done) {
+        var query = '[type] <= -3.14';
 
-    var expected = ['type', '<=', -3.14];
+        var expected = ['type', '<=', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonLTENegativeFloatInverted = function(test) {
-    var query = '-3.14 <= [type]';
+    it('basic_comparison_lte_negative_float_inverted', function(done) {
+        var query = '-3.14 <= [type]';
 
-    var expected = ['type', '>=', -3.14];
+        var expected = ['type', '>=', -3.14];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonEQTrue = function(test) {
-    var query = '[type] == true';
+    it('basic_comparison_eq_true', function(done) {
+        var query = '[type] == true';
 
-    var expected = ['type', '==', true];
+        var expected = ['type', '==', true];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonEQTrueInverted = function(test) {
-    var query = 'true == [type]';
+    it('basic_comparison_eq_true_inverted', function(done) {
+        var query = 'true == [type]';
 
-    var expected = ['type', '==', true];
+        var expected = ['type', '==', true];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonEQFalse = function(test) {
-    var query = '[type] == false';
+    it('basic_comparison_eq_false', function(done) {
+        var query = '[type] == false';
 
-    var expected = ['type', '==', false];
+        var expected = ['type', '==', false];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonEQFalseInverted = function(test) {
-    var query = 'false == [type]';
+    it('basic_comparison_eq_false_inverted', function(done) {
+        var query = 'false == [type]';
 
-    var expected = ['type', '==', false];
+        var expected = ['type', '==', false];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNETrue = function(test) {
-    var query = '[type] != true';
+    it('basic_comparison_ne_true', function(done) {
+        var query = '[type] != true';
 
-    var expected = ['type', '!=', true];
+        var expected = ['type', '!=', true];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNETrueInverted = function(test) {
-    var query = 'true != [type]';
+    it('basic_comparison_ne_true_inverted', function(done) {
+        var query = 'true != [type]';
 
-    var expected = ['type', '!=', true];
+        var expected = ['type', '!=', true];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNEFalse = function(test) {
-    var query = '[type] != false';
+    it('basic_comparison_ne_false', function(done) {
+        var query = '[type] != false';
 
-    var expected = ['type', '!=', false];
+        var expected = ['type', '!=', false];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.BasicComparisonNEFalseInverted = function(test) {
-    var query = 'false != [type]';
+    it('basic_comparison_ne_false_inverted', function(done) {
+        var query = 'false != [type]';
 
-    var expected = ['type', '!=', false];
+        var expected = ['type', '!=', false];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.AndTwoSearches = function(test) {
-    var query = '"text1"[type] && "text2"[type2]';
+    it('and_two_searches', function(done) {
+        var query = '"text1"[type] && "text2"[type2]';
 
-    var expected = [['text1', 'type'], '&&', ['text2', 'type2']];
+        var expected = [['text1', 'type'], '&&', ['text2', 'type2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.OrTwoSearches = function(test) {
-    var query = '"text1"[field1] || "text2"[field2]';
+    it('or_two_searches', function(done) {
+        var query = '"text1"[field1] || "text2"[field2]';
 
-    var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
+        var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.AndTwoSearchesSpelledOut = function(test) {
-    var query = '"text1"[type1] and "text2"[type2]';
+    it('and_two_searches_spelled_out', function(done) {
+        var query = '"text1"[type1] and "text2"[type2]';
 
-    var expected = [['text1', 'type1'], '&&', ['text2', 'type2']];
+        var expected = [['text1', 'type1'], '&&', ['text2', 'type2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.AndTwoSearchesSpelledOutUC = function(test) {
-    var query = '     "text1"[type1]    AND     "text2"[type2]   ';
+    it('and_two_searches_spelled_out_uc', function(done) {
+        var query = '     "text1"[type1]    AND     "text2"[type2]   ';
 
-    var expected = [['text1', 'type1'], '&&', ['text2', 'type2']];
+        var expected = [['text1', 'type1'], '&&', ['text2', 'type2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.OrTwoSearchesSpelledOut = function(test) {
-    var query = '"text1"[field1] or "text2"[field2]';
+    it('or_two_searches_spelled_out', function(done) {
+        var query = '"text1"[field1] or "text2"[field2]';
 
-    var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
+        var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.OrTwoSearchesSpelledOutUC = function(test) {
-    var query = '     "text1"[field1]    OR     "text2"[field2]   ';
+    it('or_two_searches_spelled_out_uc', function(done) {
+        var query = '     "text1"[field1]    OR     "text2"[field2]   ';
 
-    var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
+        var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedAndSearches = function(test) {
-    var query = '"832586"[rand_subj_id] && ("subject"[node_type] && "male"[sex])';
+    it('nested_and_searches', function(done) {
+        var query = '"832586"[rand_subj_id] && ("subject"[node_type] && "male"[sex])';
 
-    var expected = [
-                     ['832586', 'rand_subj_id'],
-                     '&&',
-                     [['subject', 'node_type'], '&&', ['male', 'sex']]
-                   ];
+        var expected = [
+                         ['832586', 'rand_subj_id'],
+                         '&&',
+                         [['subject', 'node_type'], '&&', ['male', 'sex']]
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.ThreeAdjacentAnds = function(test) {
-    var query = '"text1"[field1] && "text2"[field2] && "text3"[field3]';
+    it('three_adjacent_ands', function(done) {
+        var query = '"text1"[field1] && "text2"[field2] && "text3"[field3]';
 
-    var expected = [
-                     [['text1', 'field1'], '&&', ['text2', 'field2']],
-                     '&&',
-                     ['text3', 'field3']
-                   ];
+        var expected = [
+                         [['text1', 'field1'], '&&', ['text2', 'field2']],
+                         '&&',
+                         ['text3', 'field3']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.ThreeAdjacentOrs = function(test) {
-    var query = '"text1"[field1] || "text2"[field2] || "text3"[field3]';
+    it('three_adjacent_ors', function(done) {
+        var query = '"text1"[field1] || "text2"[field2] || "text3"[field3]';
 
-    var expected = [
-                     [['text1', 'field1'], '||', ['text2', 'field2']],
-                     '||',
-                     ['text3', 'field3']
-                   ];
+        var expected = [
+                         [['text1', 'field1'], '||', ['text2', 'field2']],
+                         '||',
+                         ['text3', 'field3']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.ThreeAdjacentAndIsFirstMixed = function(test) {
-    var query = '"text1"[field1] && "text2"[field2] or "text3"[field3]';
+    it('three_adjacent_and_is_first_mixed', function(done) {
+        var query = '"text1"[field1] && "text2"[field2] or "text3"[field3]';
 
-    var expected = [
-                     [['text1', 'field1'], '&&', ['text2', 'field2']],
-                     '||',
-                     ['text3', 'field3']
-                   ];
+        var expected = [
+                         [['text1', 'field1'], '&&', ['text2', 'field2']],
+                         '||',
+                         ['text3', 'field3']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.ThreeAdjacentOrIsFirstMixed = function(test) {
-    var query = '"text1"[field1] || "text2"[field2] and "text3"[field3]';
+    it('three_adjacent_or_is_first_mixed', function(done) {
+        var query = '"text1"[field1] || "text2"[field2] and "text3"[field3]';
 
-    var expected = [
-                     ['text1', 'field1'],
-                     '||',
-                     [['text2', 'field2'], '&&', ['text3', 'field3']]
-                   ];
+        var expected = [
+                         ['text1', 'field1'],
+                         '||',
+                         [['text2', 'field2'], '&&', ['text3', 'field3']]
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.FourAdjacentAnds = function(test) {
-    var query = '"text1"[field1] && "text2"[field2] and "text3"[field3] ' +
-                '&& "text4"[field4]';
+    it('four_adjacent_ands', function(done) {
+        var query = '"text1"[field1] && "text2"[field2] and "text3"[field3] ' +
+                    '&& "text4"[field4]';
 
-    var expected = [
-                     [
-                       [['text1', 'field1'], '&&', ['text2', 'field2']],
-                       '&&',
-                       ['text3', 'field3']
-                     ],
-                     '&&',
-                     ['text4', 'field4']
-                   ];
+        var expected = [
+                         [
+                           [['text1', 'field1'], '&&', ['text2', 'field2']],
+                           '&&',
+                           ['text3', 'field3']
+                         ],
+                         '&&',
+                         ['text4', 'field4']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.FourAdjacentOrs = function(test) {
-    var query = '"text1"[field1] or "text2"[field2] || "text3"[field3] ' +
-                'or "text4"[field4]';
+    it('four_adjacent_ors', function(done) {
+        var query = '"text1"[field1] or "text2"[field2] || "text3"[field3] ' +
+                    'or "text4"[field4]';
 
-    var expected = [
-                     [
-                       [['text1', 'field1'], '||', ['text2', 'field2']],
-                       '||',
-                       ['text3', 'field3']
-                     ],
-                     '||',
-                     ['text4', 'field4']
-                   ];
+        var expected = [
+                         [
+                           [['text1', 'field1'], '||', ['text2', 'field2']],
+                           '||',
+                           ['text3', 'field3']
+                         ],
+                         '||',
+                         ['text4', 'field4']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.FourAdjacentMixed = function(test) {
-    var query = '"text1"[field1] && "text2"[field2] or "text3"[field3] ' +
-                'and "text4"[field4]';
+    it('four_adjacent_mixed', function(done) {
+        var query = '"text1"[field1] && "text2"[field2] or "text3"[field3] ' +
+                    'and "text4"[field4]';
 
-    var expected = [
-                     [
-                       ['text1', 'field1'], '&&', ['text2', 'field2'],
-                     ],
-                     '||',
-                     [
-                       ['text3', 'field3'], '&&', ['text4', 'field4']
-                     ]
-                   ];
+        var expected = [
+                         [
+                           ['text1', 'field1'], '&&', ['text2', 'field2'],
+                         ],
+                         '||',
+                         [
+                           ['text3', 'field3'], '&&', ['text4', 'field4']
+                         ]
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.FiveAdjacentMixed = function(test) {
-    var query = '"text1"[field1] && "text2"[field2] or "text3"[field3] ' +
-                'and "text4"[field4] || "text5"[field5]';
+    it('five_adjacent_mixed', function(done) {
+        var query = '"text1"[field1] && "text2"[field2] or "text3"[field3] ' +
+                    'and "text4"[field4] || "text5"[field5]';
 
-    var expected = [
-                     [
-                       [
-                         ['text1', 'field1'], '&&', ['text2', 'field2'],
-                       ],
-                       '||',
-                       [
-                         ['text3', 'field3'], '&&', ['text4', 'field4']
-                       ]
-                     ],
-                     '||',
-                     ['text5', 'field5']
-                   ];
+        var expected = [
+                         [
+                           [
+                             ['text1', 'field1'], '&&', ['text2', 'field2'],
+                           ],
+                           '||',
+                           [
+                             ['text3', 'field3'], '&&', ['text4', 'field4']
+                           ]
+                         ],
+                         '||',
+                         ['text5', 'field5']
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.TripleNestedMixed = function(test) {
-    var query = '"text1"[field1] || ("text2"[field2] || "text3"[field3] and "text4"[field4])';
+    it('triple_nested_mixed', function(done) {
+        var query = '"text1"[field1] || ("text2"[field2] || "text3"[field3] and "text4"[field4])';
 
-    var expected = [
-                     ['text1', 'field1'],
-                     '||',
-                     [
-                       ['text2', 'field2'],
-                       '||',
-                       [['text3', 'field3'], '&&', ['text4', 'field4']]
-                     ]
-                   ];
+        var expected = [
+                         ['text1', 'field1'],
+                         '||',
+                         [
+                           ['text2', 'field2'],
+                           '||',
+                           [['text3', 'field3'], '&&', ['text4', 'field4']]
+                         ]
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedOrSearches = function(test) {
-    var query = '"832586"[rand_subj_id] || ("subject"[node_type] || "male"[sex])';
+    it('nested_or_searches', function(done) {
+        var query = '"832586"[rand_subj_id] || ("subject"[node_type] || "male"[sex])';
 
-    var expected = [
-                     ['832586', 'rand_subj_id'],
-                     '||',
-                     [['subject', 'node_type'], '||', ['male', 'sex']]
-                   ];
+        var expected = [
+                         ['832586', 'rand_subj_id'],
+                         '||',
+                         [['subject', 'node_type'], '||', ['male', 'sex']]
+                       ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatLTEComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] <= 0.2';
+    it('nested_with_float_lte_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] <= 0.2';
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '<=',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '<=',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatLTComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] < 0.2';
+    it('nested_with_float_lt_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] < 0.2';
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '<',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '<',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatGTEComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] >= 0.2';
+    it('nested_with_float_gte_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] >= 0.2';
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '>=',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '>=',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatGTComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] > 0.2';
+    it('nested_with_float_gt_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] > 0.2';
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '>',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '>',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatEQComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] == 0.2';
+    it('nested_with_float_eq_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] == 0.2';
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '==',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '==',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.NestedWithFloatNEComparison = function(test) {
-    var query = '("832586"[rand_subj_id] && ' +
-                '("subject"[node_type] && "male"[sex])) ' +
-                '|| [ver] != 0.2';
+    it('nested_with_float_ne_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] != 0.2';
 
 
-    var expected = [
-      [
-        [
-          '832586',
-          'rand_subj_id'
-        ],
-        '&&',
-        [
+        var expected = [
           [
-            'subject',
-            'node_type'
+            [
+              '832586',
+              'rand_subj_id'
+            ],
+            '&&',
+            [
+              [
+                'subject',
+                'node_type'
+              ],
+              '&&',
+              [
+                'male',
+                'sex'
+              ]
+            ]
           ],
-          '&&',
+          '||',
           [
-            'male',
-            'sex'
+            'ver',
+            '!=',
+            0.2
           ]
-        ]
-      ],
-      '||',
-      [
-        'ver',
-        '!=',
-        0.2
-      ]
-    ];
+        ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.DottedFieldSearch = function(test) {
-    var query = '"text"[abc.efg]';
+    it('dotted_field_search', function(done) {
+        var query = '"text"[abc.efg]';
 
-    var expected = [
-            'text',
-            'abc.efg'
-            ];
+        var expected = [
+                'text',
+                'abc.efg'
+                ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.SpacesInSearchText = function(test) {
-    var query = '"spaced text"[abc]';
+    it('spaces_in_search_text', function(done) {
+        var query = '"spaced text"[abc]';
 
-    var expected = [
-            'spaced text',
-            'abc'
-            ];
+        var expected = [
+                'spaced text',
+                'abc'
+                ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.MultiSpacesInSearchTextPreserved = function(test) {
-    var query = '"spaced   text"[abc]';
+    it('multi_spaces_in_search_text_preserved', function(done) {
+        var query = '"spaced   text"[abc]';
 
-    var expected = [
-            'spaced   text',
-            'abc'
-            ];
+        var expected = [
+                'spaced   text',
+                'abc'
+                ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
 
-exports.DottedFieldWithMultiSpaceText = function(test) {
-    var query = '"spaced   text"[abc.def.ghi]';
+    it('dotted_field_with_multi_space_text', function(done) {
+        var query = '"spaced   text"[abc.def.ghi]';
 
-    var expected = [
-            'spaced   text',
-            'abc.def.ghi'
-            ];
+        var expected = [
+                'spaced   text',
+                'abc.def.ghi'
+                ];
 
-    performTest(test, query, expected);
-};
+        performTest(done, query, expected);
+    });
+});
 
-function performTest(test, query, expected) {
-    test.expect(1);
-
+function performTest(done, query, expected) {
     var tree = parser.parse(query);
-    //console.log(tree);
 
     var differences = diff(tree, expected);
 
-    test.ok(differences === undefined, 'Parser produced expected output.');
+    assert.isUndefined(differences, 'Parser produced expected output.');
 
-    test.done();
+    done();
 }

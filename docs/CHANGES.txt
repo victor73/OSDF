@@ -1,3 +1,8 @@
+0.36.0
+  * Moved from nodeunit to mocha/chai for testing.
+
+  -- Victor <victor73@github.com> Fri, 15 Feb 2019 12:00:00 -0400
+
 0.35.0
   * Improved startup behavior when import of worker.js fails due to a bad
     NODE_PATH.
