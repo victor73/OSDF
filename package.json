@@ -43,7 +43,7 @@
         "gulp-rename": "1.4.0",
         "gulp-shell": "0.6.5",
         "gulp-tar": "2.1.0",
-        "mocha": "5.2.0",
+        "mocha": "6.0.2",
         "nodeunit": "0.11.3",
         "readable-stream": "2.3.6",
         "semver": "5.6.0"

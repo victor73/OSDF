@@ -12,9 +12,57 @@ describe('oql-parser', function() {
         var query = '"text"[type]';
 
         var expected = [
-                'text',
-                'type'
-                ];
+            'text',
+            'type'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('basic_negated_search_not', function(done) {
+        var query = 'not "text"[type]';
+
+        var expected = [
+            '!',
+            'text',
+            'type'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('basic_negated_search_bang', function(done) {
+        var query = '! "text"[type]';
+
+        var expected = [
+            '!',
+            'text',
+            'type'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('basic_negated_search_not_caps', function(done) {
+        var query = 'NOT "text"[type]';
+
+        var expected = [
+            '!',
+            'text',
+            'type'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('basic_negated_search_not_mixed_case', function(done) {
+        var query = 'NoT "text"[type]';
+
+        var expected = [
+            '!',
+            'text',
+            'type'
+        ];
 
         performTest(done, query, expected);
     });
@@ -30,7 +78,11 @@ describe('oql-parser', function() {
     it('basic_comparison_integer_inverted', function(done) {
         var query = '3 == [type]';
 
-        var expected = ['type', '==', 3];
+        var expected = [
+            'type',
+            '==',
+            3
+        ];
 
         performTest(done, query, expected);
     });
@@ -38,7 +90,11 @@ describe('oql-parser', function() {
     it('basic_comparison_lt_integer', function(done) {
         var query = '[type] < 3';
 
-        var expected = ['type', '<', 3];
+        var expected = [
+            'type',
+            '<',
+            3
+        ];
 
         performTest(done, query, expected);
     });
@@ -203,10 +259,26 @@ describe('oql-parser', function() {
         performTest(done, query, expected);
     });
 
+    it('and_two_searches_negated', function(done) {
+        var query = '"text1"[type] && ! "text2"[type2]';
+
+        var expected = [['text1', 'type'], '&&', ['!', 'text2', 'type2']];
+
+        performTest(done, query, expected);
+    });
+
     it('or_two_searches', function(done) {
         var query = '"text1"[field1] || "text2"[field2]';
 
         var expected = [['text1', 'field1'], '||', ['text2', 'field2']];
+
+        performTest(done, query, expected);
+    });
+
+    it('or_two_searches_negated', function(done) {
+        var query = 'NOT "text1"[field1] || "text2"[field2]';
+
+        var expected = [['!', 'text1', 'field1'], '||', ['text2', 'field2']];
 
         performTest(done, query, expected);
     });
@@ -235,6 +307,14 @@ describe('oql-parser', function() {
         performTest(done, query, expected);
     });
 
+    it('or_two_searches_spelled_out_negated', function(done) {
+        var query = '"text1"[field1] or NOT "text2"[field2]';
+
+        var expected = [['text1', 'field1'], '||', ['!', 'text2', 'field2']];
+
+        performTest(done, query, expected);
+    });
+
     it('or_two_searches_spelled_out_uc', function(done) {
         var query = '     "text1"[field1]    OR     "text2"[field2]   ';
 
@@ -243,14 +323,117 @@ describe('oql-parser', function() {
         performTest(done, query, expected);
     });
 
+    it('or_two_searches_spelled_out_uc_negated', function(done) {
+        var query = '     NOT   "text1"[field1]    OR     "text2"[field2]   ';
+
+        var expected = [['!', 'text1', 'field1'], '||', ['text2', 'field2']];
+
+        performTest(done, query, expected);
+    });
+
     it('nested_and_searches', function(done) {
         var query = '"832586"[rand_subj_id] && ("subject"[node_type] && "male"[sex])';
 
         var expected = [
-                         ['832586', 'rand_subj_id'],
-                         '&&',
-                         [['subject', 'node_type'], '&&', ['male', 'sex']]
-                       ];
+            [
+                '832586',
+                'rand_subj_id'
+            ],
+            '&&',
+            [
+                [
+                    'subject',
+                    'node_type'
+                ],
+                '&&',
+                [
+                    'male',
+                    'sex'
+                ]
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_and_searches_negated', function(done) {
+        var query = '"832586"[rand_subj_id] && ' +
+                    '(nOt "subject"[node_type] && "male"[sex])';
+
+        var expected = [
+            [
+                '832586',
+                'rand_subj_id'
+            ],
+            '&&',
+            [
+                [
+                    '!',
+                    'subject',
+                    'node_type'
+                ],
+                '&&',
+                [
+                    'male',
+                    'sex'
+                ]
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_or_searches', function(done) {
+        var query = '"832586"[rand_subj_id] || ' +
+                    '("subject"[node_type] || "male"[sex])';
+
+        var expected = [
+            [
+                '832586',
+                'rand_subj_id'
+            ],
+            '||',
+            [
+                [
+                    'subject',
+                    'node_type'
+                ],
+                '||',
+                [
+                    'male',
+                    'sex'
+                ]
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_or_searches_negated', function(done) {
+        var query = 'not "832586"[rand_subj_id] || ' +
+                    ' (! "subject"[node_type] || NOT "male"[sex])';
+
+        var expected = [
+            [
+                '!',
+                '832586',
+                'rand_subj_id'
+            ],
+            '||',
+            [
+                [
+                    '!',
+                    'subject',
+                    'node_type'
+                ],
+                '||',
+                [
+                    '!',
+                    'male',
+                    'sex'
+                ]
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -259,10 +442,20 @@ describe('oql-parser', function() {
         var query = '"text1"[field1] && "text2"[field2] && "text3"[field3]';
 
         var expected = [
-                         [['text1', 'field1'], '&&', ['text2', 'field2']],
-                         '&&',
-                         ['text3', 'field3']
-                       ];
+            [
+                [
+                    'text1', 'field1'
+                ],
+                '&&',
+                [
+                    'text2', 'field2'
+                ]
+            ],
+            '&&',
+            [
+                'text3', 'field3'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -271,10 +464,20 @@ describe('oql-parser', function() {
         var query = '"text1"[field1] || "text2"[field2] || "text3"[field3]';
 
         var expected = [
-                         [['text1', 'field1'], '||', ['text2', 'field2']],
-                         '||',
-                         ['text3', 'field3']
-                       ];
+            [
+                [
+                    'text1', 'field1'
+                ],
+                '||',
+                [
+                    'text2', 'field2'
+                ]
+            ],
+           '||',
+            [
+                'text3', 'field3'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -283,10 +486,23 @@ describe('oql-parser', function() {
         var query = '"text1"[field1] && "text2"[field2] or "text3"[field3]';
 
         var expected = [
-                         [['text1', 'field1'], '&&', ['text2', 'field2']],
-                         '||',
-                         ['text3', 'field3']
-                       ];
+            [
+                [
+                    'text1',
+                    'field1'
+                ],
+                '&&',
+                [
+                    'text2',
+                    'field2'
+                ]
+            ],
+            '||',
+            [
+                'text3',
+                'field3'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -295,10 +511,23 @@ describe('oql-parser', function() {
         var query = '"text1"[field1] || "text2"[field2] and "text3"[field3]';
 
         var expected = [
-                         ['text1', 'field1'],
-                         '||',
-                         [['text2', 'field2'], '&&', ['text3', 'field3']]
-                       ];
+            [
+                'text1',
+                'field1'
+            ],
+            '||',
+            [
+                [
+                    'text2',
+                    'field2'
+                ],
+                '&&',
+                [
+                    'text3',
+                    'field3'
+                ]
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -308,14 +537,30 @@ describe('oql-parser', function() {
                     '&& "text4"[field4]';
 
         var expected = [
-                         [
-                           [['text1', 'field1'], '&&', ['text2', 'field2']],
-                           '&&',
-                           ['text3', 'field3']
-                         ],
-                         '&&',
-                         ['text4', 'field4']
-                       ];
+            [
+                [
+                    [
+                        'text1',
+                        'field1'
+                    ],
+                    '&&',
+                    [
+                        'text2',
+                        'field2'
+                    ]
+                ],
+                '&&',
+                [
+                    'text3',
+                    'field3'
+                ]
+            ],
+            '&&',
+            [
+                'text4',
+                'field4'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -325,14 +570,26 @@ describe('oql-parser', function() {
                     'or "text4"[field4]';
 
         var expected = [
-                         [
-                           [['text1', 'field1'], '||', ['text2', 'field2']],
-                           '||',
-                           ['text3', 'field3']
-                         ],
-                         '||',
-                         ['text4', 'field4']
-                       ];
+            [
+                [
+                    [
+                        'text1', 'field1'
+                    ],
+                    '||',
+                    [
+                        'text2', 'field2'
+                    ]
+                ],
+                '||',
+                [
+                    'text3', 'field3'
+                ]
+            ],
+            '||',
+            [
+                'text4', 'field4'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -342,14 +599,26 @@ describe('oql-parser', function() {
                     'and "text4"[field4]';
 
         var expected = [
-                         [
-                           ['text1', 'field1'], '&&', ['text2', 'field2'],
-                         ],
-                         '||',
-                         [
-                           ['text3', 'field3'], '&&', ['text4', 'field4']
-                         ]
-                       ];
+            [
+                [
+                    'text1', 'field1'
+                ],
+                '&&',
+                [
+                    'text2', 'field2'
+                ],
+            ],
+            '||',
+            [
+                [
+                    'text3', 'field3'
+                ],
+                '&&',
+                [
+                    'text4', 'field4'
+                ]
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -359,18 +628,32 @@ describe('oql-parser', function() {
                     'and "text4"[field4] || "text5"[field5]';
 
         var expected = [
-                         [
-                           [
-                             ['text1', 'field1'], '&&', ['text2', 'field2'],
-                           ],
-                           '||',
-                           [
-                             ['text3', 'field3'], '&&', ['text4', 'field4']
-                           ]
-                         ],
-                         '||',
-                         ['text5', 'field5']
-                       ];
+            [
+                [
+                    [
+                        'text1', 'field1'
+                    ],
+                    '&&',
+                    [
+                        'text2', 'field2'
+                    ],
+                ],
+                '||',
+                [
+                    [
+                        'text3', 'field3'
+                    ],
+                    '&&',
+                    [
+                        'text4', 'field4'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'text5', 'field5'
+            ]
+        ];
 
         performTest(done, query, expected);
     });
@@ -379,60 +662,25 @@ describe('oql-parser', function() {
         var query = '"text1"[field1] || ("text2"[field2] || "text3"[field3] and "text4"[field4])';
 
         var expected = [
-                         ['text1', 'field1'],
-                         '||',
-                         [
-                           ['text2', 'field2'],
-                           '||',
-                           [['text3', 'field3'], '&&', ['text4', 'field4']]
-                         ]
-                       ];
-
-        performTest(done, query, expected);
-    });
-
-    it('nested_or_searches', function(done) {
-        var query = '"832586"[rand_subj_id] || ("subject"[node_type] || "male"[sex])';
-
-        var expected = [
-                         ['832586', 'rand_subj_id'],
-                         '||',
-                         [['subject', 'node_type'], '||', ['male', 'sex']]
-                       ];
-
-        performTest(done, query, expected);
-    });
-
-    it('nested_with_float_lte_comparison', function(done) {
-        var query = '("832586"[rand_subj_id] && ' +
-                    '("subject"[node_type] && "male"[sex])) ' +
-                    '|| [ver] <= 0.2';
-
-        var expected = [
-          [
             [
-              '832586',
-              'rand_subj_id'
+                'text1', 'field1'
             ],
-            '&&',
+            '||',
             [
-              [
-                'subject',
-                'node_type'
-              ],
-              '&&',
-              [
-                'male',
-                'sex'
-              ]
+                [
+                    'text2', 'field2'
+                ],
+                '||',
+                [
+                    [
+                        'text3', 'field3'
+                    ],
+                    '&&',
+                    [
+                        'text4', 'field4'
+                    ]
+                ]
             ]
-          ],
-          '||',
-          [
-            'ver',
-            '<=',
-            0.2
-          ]
         ];
 
         performTest(done, query, expected);
@@ -444,65 +692,137 @@ describe('oql-parser', function() {
                     '|| [ver] < 0.2';
 
         var expected = [
-          [
             [
-              '832586',
-              'rand_subj_id'
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
             ],
-            '&&',
+            '||',
             [
-              [
-                'subject',
-                'node_type'
-              ],
-              '&&',
-              [
-                'male',
-                'sex'
-              ]
+                'ver',
+                '<',
+                0.2
             ]
-          ],
-          '||',
-          [
-            'ver',
-            '<',
-            0.2
-          ]
         ];
 
         performTest(done, query, expected);
     });
 
-    it('nested_with_float_gte_comparison', function(done) {
+    it('nested_with_float_lt_comparison_negated', function(done) {
         var query = '("832586"[rand_subj_id] && ' +
-                    '("subject"[node_type] && "male"[sex])) ' +
-                    '|| [ver] >= 0.2';
+                    '("subject"[node_type] && ! "male"[sex])) ' +
+                    '|| [ver] < 0.2';
 
         var expected = [
-          [
             [
-              '832586',
-              'rand_subj_id'
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        '!',
+                        'male',
+                        'sex'
+                    ]
+                ]
             ],
-            '&&',
+            '||',
             [
-              [
-                'subject',
-                'node_type'
-              ],
-              '&&',
-              [
-                'male',
-                'sex'
-              ]
+                'ver',
+                '<',
+                0.2
             ]
-          ],
-          '||',
-          [
-            'ver',
-            '>=',
-            0.2
-          ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_lte_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] <= 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '<=',
+                0.2
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_lte_comparison_negated', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '(! "subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] <= 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        '!',
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '<=',
+                0.2
+            ]
         ];
 
         performTest(done, query, expected);
@@ -543,10 +863,10 @@ describe('oql-parser', function() {
         performTest(done, query, expected);
     });
 
-    it('nested_with_float_eq_comparison', function(done) {
+    it('nested_with_float_gt_comparison_negated', function(done) {
         var query = '("832586"[rand_subj_id] && ' +
-                    '("subject"[node_type] && "male"[sex])) ' +
-                    '|| [ver] == 0.2';
+                    '("subject"[node_type] && ! "male"[sex])) ' +
+                    '|| [ver] > 0.2';
 
         var expected = [
           [
@@ -562,6 +882,7 @@ describe('oql-parser', function() {
               ],
               '&&',
               [
+                '!',
                 'male',
                 'sex'
               ]
@@ -570,9 +891,151 @@ describe('oql-parser', function() {
           '||',
           [
             'ver',
-            '==',
+            '>',
             0.2
           ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_gte_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] >= 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '>=',
+                0.2
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_gte_comparison_negated', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '(not "subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] >= 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        '!',
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '>=',
+                0.2
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_eq_comparison', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] == 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '==',
+                0.2
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('nested_with_float_eq_comparison_negated', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '("subject"[node_type] && NOT "male"[sex])) ' +
+                    '|| [ver] == 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        '!',
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '==',
+                0.2
+            ]
         ];
 
         performTest(done, query, expected);
@@ -583,44 +1046,92 @@ describe('oql-parser', function() {
                     '("subject"[node_type] && "male"[sex])) ' +
                     '|| [ver] != 0.2';
 
-
         var expected = [
-          [
             [
-              '832586',
-              'rand_subj_id'
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
             ],
-            '&&',
+            '||',
             [
-              [
-                'subject',
-                'node_type'
-              ],
-              '&&',
-              [
-                'male',
-                'sex'
-              ]
+                'ver',
+                '!=',
+                0.2
             ]
-          ],
-          '||',
-          [
-            'ver',
-            '!=',
-            0.2
-          ]
         ];
 
         performTest(done, query, expected);
     });
 
+    it('nested_with_float_ne_comparison_negated', function(done) {
+        var query = '("832586"[rand_subj_id] && ' +
+                    '(NOT "subject"[node_type] && "male"[sex])) ' +
+                    '|| [ver] != 0.2';
+
+        var expected = [
+            [
+                [
+                    '832586',
+                    'rand_subj_id'
+                ],
+                '&&',
+                [
+                    [
+                        '!',
+                        'subject',
+                        'node_type'
+                    ],
+                    '&&',
+                    [
+                        'male',
+                        'sex'
+                    ]
+                ]
+            ],
+            '||',
+            [
+                'ver',
+                '!=',
+                0.2
+            ]
+        ];
+
+        performTest(done, query, expected);
+    });
+
+
     it('dotted_field_search', function(done) {
         var query = '"text"[abc.efg]';
 
         var expected = [
-                'text',
-                'abc.efg'
-                ];
+            'text',
+            'abc.efg'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('dotted_field_search_negated', function(done) {
+        var query = 'NOT "text"[abc.efg]';
+
+        var expected = [
+            '!',
+            'text',
+            'abc.efg'
+        ];
 
         performTest(done, query, expected);
     });
@@ -629,9 +1140,21 @@ describe('oql-parser', function() {
         var query = '"spaced text"[abc]';
 
         var expected = [
-                'spaced text',
-                'abc'
-                ];
+            'spaced text',
+            'abc'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('spaces_in_search_text_negated', function(done) {
+        var query = 'NoT "spaced text"[abc]';
+
+        var expected = [
+            '!',
+            'spaced text',
+            'abc'
+        ];
 
         performTest(done, query, expected);
     });
@@ -640,20 +1163,45 @@ describe('oql-parser', function() {
         var query = '"spaced   text"[abc]';
 
         var expected = [
-                'spaced   text',
-                'abc'
-                ];
+            'spaced   text',
+            'abc'
+        ];
 
         performTest(done, query, expected);
     });
+
+    it('multi_spaces_in_search_text_preserved_negated', function(done) {
+        var query = '! "spaced   text"[abc]';
+
+        var expected = [
+            '!',
+            'spaced   text',
+            'abc'
+        ];
+
+        performTest(done, query, expected);
+    });
+
 
     it('dotted_field_with_multi_space_text', function(done) {
         var query = '"spaced   text"[abc.def.ghi]';
 
         var expected = [
-                'spaced   text',
-                'abc.def.ghi'
-                ];
+            'spaced   text',
+            'abc.def.ghi'
+        ];
+
+        performTest(done, query, expected);
+    });
+
+    it('dotted_field_with_multi_space_text_negated', function(done) {
+        var query = 'not "spaced   text"[abc.def.ghi]';
+
+        var expected = [
+           '!',
+           'spaced   text',
+           'abc.def.ghi'
+        ];
 
         performTest(done, query, expected);
     });

@@ -63,11 +63,23 @@ var generators = {
         return generated;
     },
     'SEARCH': function(node) {
-        var text = node[0];
-        var field = node[1];
+        var text;
+        var field;
+        var generated;
 
-        var generated = {'term': {}};
-        generated.term[field] = text;
+        if (node.length === 2) {
+            text = node[0];
+            field = node[1];
+
+            generated = {'term': {}};
+            generated.term[field] = text;
+        } else {
+            text = node[1];
+            field = node[2];
+
+            generated = {'not': {'term': {}}};
+            generated.not.term[field] = text;
+        }
 
         return generated;
     },
@@ -182,7 +194,12 @@ function _processNode(node) {
     } else if (node.length === 2) {
         return generators['SEARCH'](node);
     } else if (node.length === 3) {
-        return generators['COMPARISON'](node);
+        if (node[0] === '!') {
+            // Negated search...
+            return generators['SEARCH'](node);
+        } else {
+            return generators['COMPARISON'](node);
+        }
     } else {
         throw new Error('Invalid AST node.');
     }

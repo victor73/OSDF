@@ -8,6 +8,7 @@ and [Aa][Nn][Dd]
 or  [Oo][Rr]
 true [Tt][Rr][Uu][Ee]
 false [Ff][Aa][Ll][Ss][Ee]
+not [Nn][Oo][Tt]
 
 %%
 
@@ -31,6 +32,8 @@ false [Ff][Aa][Ll][Ss][Ee]
 "!="                             return 'NE'
 {true}                           return 'BOOL'
 {false}                          return 'BOOL'
+{not}                            return 'NOT'
+"!"                              return 'NOT'
 
 {dotted}                         return 'DOTTED'
 "all"                            return 'ALL'
@@ -76,7 +79,8 @@ term
     ;
 
 search
-    : query_text field          {$$ = [$1, $2];}
+    : NOT query_text field      {$$ = ["!", $2, $3];}
+    | query_text field          {$$ = [$1, $2];}
     ;
 
 allsearch

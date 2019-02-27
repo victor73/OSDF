@@ -1,3 +1,10 @@
+0.37.0
+  * Enhancement to OQL to support negated searches/matches.
+  * Additional test methods to test OQL parser and compiler.
+  * Upgraded mocha to version 6.0.2.
+
+  -- Victor <victor73@github.com> Wed, 27 Feb 2019 10:00:00 -0400
+
 0.36.0
   * Moved from nodeunit to mocha/chai for testing.
 
