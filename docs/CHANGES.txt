@@ -1,3 +1,9 @@
+osdf (0.37.1-1) unstable; urgency=low
+  * Updated testing documentation mocha from nodeunit.
+  * Changed gulp "test" target to invoke mocha from nodeunit.
+
+  -- Victor <victor73@github.com> Mon, 11 Mar 2019 15:00:00 -0400
+
 0.37.0
   * Enhancement to OQL to support negated searches/matches.
   * Additional test methods to test OQL parser and compiler.
