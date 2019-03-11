@@ -2,40 +2,74 @@ OSDF Testing
 
 Requirements
 =====================================================================
-  - Node.js 6.x or better
-  - nodeunit (installed via npm)
+  - Node.js 8.x or better
+  - Mocha (installed via npm)
+  - Chai (installed via npm)
 
 Procedure
 =====================================================================
 
-1. Ensure that the nodeunit utility is installed and available on the
-   command line. Nodeunit is installed via the npm utility.
+1. Ensure that the mocha utility, and Chai, are installed and available on the
+   command line. These are typically installed automatically with the npm utility
+   because they are listed in the project's dependencies in the package.json
+   file.
 
-   # Installation of nodeunit as a non-privileged/non-root user
-   $ npm install nodeunit
+   # Installation of mocha and chai as a non-privileged/non-root user
+   $ npm install
 
-   # Installatoin of nodeunit as root or with sudo
-   # npm install -g nodeunit 
+   # Installation of mocha system-wide as root (or with sudo)
 
-   $ sudo npm install -g nodeunit
+   # npm install -g mocha 
 
-2. Checking that nodeunit is installed
+      or
 
-   $ which nodeunit
+   $ sudo npm install -g mocha
 
-   The 'which' command should report the location of the nodunit
-   utility.
 
-2. Running the tests
+2. Check that mocha is installed
 
-   # Running the whole test suite
+   $ which mocha
 
-   $ nodeunit test
+   The 'which' command should report the location of the mocha utility. This
+   should work when installing mocha-system wide however, if mocha was installed
+   into the node_modules directory with npm, then you may need to add
+   node_modules/.bin/ into your PATH and the OSDF root and lib directories to
+   the NODE_PATH.
 
-   # Running an individual test script
+   # Adjusting the NODE_PATH (inside the root of the OSDF codebase).
+   export NODE_PATH=.:./lib
 
-   $ nodeunit test/node-retrieve.js
+3. Run the tests with gulp
 
-   # Running an individual test case
+   Gulp is a task runner and OSDF provides a gulpfile.js that makes
+   invoking the mocha test suite simple by invoking mocha on your behalf.
+   If gulp is globally available on your system:
 
-   $ nodeunit test/node-retrieve -t basic_retrieve
+   $ gulp test
+
+   One can also use NPM to invoke the tests. The following will invoke
+   gulp (which itself will invoke mocha) for you.
+   
+   $ npm test
+
+
+4. Run the tests directly with mocha
+
+   Once mocha is sucessfully installed, it affords greater flexibility
+   and control than simply running the entire test suite with gulp. There
+   may be times when a developer/user simply wishes to run a single test
+   script, or even a single test case. For those tasks, it may be simpler
+   to run mocha directly as follows:
+
+   Running the whole test suite is accomplished with:
+
+   $ mocha test
+
+   Running an individual test script
+
+   $ mocha test/node-retrieve.js
+
+   Running an individual test case, or a subset of test cases, can be done
+   with mocha's --grep option:
+
+   $ mocha test/node-retrieve.js  --grep basic_retrieve_no_auth

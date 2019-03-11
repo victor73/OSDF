@@ -191,7 +191,7 @@ gulp.task('test', function() {
         './test/schema-*.js'
     ];
     gulp.src(test_scripts)
-        .pipe(shell(['nodeunit <%= file.path %>'],
+        .pipe(shell(['mocha <%= file.path %>'],
             {env: {NODE_PATH: '.:./lib'}}
         ));
 });
