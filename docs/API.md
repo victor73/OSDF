@@ -1,5 +1,6 @@
 # Open Science Data Framework (OSDF) API
-<a name="top"></a> 
+
+<a name="top"></a>
 
 ***
 
@@ -46,7 +47,7 @@ Username: jdoe
 Password: p@ssw0rd
 
     $ curl -u jdoe:p@ssw0rd -X GET <OSDF_URL>/nodes/<NODE_ID>
-    
+
 For the remainder of this API documentation, the combination of the username and the password, will be referred to as "\<AUTH>" for brevity.
 
 [top](#top)
@@ -86,9 +87,9 @@ Example Response:
       "comment1": "<comment1>",
       "comment2": "<comment2>"
     }
-    
+
 Concrete Example Response:
-    
+
     {
       "api_version" = "1.0",
       "title": "Example OSDF Server",
@@ -134,11 +135,11 @@ Example Response:
       "<ns1>":     { "title": "<title1>",
                      "description": "<description1>",
                      "url": "<url1>" },
-    
+
       "<ns2>":     { "title": "<title2>",
                      "description": "<description2>",
                      "url": "<url2>" },
-    
+
       "<nsN>":     { "title": "<titleN>",
                      "description": "<descriptionN>",
                      "url": "<urlN>" }
@@ -159,7 +160,7 @@ Concrete Example Response:
 ### <a name="namespace_retrieve"></a> Retrieve a Namespace
 
 **Request: GET /namespaces/${ns}**
-    
+
 A GET to the URL will yield specific namespace details.
 
 Example Request:
@@ -213,7 +214,7 @@ by node id.
 
 **Request: POST /nodes**
 
-Abstract Form: 
+Abstract Form:
 
     {
          "ns": "<namespace_id>",
@@ -233,7 +234,7 @@ Abstract Form:
 Concrete Example:
 
     {
-        "ns": "test",  
+        "ns": "test",
         "linkage": { "collected_from" : [ "23435e57" ] },
         "acl": { "read" : [ "all" ],
                  "write": [ "researchers" ]
@@ -301,7 +302,7 @@ Abstract Form:
 Concrete Example:
 
     {
-        "ns": "test",  
+        "ns": "test",
         "linkage": { "collected_from" : [ "23435e57" ] },
         "acl": { "read" : [ "all" ],
                  "write": [ "researchers" ]
@@ -340,7 +341,6 @@ proper authentication will result in an HTTP 403 ("Forbidden") status code.
 
 [top](#top)
 
-
 ### <a name="node_retrieve"></a> Retrieve a Node
 
 **Request: GET /nodes/${node_id}**
@@ -350,9 +350,9 @@ A GET to the URL will yield a JSON document describing the node.
 Example Request:
 
     $ curl -u <AUTH> -X GET <OSDF_URL>/nodes/<NODE_ID>
-    
+
 where &lt;NODE_ID&gt; is the ID of the node we wish to retrieve the data for.
-    
+
 **Response: (application/json)**
 
 Example Response:
@@ -415,10 +415,9 @@ Example Request:
 
 where &lt;VER&gt; is the version number of interest belonging to node with ID of &lt;NODE_ID&gt;
 
-
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
     {
         "ns": "<namespace_id>",
@@ -476,7 +475,6 @@ Example Request:
 
 where &lt;NODE_ID&gt; is the ID of the node we want the outbound connections/edges for.
 
-
 **Response: (application/json)**
 
     {
@@ -502,7 +500,6 @@ Example Request:
     $ curl –u <AUTH> –X GET <OSDF_URL>/nodes/<NODE_ID>/in
 
 where &lt;NODE_ID&gt; is the ID of the node we wish to know what nodes point to.
-
 
 **Response: (application/json)**
 
@@ -531,8 +528,8 @@ older version, that request will fail.
 
 A PUT to the URL with a JSON structure describing the new node data.
 
-Example data: 
-  
+Example data:
+
     "ns": "<namespace_id>",
         "ver": <version>
         "linkage": { "<ns_linkage_cv1>": [ "<osdf_id_1>", "<osdf_id_2>", "<osdf_id_N>" ],
@@ -564,7 +561,6 @@ Concrete Example:
             "tags": [ "female", "human" ]
         }
     }
-
 
 **Response:**
 
@@ -605,7 +601,6 @@ Security related errors for users attempting to delete nodes without
 appropriate entries in the namespaces ACLs will result in an HTTP 403
 "Forbidden" status code.
 
-
 [top](#top)
 
 ***
@@ -636,7 +631,7 @@ any new incoming nodes that have a "node_type" that matches the schema's name.
 Example Requests:
 
     $ curl –u <AUTH> –X POST -d <SCHEMA_DOC> <OSDF_URL>/namespaces/<NS>/schemas
-    
+
 or, if the schema document is stored in a file:
 
     $ curl -u <AUTH> -X POST -d @schema_doc.json <OSDF_URL>/namespaces/<NS>/schemas
@@ -676,10 +671,9 @@ Example Request:
 
 where &lt;NS&gt; is the name of the namespace for which the schemas are wanted.
 
-
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
     {
         "schema_name1": <SCHEMA_DOC1>,
@@ -725,7 +719,7 @@ where &lt;NS&gt; is the name of the namespace and &lt;SCHEMA&gt; is the name of 
 
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
     {
         "type": "object",
@@ -757,7 +751,7 @@ schema used to validate nodes with a "node_type" matching the schema name.
 Example Requests:
 
     $ curl –u <AUTH> –X PUT -d <SCHEMA_JSON> <OSDF_URL>/namespaces/<NS>/schemas/<SCHEMA>
-    
+
 or, if the JSON-Schema is stored in a file:
 
     $ curl -u <AUTH> -X PUT -d @schema.json <OSDF_URL>/namespaces/<NS>/schemas/<SCHEMA>
@@ -816,7 +810,7 @@ auxiliary or if any schemas are updated/modified to make make reference to it.
 Example Requests:
 
     $ curl –u <AUTH> –X POST -d <AUX_SCHEMA_DOC> <OSDF_URL>/namespaces/<NS>/schemas/aux
-    
+
 or, if the document is stored in a file:
 
     $ curl -u <AUTH> -X POST -d @aux_schema_doc.json <OSDF_URL>/namespaces/<NS>/schemas/aux
@@ -860,7 +854,7 @@ where &lt;NS&gt; is the name of the namespace for which the auxiliary schemas ar
 
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
     {
         "aux_schema_name1": <AUX_SCHEMA_DOC1>,
@@ -906,7 +900,7 @@ where &lt;NS&gt; is the name of the namespace and &lt;AUX_SCHEMA&gt; is the name
 
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
     {
         "type": "object",
@@ -937,7 +931,7 @@ A PUT to the URL with a properly formatted and valid document will update the au
 Example Requests:
 
     $ curl –u <AUTH> –X PUT -d <AUX_SCHEMA_JSON> <OSDF_URL>/namespaces/<NS>/schemas/aux/<AUX_SCHEMA>
-    
+
 or, if the JSON-Schema document is stored in a file:
 
     $ curl -u <AUTH> -X PUT -d @aux_schema.json <OSDF_URL>/namespaces/<NS>/schemas/aux/<AUX_SCHEMA>
@@ -1008,7 +1002,7 @@ Example Requests:
 
     $ curl -u <AUTH> -X POST -d '{"query" : { "term" : { "node_type" : "sample" }}}' \
       <OSDF_URL>/nodes/query/<NS>
-    
+
 or, if the JSON query is stored in a file:
 
     $ curl -u <AUTH> -X POST -d @query.json <OSDF_URL>/nodes/query/<NS>
@@ -1018,9 +1012,9 @@ file containing the JSON query document using the Query DSL.
 
 **Response: (application/json)**
 
-Example Response: 
+Example Response:
 
-Returns HTTP status code 200 on success along with a JSON document 
+Returns HTTP status code 200 on success along with a JSON document
 
 Example Response:
 
@@ -1095,8 +1089,8 @@ the documentation. The underlying Lucene analyzer both tokenizes the text and
 makes it lowercase. As a result, searching for a value that contains any upper
 case letters with this type of query will not yield results.
 
-    { 
-       "query": { 
+    {
+       "query": {
           "term" : { "node_type" : "sample" }
        }
     }
@@ -1121,9 +1115,9 @@ any part of the document’s JSON structure.
 Nested JSON fields can be specified using the dot operator. The query below
 will only return documents with a matching hierarchical JSON structure.
 
-    { 
-       "query" : { 
-          "query_string" : { 
+    {
+       "query" : {
+          "query_string" : {
              "fields" : [ "meta.process.software" ],
              "query" : "blast"
           }
@@ -1140,9 +1134,9 @@ inserted between literals if no operator is specified or the default operator
 is not set. In the query, "default_field"" is the JSON field on which to
 search, but is not required and, if not provided, make the query operate on all
 fields.
-    
+
     {
-       "query": { 
+       "query": {
           "query_string" : {
              "default_field" : "node_type",
              "query" : "this AND that OR thus"
@@ -1158,7 +1152,7 @@ Each of the boolean query fields ("must", "should", and "must_not") takes an
 array of other DSL queries. These subqueries are not prefixed with the token
 “query” as in the outermost query. Note that "should" clauses are optional, and
 that a boolean query cannot be made up solely of a "must_not" clause…
- 
+
     {
        "query" : {
           "bool" : {
@@ -1189,7 +1183,7 @@ In addition to queries, filters may be used to further limit the query results.
 For example, the following boolean query has been filtered to only return
 samples with a collection date of "2012-01-01". Filters have both "query" and
 "filter" sections, therefore, filtered queries can actually be nested.
- 
+
     {
         "query" : {
             "filtered" : {
