@@ -2,8 +2,7 @@
    "type": "object",
    "properties": {
        "description": {
-           "type": "string",
-           "required": true
+           "type": "string"
        },
        "color": {
            "$ref": "example_aux"

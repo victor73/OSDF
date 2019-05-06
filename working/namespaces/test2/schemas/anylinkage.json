@@ -2,9 +2,11 @@
    "type": "object",
    "properties": {
        "description": {
-           "type": "string",
-           "required": true
+           "type": "string"
        }
    },
-   "additionalProperties": true
+   "additionalProperties": true,
+   "required": [
+       "description"
+   ]
 }

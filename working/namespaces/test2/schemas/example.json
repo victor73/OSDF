@@ -2,8 +2,7 @@
    "type": "object",
    "properties": {
        "description": {
-           "type": "string",
-           "required": true
+           "type": "string"
        },
        "color": {
            "$ref": "color"
@@ -11,6 +10,7 @@
    },
    "additionalProperties": false,
    "required": [
+       "description",
        "color"
    ]
 }
