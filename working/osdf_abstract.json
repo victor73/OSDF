@@ -1,12 +1,11 @@
 {
-   "description":"base osdf node",
-   "id":"osdf_abstract",
-   "type":"object",
+   "description": "base osdf node",
+   "id": "osdf_abstract",
+   "type": "object",
    "properties":{
       "acl":{
-         "description":"access control language for this node",
-         "required":"true",
-         "type":"object",
+         "description": "access control language for this node",
+         "type": "object",
          "properties":{
             "read":{
                "type":"array",
@@ -23,19 +22,22 @@
          }
       },
       "linkage":{
-         "description":"defining relationships to other nodes",
-         "required":"true",
-         "type":"object"
+         "description":."defining relationships to other nodes",
+         "type":."object"
       },
       "node_type":{
-         "description":"unique name of the node",
-         "required":"true",
-         "type":"string"
+         "description": "unique name of the node",
+         "type": "string"
       },
       "ns":{
          "description":"namespace id",
-         "required":"true",
          "type":"string"
       }
-   }
+   },
+   "required": [
+       "acl",
+       "linkage",
+       "node_type",
+       "ns"
+   ]
 }

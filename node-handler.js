@@ -4,7 +4,7 @@
 // cradle          - For interactions with CouchDB
 // lodash          - For generic utility functions
 // string-format   - For better string formatting abilities
-// tv4             - Used for JSON validation with JSON-Schema
+// ajv             - Used for JSON validation with JSON-Schema
 
 var _ = require('lodash');
 var auth = require('auth_enforcer');
@@ -21,7 +21,7 @@ var perms = require('perms-handler');
 var schema_utils = require('schema_utils');
 var series = require('async/series');
 var sprintf = require('sprintf').sprintf;
-var tv4 = require('tv4');
+var ajv = require('ajv');
 var util = require('util');
 var waterfall = require('async/waterfall');
 
@@ -45,7 +45,8 @@ var osdf_error = osdf_utils.send_error;
 // An array to hold the namespaces.
 var namespaces = [];
 var validators = {};
-var base_schema;
+var base_validator;
+var base_validate;
 var working_dir;
 var db;
 
@@ -110,10 +111,17 @@ exports.init = function(emitter, working_dir_custom) {
                         .format(base_schema_path, err);
                     callback(msg, null);
                 } else {
-                    base_schema = JSON.parse(schema_text);
-                    callback(null);
+                    var base_schema = JSON.parse(schema_text);
+                    callback(null, base_schema);
                 }
             });
+        },
+        function(base_schema, callback) {
+            logger.info('Creating base node validator.');
+            base_validator = new ajv({allErrors: true});
+            base_validate = base_validator.compile(base_schema);
+
+            callback(null);
         },
         function(callback) {
             // The linkage controller needs its own ability to interact with
@@ -433,12 +441,14 @@ exports.insert_node = function(request, response) {
 
     waterfall([
         function(callback) {
+            var node_data;
             try {
-                var node_data = JSON.parse(content);
-                callback(null, node_data);
+                node_data = JSON.parse(content);
             } catch (err) {
                 callback({err: 'Invalid JSON data.', code: 422}, null);
+                return;
             }
+            callback(null, node_data);
         },
         function(node_data, callback) {
             validate_incoming_node(content, function(err, report) {
@@ -756,11 +766,11 @@ function validate_incoming_node(node_string, callback) {
 
     // Do a rudimentary check with json-schema for whether the JSON document
     // has the required structure/keys.
-    var base_result = tv4.validateMultiple(node, base_schema);
+    var base_result = base_validate(node);
 
-    if (! base_result.valid) {
+    if (! base_result) {
         var errors = [];
-        _.each(base_result.errors, function(validation_error) {
+        _.each(base_validate.errors, function(validation_error) {
             var err_msg = '{} on path {}'.format(
                 validation_error.message,
                 validation_error.dataPath
@@ -818,27 +828,29 @@ function validate_incoming_node(node_string, callback) {
 
                 // So, we don't validate the whole node against the JSON schema,
                 // just the 'meta' portion.
-                var meta = node['meta'];
+                var metadata = node['meta'];
 
                 // And validate...
-                var tv4 = validators[node.ns]['val'];
+                var validator = validators[node.ns]['val'];
 
-                var result;
+                var valid;
                 try {
-                    result = tv4.validateMultiple(meta, schema);
+                    valid = validator.validate(schema, metadata);
                 } catch (err) {
                     callback('Error validating document: ' + err);
                 }
 
-                _.each(result.errors, function(validation_error) {
-                    var err_msg = validation_error.message + ' on path ' +
-                                  validation_error.dataPath;
-                    errors.push(err_msg);
-                });
+                if (! valid) {
+                    _.each(validator.errors, function(validation_error) {
+                        var err_msg = validation_error.message + ' on path ' +
+                                      validation_error.dataPath;
+                        errors.push(err_msg);
+                    });
+                }
 
                 // We have to consider BOTH linkage validity AND JSON-Schema
                 // validity
-                var combined_validity = linkage_validity && result.valid;
+                var combined_validity = linkage_validity && valid;
 
                 report = {
                     valid: combined_validity,
@@ -1039,8 +1051,9 @@ function schema_registrar(namespace, callback) {
 
     var schema_dir = path.join(ns2working(namespace), 'schemas');
 
-    // Scan the working area for the namespace for JSON schema files for the node_types.
-    // Each .json file in there is basenamed with the name of the node_type.
+    // Scan the working area for the namespace for JSON schema files for the
+    // node_types. Each .json file in there is basenamed with the name of the
+    // node_type.
     fs.readdir(schema_dir, function(err, files) {
         if (err) {
             logger.error(err);
@@ -1063,10 +1076,16 @@ function schema_registrar(namespace, callback) {
 
                 var node_type = path.basename(node_type_schema, '.json');
 
+                // If the validators structure has no key for the namespace
+                // we kick things off by defining it and setting the value
+                // to an empty object.
                 if (! validators.hasOwnProperty(namespace)) {
                     validators[namespace] = {};
                 }
 
+                // If the validators structure has the namespace
+                // registered, but the node_type is yet unseen, then we
+                // initialize that to an empty object.
                 if (! validators[namespace].hasOwnProperty(node_type)) {
                     validators[namespace][node_type] = {};
                 }
@@ -1294,7 +1313,7 @@ function has_dependent_nodes(node, callback) {
     });
 }
 
-// TODO: Investigate whether tv4 overwrites the previous notion it had
+// TODO: Investigate whether ajv overwrites the previous notion it had
 // for that auxiliary schema. This code assumes that it does.
 function update_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug('In node-handler:update_aux_schema_helper.');
@@ -1302,9 +1321,9 @@ function update_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug('Type of aux schema provided: ' + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
-        var tv4 = validators[namespace]['val'];
+        var validator = validators[namespace]['val'];
 
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
+        load_aux_schema_into_validator_from_json(validator, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1321,8 +1340,8 @@ function insert_aux_schema_helper(namespace, name, aux_schema_json) {
     logger.debug('Type of aux schema provided: ' + typeof(aux_schema_json));
 
     if (validators.hasOwnProperty(namespace)) {
-        var tv4 = validators[namespace]['val'];
-        load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, function(err) {
+        var validator = validators[namespace]['val'];
+        load_aux_schema_into_validator_from_json(validator, name, aux_schema_json, function(err) {
             if (err) {
                 logger.error('Unable to load aux schema: ' + err);
             }
@@ -1337,9 +1356,9 @@ function insert_schema_helper(namespace, name, schema_json) {
     logger.debug('In insert_schema_helper.');
 
     if (validators.hasOwnProperty(namespace)) {
-        var tv4 = validators[namespace]['val'];
+        var validator = validators[namespace]['val'];
         try {
-            tv4.addSchema(name, schema_json);
+            validator.addSchema(schema_json, name);
         } catch (err) {
             logger.error('Unable to load schema: ' + err);
         }
@@ -1348,7 +1367,7 @@ function insert_schema_helper(namespace, name, schema_json) {
     }
 }
 
-function load_aux_schema_into_validator(tv4, schema, callback) {
+function load_aux_schema_into_validator(validator, schema, callback) {
     logger.debug('In load_aux_schema_into_validator: ' + schema);
     var basename = path.basename(schema, '.json');
 
@@ -1359,13 +1378,15 @@ function load_aux_schema_into_validator(tv4, schema, callback) {
         } else {
             logger.debug('Registering schema "{}" with id "{}".'
                 .format(schema, basename));
-            tv4.addSchema(basename, JSON.parse(data));
+            // The second argument, with the ajv library, is interpreted as the
+            // $ref schemas's ID.
+            validator.addSchema(JSON.parse(data), basename);
             callback(null);
         }
     });
 }
 
-function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, callback) {
+function load_aux_schema_into_validator_from_json(validator, name, aux_schema_json, callback) {
     logger.debug('In load_aux_schema_into_validator_from_json. ' +
                  'Aux schema name: ' + name);
 
@@ -1373,9 +1394,10 @@ function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, ca
 
     try {
         if (json_type === 'object') {
-            tv4.addSchema(name, aux_schema_json);
+            validator.addSchema(aux_schema_json, name);
+            callback(null);
         } else if (json_type === 'string') {
-            tv4.addSchema(name, JSON.parse(aux_schema_json));
+            validator.addSchema(JSON.parse(aux_schema_json), name);
             callback(null);
         } else {
             callback('Invalid data type for auxiliary schema.');
@@ -1386,10 +1408,10 @@ function load_aux_schema_into_validator_from_json(tv4, name, aux_schema_json, ca
     }
 }
 
-function load_aux_schemas_into_validator(ns, tv4, schemas, then) {
+function load_aux_schemas_into_validator(ns, validator, schemas, then) {
     logger.debug('In load_aux_schemas_into_validator.');
     var loaded = {};
-    recursive_load_helper(ns, tv4, schemas, loaded, then);
+    recursive_load_helper(ns, validator, schemas, loaded, then);
 }
 
 function locate_aux_schema_by_name(ns, aux_schema_name) {
@@ -1402,6 +1424,7 @@ function locate_aux_schema_source(ns, aux_schema) {
 
 // Given a namespace name (string), return the location on the filesystem
 // where the namespace's working directory is.
+//
 // Parameters: namespace (string)
 // Returns: path (string)
 function ns2working(namespace) {
@@ -1413,6 +1436,7 @@ function ns2working(namespace) {
 // for each of the namespaces that we know about. This all happens
 // asynchronously, so the argument to the function is a callback for client
 // code to know when the process is complete.
+//
 // Parameters: populate_callback (function)
 // Returns: none
 function populate_validators(populate_callback) {
@@ -1459,7 +1483,8 @@ function establish_linkage_controls(callback) {
                     try {
                         linkage_json = JSON.parse(file_text);
                     } catch (parse_err) {
-                        var msg = 'Unable to parse linkage control file for namespace "{}"!';
+                        var msg = 'Unable to parse linkage control file for ' +
+                            'namespace "{}"!';
                         msg = msg.format(ns);
                         logger.error(msg);
                         cb(msg);
@@ -1492,11 +1517,11 @@ function establish_linkage_controls(callback) {
 //
 // Parameters
 // ns: The string namespace name
-// tv4: The tv4 validator. Each namespace has one.
+// ajv: The ajv validator. Each namespace has one.
 // schemas: An array of schema files to load, each may contain references to
 //          other schemas
 // then: a callback that is called when the loading is complete
-function recursive_load_helper(ns, tv4, schemas, loaded, then) {
+function recursive_load_helper(ns, ajv, schemas, loaded, then) {
     each(schemas, function(schema, cb) {
         var schema_src = locate_aux_schema_source(ns, schema);
 
@@ -1535,12 +1560,12 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 
                     // Call ourselves and pass along the list of schemas that we have
                     // already loaded.
-                    recursive_load_helper(ns, tv4, reference_schemas, loaded, function(err) {
+                    recursive_load_helper(ns, ajv, reference_schemas, loaded, function(err) {
                         if (loaded.hasOwnProperty(schema_id)) {
                             logger.debug('Already loaded ' + schema_id);
                             cb();
                         } else {
-                            load_aux_schema_into_validator(tv4, schema_src, function() {
+                            load_aux_schema_into_validator(ajv, schema_src, function() {
                                 // Make a note that we loaded this one already
                                 loaded[schema_id] = 1;
                                 cb();
@@ -1562,7 +1587,7 @@ function recursive_load_helper(ns, tv4, schemas, loaded, then) {
 function register_aux_schemas(ns, callback) {
     logger.debug('In register_aux_schemas: ' + ns);
 
-    var validator = tv4.freshApi();
+    var validator = new ajv({allErrors: true});
 
     register_aux_schemas_to_validator(validator, ns, function(err) {
         if (err) {
@@ -1575,12 +1600,13 @@ function register_aux_schemas(ns, callback) {
     });
 }
 
-function register_aux_schemas_to_validator(tv4, ns, then) {
+function register_aux_schemas_to_validator(validator, ns, then) {
     logger.debug('In register_aux_schemas_to_validator.');
 
     waterfall([
         function(callback) {
             var aux_dir = path.join(working_dir, 'namespaces', ns, 'aux');
+
             // Scan the files contained in the directory and process them
             fs.readdir(aux_dir, function(err, files) {
                 if (err) {
@@ -1600,7 +1626,7 @@ function register_aux_schemas_to_validator(tv4, ns, then) {
             });
         },
         function(files, callback) {
-            load_aux_schemas_into_validator(ns, tv4, files, function(err) {
+            load_aux_schemas_into_validator(ns, validator, files, function(err) {
                 callback(err);
             });
         }],
