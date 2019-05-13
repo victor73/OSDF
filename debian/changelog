@@ -2,6 +2,7 @@ osdf (0.38.0-1) unstable; urgency=low
 
   * Switched to json-schema validation to use the ajv library in place of tv4.
   * Fixes to bundled schema examples.
+  * Added admin guide under docs.
 
  -- Victor <victor73@github.com>  Mon, 06 May 2019 10:00:00 -0400
 
