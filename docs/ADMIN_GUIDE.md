@@ -160,7 +160,7 @@ add a new line to the users.db file along with the corresponding hashed
 password. To aid in this process, OSDF comes bundled with a utility script
 found in the "bin" directory: generate_password_hash.js. Invoking
 generate_password_hash.js requires the username that the hash should be
-generated for. The password itself is entered interactively in a mannter that
+generated for. The password itself is entered interactively in a manner that
 does not echo it to the terminal window (for security). A brief example
 follows:
 
