@@ -122,19 +122,17 @@ cores) Node.js will be using for OSDF and other details. If OSDF starts
 correctly without errros, one will see a message that looks like
 this:
 
-```
-===============================================
-Welcome to
-  ____  _______  ____
- / __ \/ __/ _ \/ __/
-/ /_/ /\ \/ // / _/
-\____/___/____/_/
+    ===============================================
+    Welcome to
+    ____  _______  ____
+    / __ \/ __/ _ \/ __/
+    / /_/ /\ \/ // / _/
+    \____/___/____/_/
 
 
-Open Science Data Framework
+    Open Science Data Framework
 
-===============================================
-```
+    ===============================================
 
 [top](#top)
 
@@ -146,11 +144,11 @@ is simply the "working" directory in the root of the OSDF installation. Under
 that directory, there is a file called users.db that lists the valid users for
 the OSDF instance. The format of the file is simple:
 
-  username:hashed_password
+    username:hashed_password
 
 For example:
 
-  test:sha1$d7e6a336$1$d96d61f49ed32e79cf9ed90402d691d85d197fff
+    test:sha1$d7e6a336$1$d96d61f49ed32e79cf9ed90402d691d85d197fff
 
 The password is salted and hashed to prevent the password from being exposed
 "in the clear". A discussion about the merits of such a scheme is beyond the
