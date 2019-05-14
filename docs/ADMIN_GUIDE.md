@@ -181,7 +181,7 @@ information endpoint:
 
     $ curl -X GET -u cooluser:test http://X.X.X.X:8123/info
 
-where "X.X.X.X" is the OSDF servers IP address or hostname.
+where "X.X.X.X" is the OSDF server's IP address or hostname.
 
 Now that the user has been added to the system, an OSDF administrator
 may also wish to add the user to one or more groups in a namespace, or
@@ -207,10 +207,10 @@ The organizational structure should look like this:
 
 Each namespace has its own directory, and each one should have an "acls"
 (ACL=Access Control List) directory. In the "acls" directory, administrators
-can place a file. The name of the file will be interpreted as the name of a
+can place a file where the name of the file will be interpreted as the name of a
 group in OSDF, and the file may contain usernames/accounts that are to be
 members of the group. For instance, bundled with the reference OSDF
-implementation is a namespace called "test". The "test" namespace "acls"
+implementation is a namespace called "test". The "test" namespace's "acls"
 directory has 3 files in it: managers, executives, and associates. Therefore,
 there are 3 acls for the "test" namespace. Each of these files contains the
 membership of those acls, one account/username per line.
@@ -334,11 +334,11 @@ network the OSDF instance is to be found. This is accomplished with a
 dedicated configuration file: test_config.ini. This is an INI style
 configuration file that must adhere to the following format:
 
-  [osdf]
-  host=X.X.X.X
-  port=8123
-  username=USERNAME
-  password=PASSWORD
+    [osdf]
+    host=X.X.X.X
+    port=8123
+    username=USERNAME
+    password=PASSWORD
 
 Replace X.X.X.X with the IP address or hostname of the OSDF server you wish
 to test. Replace 8123, with the specific port number of your OSDF server
