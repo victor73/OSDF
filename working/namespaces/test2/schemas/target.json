@@ -10,7 +10,6 @@
    },
    "additionalProperties": false,
    "required": [
-       "description",
        "color"
    ]
 }
