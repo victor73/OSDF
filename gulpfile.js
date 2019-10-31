@@ -90,14 +90,11 @@ var sources = [
     'working/**'
 ];
 
-/*
-
 // remove the build and dist directories
 gulp.task('clean', function() {
     return gulp.src(['build', 'dist'])
         .pipe(clean());
 });
-*/
 
 // Compile the jison based parser.
 gulp.task('oql_parser', function() {
