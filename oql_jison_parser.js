@@ -73,7 +73,7 @@
 */
 var oql_jison_parser = (function(){
 var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,9],$V2=[1,13],$V3=[1,16],$V4=[1,17],$V5=[1,15],$V6=[1,14],$V7=[1,19],$V8=[1,20],$V9=[5,7,8,10],$Va=[1,29],$Vb=[1,30],$Vc=[1,31],$Vd=[1,32],$Ve=[1,47],$Vf=[1,48],$Vg=[1,44],$Vh=[1,45],$Vi=[1,46],$Vj=[5,7,8,10,21,23,35,36,37,38],$Vk=[24,25],$Vl=[2,39],$Vm=[2,40],$Vn=[24,25,26];
-var parser = {trace: function trace() { },
+var parser = {trace: function trace () { },
 yy: {},
 symbols_: {"error":2,"expressions":3,"e":4,"EOF":5,"term":6,"AND":7,"OR":8,"(":9,")":10,"search":11,"allsearch":12,"comparison":13,"bool_check":14,"NOT":15,"query_text":16,"field":17,"all":18,"comparator":19,"number":20,"EQ":21,"BOOL":22,"NE":23,"FLOAT":24,"INTEGER":25,"[":26,"ALL":27,"]":28,"DOTTED":29,"IDENT":30,"STRING":31,"QUOTE":32,"ALPHA":33,"bool_compar":34,"CMP_GT":35,"CMP_LT":36,"CMP_GTE":37,"CMP_LTE":38,"$accept":0,"$end":1},
 terminals_: {2:"error",5:"EOF",7:"AND",8:"OR",9:"(",10:")",15:"NOT",21:"EQ",22:"BOOL",23:"NE",24:"FLOAT",25:"INTEGER",26:"[",27:"ALL",28:"]",29:"DOTTED",30:"IDENT",31:"STRING",32:"QUOTE",33:"ALPHA",35:"CMP_GT",36:"CMP_LT",37:"CMP_GTE",38:"CMP_LTE"},
@@ -137,7 +137,7 @@ break;
 },
 table: [{3:1,4:2,6:3,9:$V0,11:5,12:6,13:7,14:8,15:$V1,16:10,17:11,20:12,22:$V2,24:$V3,25:$V4,26:$V5,32:$V6},{1:[3]},{5:[1,18],7:$V7,8:$V8},o($V9,[2,2]),{4:21,6:3,9:$V0,11:5,12:6,13:7,14:8,15:$V1,16:10,17:11,20:12,22:$V2,24:$V3,25:$V4,26:$V5,32:$V6},o($V9,[2,6]),o($V9,[2,7]),o($V9,[2,8]),o($V9,[2,9]),{16:22,32:$V6},{17:23,18:24,26:[1,25]},{19:26,21:[1,27],23:[1,28],35:$Va,36:$Vb,37:$Vc,38:$Vd},{19:33,21:[1,34],23:[1,35],35:$Va,36:$Vb,37:$Vc,38:$Vd},{21:[1,36],23:[1,37]},{24:[1,42],25:[1,41],27:[1,43],30:[1,38],31:[1,40],33:[1,39]},{24:$Ve,25:$Vf,29:$Vg,30:$Vh,31:$Vi},o($Vj,[2,19]),o($Vj,[2,20]),{1:[2,1]},{4:49,6:3,9:$V0,11:5,12:6,13:7,14:8,15:$V1,16:10,17:11,20:12,22:$V2,24:$V3,25:$V4,26:$V5,32:$V6},{4:50,6:3,9:$V0,11:5,12:6,13:7,14:8,15:$V1,16:10,17:11,20:12,22:$V2,24:$V3,25:$V4,26:$V5,32:$V6},{7:$V7,8:$V8,10:[1,51]},{17:52,26:$V5},o($V9,[2,11]),o($V9,[2,12]),{24:$Ve,25:$Vf,27:[1,53],29:$Vg,30:$Vh,31:$Vi},{20:54,24:$V3,25:$V4},o($Vk,$Vl,{22:[1,55]}),o($Vk,$Vm,{22:[1,56]}),o($Vn,[2,35]),o($Vn,[2,36]),o($Vn,[2,37]),o($Vn,[2,38]),{17:57,26:$V5},{26:$Vl},{26:$Vm},{17:58,26:$V5},{17:59,26:$V5},{32:[1,60]},{32:[1,61]},{32:[1,62]},{32:[1,63]},{32:[1,64]},{32:[1,65]},{28:[1,66]},{28:[1,67]},{28:[1,68]},{28:[1,69]},{28:[1,70]},o($V9,[2,3]),o([5,8,10],[2,4],{7:$V7}),o($V9,[2,5]),o($V9,[2,10]),{28:[1,71]},o($V9,[2,13]),o($V9,[2,15]),o($V9,[2,16]),o($V9,[2,14]),o($V9,[2,17]),o($V9,[2,18]),{26:[2,27]},{26:[2,28]},{26:[2,29]},{26:[2,30]},{26:[2,31]},{26:[2,32]},o($Vj,[2,22]),o($Vj,[2,23]),o($Vj,[2,24]),o($Vj,[2,25]),o($Vj,[2,26]),o($V9,[2,21])],
 defaultActions: {18:[2,1],34:[2,39],35:[2,40],60:[2,27],61:[2,28],62:[2,29],63:[2,30],64:[2,31],65:[2,32]},
-parseError: function parseError(str, hash) {
+parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
     } else {
@@ -425,7 +425,7 @@ showPosition:function () {
     },
 
 // test the lexed token: return FALSE when not a match, otherwise return token
-test_match:function (match, indexed_rule) {
+test_match:function(match, indexed_rule) {
         var token,
             lines,
             backup;
@@ -555,7 +555,7 @@ next:function () {
     },
 
 // return next match that has a token
-lex:function lex() {
+lex:function lex () {
         var r = this.next();
         if (r) {
             return r;
@@ -565,12 +565,12 @@ lex:function lex() {
     },
 
 // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
-begin:function begin(condition) {
+begin:function begin (condition) {
         this.conditionStack.push(condition);
     },
 
 // pop the previously active lexer condition state off the condition stack
-popState:function popState() {
+popState:function popState () {
         var n = this.conditionStack.length - 1;
         if (n > 0) {
             return this.conditionStack.pop();
@@ -580,7 +580,7 @@ popState:function popState() {
     },
 
 // produce the lexer rule set which is active for the currently active lexer condition state
-_currentRules:function _currentRules() {
+_currentRules:function _currentRules () {
         if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
             return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
         } else {
@@ -589,7 +589,7 @@ _currentRules:function _currentRules() {
     },
 
 // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
-topState:function topState(n) {
+topState:function topState (n) {
         n = this.conditionStack.length - 1 - Math.abs(n || 0);
         if (n >= 0) {
             return this.conditionStack[n];
@@ -599,7 +599,7 @@ topState:function topState(n) {
     },
 
 // alias for begin(condition)
-pushState:function pushState(condition) {
+pushState:function pushState (condition) {
         this.begin(condition);
     },
 
@@ -689,7 +689,7 @@ if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
 exports.parser = oql_jison_parser;
 exports.Parser = oql_jison_parser.Parser;
 exports.parse = function () { return oql_jison_parser.parse.apply(oql_jison_parser, arguments); };
-exports.main = function commonjsMain(args) {
+exports.main = function commonjsMain (args) {
     if (!args[1]) {
         console.log('Usage: '+args[0]+' FILE');
         process.exit(1);
