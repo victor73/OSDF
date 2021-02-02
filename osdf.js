@@ -298,7 +298,7 @@ function show_ready(ready_data) {
     console.log('===============================================');
     console.log('Welcome to');
     console.log(
-        new Buffer('ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFwvIF9f' +
+        Buffer.from('ICBfX19fICBfX19fX19fICBfX19fCiAvIF9fIFwvIF9fLyBfIFwvIF9f' +
             'LwovIC9fLyAvXCBcLyAvLyAvIF8vClxfX19fL19fXy9fX19fL18vCgo=',
         'base64').toString('utf8')
     );
